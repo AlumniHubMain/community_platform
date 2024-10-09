@@ -15,6 +15,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY src/ src/
 
-EXPOSE 8000
+EXPOSE 8080
 
 CMD ["python", "src/main.py"]
