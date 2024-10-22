@@ -1,0 +1,8 @@
+asyncpg
+eval_type_backport
+fastapi
+greenlet
+pydantic
+pydantic_settings
+SQLAlchemy
+uvicorn
