@@ -1,1 +1,3 @@
 /backend/db_proxy/.config
+.idea
+.DS_Store
