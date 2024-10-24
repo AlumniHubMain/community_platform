@@ -1,6 +1,8 @@
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+import os
+
 
 class Settings(BaseSettings):
     db_host: SecretStr
@@ -18,7 +20,7 @@ class Settings(BaseSettings):
                          f"{self.db_port}/"
                          f"{self.db_name.get_secret_value()}")
 
-    model_config = SettingsConfigDict(env_file='.config', env_file_encoding='utf8')
+    model_config = SettingsConfigDict(env_file=os.environ.get('DOTENV', '.env'), env_file_encoding='utf8')
 
 
 # При импорте файла сразу создастся и провалидируется объект конфига, который можно далее импортировать из разных мест
