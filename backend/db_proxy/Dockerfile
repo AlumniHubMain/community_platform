@@ -4,6 +4,7 @@
 
 FROM python:3.13-slim
 # COPY backend/db_proxy/requirements.txt requirements.txt
+COPY requirements.txt requirements.txt
 WORKDIR "backend/db_proxy"
 RUN pip install -r requirements.txt
 COPY . .
