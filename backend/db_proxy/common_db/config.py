@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     db_name: SecretStr
     db_user: SecretStr
     db_pass: SecretStr
+    db_schema: str      # DB_SCHEMA=your_schema (default=public)
 
     @property
     def database_url_asyncpg(self) -> SecretStr:
