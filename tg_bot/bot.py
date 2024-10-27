@@ -1,9 +1,9 @@
 import asyncio
 from aiogram.types import BotCommand
 from src.loader import dp, bot
-from functions.logging_report import report
-from handlers.admin import router as admin_router
-from handlers.user import router as user_router
+from src.logging.logging_report import report
+from src.staff.router import router as staff_router
+from src.user.router import router as user_router
 
 
 async def on_startup():
@@ -19,7 +19,7 @@ async def on_startup():
 
 async def main():
     # Регистрируем роутеры в диспетчере
-    dp.include_router(admin_router)
+    dp.include_router(staff_router)
     dp.include_router(user_router)
 
     print('Бот запущен')
