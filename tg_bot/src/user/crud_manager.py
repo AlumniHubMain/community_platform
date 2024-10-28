@@ -1,7 +1,7 @@
 from .schemas import DTOTgBotUser, DTOTgBotUserUpdate, DTOTgBotUserRead
 from backend.db_proxy.common_db.models import ORMUserProfile
 from backend.db_proxy.common_db.db_abstract import get_async_session
-from sqlalchemy import or_, update
+from sqlalchemy import or_, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -18,7 +18,7 @@ class UserManager:
         """
         async for session in get_async_session():
             result = await session.execute(select(ORMUserProfile).
-                                           filter(or_(ORMUserProfile.telegram_name == user.telegram_name,
+                                           filter(or_(func.lower(ORMUserProfile.telegram_name) == user.telegram_name,
                                                       ORMUserProfile.telegram_id == user.telegram_id)
                                                   )
                                            )
