@@ -1,18 +1,13 @@
-import asyncio
+from contextlib import asynccontextmanager
 import logging
-from os import getenv
-import sys
+import os
+from fastapi import FastAPI
 from google.cloud import secretmanager
 from aiogram import Bot, Dispatcher, html
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, BotCommand
-import aiohttp
+from aiogram.types import Message, BotCommand, Update
 from aiogram import BaseMiddleware
-from aiogram.types import Message
-
-dp = Dispatcher()
+import time
 
 
 class UserValidationMiddleware(BaseMiddleware):
@@ -51,7 +46,43 @@ class UserValidationMiddleware(BaseMiddleware):
         #         return await response.json()
 
 
+def get_secret(secret_id: str) -> str:
+    client = secretmanager.SecretManagerServiceClient()
+    project_id = "communityp"
+    secret_name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
+    response = client.access_secret_version(request={"name": secret_name})
+    return response.payload.data.decode("UTF-8")
+
+
+TOKEN = os.getenv("BOT_TOKEN") or get_secret("telegram-bot-token")
+
+WEBHOOK_URL = os.getenv("CLOUD_RUN_URL") + "/webhook"
+
+logging.basicConfig(filemode="a", level=logging.INFO)
+bot = Bot(token=TOKEN)
+dp = Dispatcher(bot=bot)
+
+
 dp.update.outer_middleware(UserValidationMiddleware())
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await bot.set_webhook(WEBHOOK_URL)
+    main_menu_commands = [
+        BotCommand(command="/survey", description="Пройти опрос"),
+        BotCommand(command="/view_profile", description="Посмотреть свою анкету"),
+        BotCommand(command="/start", description="Start the bot"),
+        BotCommand(command="/help", description="Help information"),
+    ]
+    await bot.set_my_commands(main_menu_commands)
+    yield
+
+    await bot.delete_webhook()
+    await bot.session.close()
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @dp.message(CommandStart())
@@ -70,45 +101,29 @@ async def survey_handler(message: Message) -> None:
     ...
 
 
-def get_secret(secret_id: str) -> str:
-    client = secretmanager.SecretManagerServiceClient()
-    project_id = ""
-    secret_name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
 
-    response = client.access_secret_version(request={"name": secret_name})
-    secret_value = response.payload.data.decode("UTF-8")
-
-    return secret_value
-
-
-def init_bot():
-    TOKEN = getenv("BOT_TOKEN")
-
-    if not TOKEN:
-        logging.info(
-            "BOT_TOKEN not found in environment, loading from Google Secret Manager..."
-        )
-        TOKEN = get_secret("telegram-bot-token")
-
-    return Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-
-async def on_startup(bot: Bot) -> None:
-    main_menu_commands = [
-        BotCommand(command="/survey", description="Пройти опрос"),
-        BotCommand(command="/view_profile", description="Посмотреть свою анкету"),
-        BotCommand(command="/start", description="Start the bot"),
-        BotCommand(command="/help", description="Help information"),
-    ]
-    await bot.set_my_commands(main_menu_commands)
+@dp.message(CommandStart())
+async def start_handler(message: Message):
+    user_id = message.from_user.id
+    user_full_name = message.from_user.full_name
+    logging.info(
+        f"Start: {user_id} {user_full_name} {time.asctime()}. Message: {message}"
+    )
+    await message.reply(f"Hello, {user_full_name}!")
 
 
-async def main() -> None:
 
-    bot = init_bot()
-    await on_startup(bot)
-    await dp.start_polling(bot)
+@app.post("/webhook")
+async def bot_webhook(update: dict):
+    await dp.feed_webhook_update(bot=bot, update=Update(**update))
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    asyncio.run(main())
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8080)
