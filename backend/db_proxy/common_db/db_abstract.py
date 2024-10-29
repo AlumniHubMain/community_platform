@@ -23,7 +23,6 @@ class ObjectTable(Base):
     __allow_unmapped__ = True
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    # ToDo(evseev.dmsr) посмотреть, нужен ли этот "блокчейн"
     created_at: Mapped[datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
     updated_at: Mapped[datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"),
                                                  onupdate=text("TIMEZONE('utc', now())"))

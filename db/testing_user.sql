@@ -1,5 +1,8 @@
-INSERT into users_testing VALUES
+INSERT into users VALUES
 (
+    current_timestamp,
+    current_timestamp,
+
     1,
 
     'Ivan',
