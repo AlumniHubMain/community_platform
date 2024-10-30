@@ -7,7 +7,6 @@ from aiogram import Bot, Dispatcher, html
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, BotCommand, Update
 from aiogram import BaseMiddleware
-import time
 
 
 class UserValidationMiddleware(BaseMiddleware):
@@ -87,7 +86,7 @@ app = FastAPI(lifespan=lifespan)
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    await message.answer(f"Hello, {html.bold(message.from_user.full_name)}!")
+    await message.answer(f"Hello, {html.bold(message.from_user.full_name)}!", parse_mode='html')
 
 
 @dp.message(Command("survey"))
@@ -99,18 +98,6 @@ async def survey_handler(message: Message) -> None:
     #         async with session.post(register_url, data) as response:
     #             return await response.json()
     ...
-
-
-
-@dp.message(CommandStart())
-async def start_handler(message: Message):
-    user_id = message.from_user.id
-    user_full_name = message.from_user.full_name
-    logging.info(
-        f"Start: {user_id} {user_full_name} {time.asctime()}. Message: {message}"
-    )
-    await message.reply(f"Hello, {user_full_name}!")
-
 
 
 @app.post("/webhook")
