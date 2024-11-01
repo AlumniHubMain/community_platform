@@ -67,7 +67,10 @@ dp.update.outer_middleware(UserValidationMiddleware())
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logging.info('setting webhook url: %s', WEBHOOK_URL)
+
     await bot.set_webhook(WEBHOOK_URL)
+
     main_menu_commands = [
         BotCommand(command="/survey", description="Пройти опрос"),
         BotCommand(command="/view_profile", description="Посмотреть свою анкету"),
@@ -77,7 +80,7 @@ async def lifespan(app: FastAPI):
     await bot.set_my_commands(main_menu_commands)
     yield
 
-    await bot.delete_webhook()
+    # await bot.delete_webhook()
     await bot.session.close()
 
 
