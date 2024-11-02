@@ -15,11 +15,11 @@ class UserProfileManager:
 
     @classmethod
     async def get_user_profile(
-            cls,
-            session: AsyncSession,
-            user_id: int
+        cls, session: AsyncSession, user_id: int
     ) -> SUserProfileRead:
-        result = await session.execute(select(ORMUserProfile).where(ORMUserProfile.id == user_id))
+        result = await session.execute(
+            select(ORMUserProfile).where(ORMUserProfile.id == user_id)
+        )
         profile = result.scalar_one_or_none()
         if profile is None:
             raise HTTPException(status_code=404, detail="Profile not found")
