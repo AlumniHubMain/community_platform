@@ -1,5 +1,7 @@
 asyncpg
 eval_type_backport
+gcloud-aio-storage
+google-auth
 fastapi
 greenlet
 pydantic
