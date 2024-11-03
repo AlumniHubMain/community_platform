@@ -1,8 +1,12 @@
 asyncpg
+certifi
 eval_type_backport
+gcloud-aio-storage
 fastapi
 greenlet
+pillow
 pydantic
 pydantic_settings
+python-multipart
 SQLAlchemy
 uvicorn

@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from users.router import router as users_router
+from media_storage.router import router as mds_router
 
 
 # Configure logging
@@ -42,6 +43,7 @@ app.add_middleware(
 )
 
 app.include_router(users_router)
+app.include_router(mds_router)
 
 @app.get("/", response_class=HTMLResponse)
 async def login_page():
