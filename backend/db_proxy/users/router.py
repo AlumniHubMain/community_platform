@@ -8,15 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from common_db import get_async_session
 from .user_profile_manager import UserProfileManager
-from .schemas import (
-    SUserProfileRead
-)
+from .schemas import SUserProfileRead
 
-router = APIRouter(tags=["Client profiles"], prefix='/user')
+router = APIRouter(tags=["Client profiles"], prefix="/user")
 
 
 @router.get("/{user_id}", response_model=SUserProfileRead, summary="Get user's profile")
-async def get_profile(user_id: int, session: Annotated[AsyncSession, Depends(get_async_session)]) -> SUserProfileRead:
+async def get_profile(
+    user_id: int, session: Annotated[AsyncSession, Depends(get_async_session)]
+) -> SUserProfileRead:
     return await UserProfileManager.get_user_profile(session, user_id)
 
 

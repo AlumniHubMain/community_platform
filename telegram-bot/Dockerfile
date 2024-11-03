@@ -1,9 +1,6 @@
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED 1
-ENV BOT_TOKEN="placeholder_do_not_use_real_token_here"
-# Use docker run -d --name your_bot_container -e BOT_TOKEN="your_real_token" your_bot_image 
-# to run locally
 
 WORKDIR /bot
 
@@ -15,6 +12,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY src/ src/
 
-EXPOSE 8000
+EXPOSE 8080
 
-CMD ["python", "src/main.py"]
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
