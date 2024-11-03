@@ -10,6 +10,7 @@ class ORMUserProfile(ObjectTable):
     """
     Модель таблицы (шаблон) пользователей.
     """
+
     __tablename__ = "users"
 
     name: Mapped[str] = mapped_column(String, nullable=False)

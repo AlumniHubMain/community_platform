@@ -4,8 +4,9 @@
 
 FROM python:3.13-slim
 
-COPY . .
+COPY requirements.txt ./
 RUN pip install -r requirements.txt
+COPY . .
 
 # WORKDIR "backend/db_proxy"
 # CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
