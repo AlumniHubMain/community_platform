@@ -8,6 +8,7 @@ import logging
 import os
 
 from users.router import router as users_router
+from media_storage.router import router as mds_router
 
 import uvicorn
 
@@ -40,6 +41,7 @@ app.add_middleware(
 )
 
 app.include_router(users_router)
+app.include_router(mds_router)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))  # Default to 8000 if not set
