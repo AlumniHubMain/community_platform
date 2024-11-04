@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from .schemas import SUserProfileRead
+from .schemas import SUserProfileRead, UserProfile
 
 
 class UserProfileManager:
@@ -23,4 +23,13 @@ class UserProfileManager:
         profile = result.scalar_one_or_none()
         if profile is None:
             raise HTTPException(status_code=404, detail="Profile not found")
-        return SUserProfileRead.from_orm(profile)
+        return SUserProfileRead.model_validate(profile)
+
+    @classmethod
+    async def create_user_profile(
+        cls, session: AsyncSession, profile: UserProfile
+    ) -> SUserProfileRead:
+        profile_orm = ORMUserProfile(**profile.model_dump(exclude_unset=True, exclude_none=True))
+        session.add(profile_orm)
+        await session.commit()
+        return SUserProfileRead.model_validate(profile_orm)

@@ -21,7 +21,7 @@ class Base(DeclarativeBase):
     __table_args__ = {"schema": f"{schema}"}
 
 
-class ObjectTable(Base):
+class   ObjectTable(Base):
     """
     Модель таблицы (шаблон) для объектов.
     """
