@@ -1,7 +1,7 @@
 CREATE TABLE if not exists users
 (
-    created_at                              TIMESTAMP  NOT NULL,
-    updated_at                              TIMESTAMP  NOT NULL,
+    created_at                              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at                              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	
     id                                      BIGSERIAL PRIMARY KEY,
 
