@@ -1,8 +1,10 @@
-from ..user.schemas import DTOTgBotUser
-from .models import TgBotStaffRole
 from datetime import datetime
+
 from pydantic import EmailStr
 from pydantic_extra_types.phone_numbers import PhoneNumber
+
+from tg_bot.src.user.schemas import DTOTgBotUser
+from .models import TgBotStaffRole
 
 
 class DTOTgBotStaffUpdate(DTOTgBotUser):

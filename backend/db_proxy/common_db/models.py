@@ -1,9 +1,9 @@
-from .db_abstract import ObjectTable
+from typing import List
 
 from sqlalchemy import ARRAY, String, BIGINT
 from sqlalchemy.orm import mapped_column, Mapped
 
-from typing import List
+from .db_abstract import ObjectTable
 
 
 class ORMUserProfile(ObjectTable):
@@ -27,5 +27,7 @@ class ORMUserProfile(ObjectTable):
     telegram_name: Mapped[str | None] = mapped_column(String(200))
     telegram_id: Mapped[int | None] = mapped_column(BIGINT)
 
-    requests_to_society: Mapped[List[str] | None] = mapped_column(ARRAY(String(100)))
-    professional_interests: Mapped[List[str] | None] = mapped_column(ARRAY(String(100)))
+    requests_to_society: Mapped[List[str] |
+                                None] = mapped_column(ARRAY(String(100)))
+    professional_interests: Mapped[List[str] |
+                                   None] = mapped_column(ARRAY(String(100)))

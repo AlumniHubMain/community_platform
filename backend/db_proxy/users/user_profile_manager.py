@@ -1,7 +1,5 @@
 from common_db import ORMUserProfile
-
 from fastapi import HTTPException
-
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -29,7 +27,8 @@ class UserProfileManager:
     async def create_user_profile(
         cls, session: AsyncSession, profile: UserProfile
     ) -> SUserProfileRead:
-        profile_orm = ORMUserProfile(**profile.model_dump(exclude_unset=True, exclude_none=True))
+        profile_orm = ORMUserProfile(
+            **profile.model_dump(exclude_unset=True, exclude_none=True))
         session.add(profile_orm)
         await session.commit()
         return SUserProfileRead.model_validate(profile_orm)

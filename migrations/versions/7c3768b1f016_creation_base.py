@@ -1,15 +1,16 @@
 """creation base
 
 Revision ID: 7c3768b1f016
-Revises: 
+Revises:
 Create Date: 2024-10-26 23:37:29.645366
 
 """
 
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
+
 from backend.db_proxy.common_db.db_abstract import schema
 
 
@@ -104,7 +105,8 @@ def upgrade() -> None:
     op.execute(f'GRANT USAGE ON SCHEMA {schema} TO "YNDXFamily_db_owner"')
     op.execute(
         f'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA {schema} TO "YNDXFamily_db_owner"')
-    op.execute(f'GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO "YNDXFamily_db_owner"')
+    op.execute(
+        f'GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO "YNDXFamily_db_owner"')
     # ### end Alembic commands ###
 
 

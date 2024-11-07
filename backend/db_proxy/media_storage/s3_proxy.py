@@ -1,11 +1,12 @@
-import aiohttp
-from common_db import settings
 from datetime import datetime
-from fastapi import UploadFile
-from gcloud.aio.storage import Storage
 from hashlib import md5
 from io import BytesIO
+
+import aiohttp
 from PIL import Image
+from common_db import settings
+from fastapi import UploadFile
+from gcloud.aio.storage import Storage
 
 
 def make_hash(file: UploadFile) -> str:
@@ -24,6 +25,7 @@ def convert_into_webp(file: UploadFile) -> BytesIO:
     result.seek(0)
     return result
 
+
 class GCSClient:
     def __init__(self):
         self._credentials_file = settings.google_application_credentials
@@ -32,7 +34,8 @@ class GCSClient:
 
     def check_file_extension(self, file: UploadFile) -> str:
         original_filename = file.filename
-        name, extension = original_filename.rsplit('.', 1) if '.' in original_filename else (original_filename, '')
+        name, extension = original_filename.rsplit(
+            '.', 1) if '.' in original_filename else (original_filename, '')
         extension = extension.lower()
         if extension not in self._supported_extensions:
             raise Exception("Unsupported image extension")
@@ -40,7 +43,8 @@ class GCSClient:
 
     async def upload_avatar(self, file: UploadFile) -> dict:
         async with aiohttp.ClientSession() as session:
-            client = Storage(session=session, service_file=self._credentials_file)
+            client = Storage(
+                session=session, service_file=self._credentials_file)
             extension = self.check_file_extension(file)
             dir_name = make_hash(file)
 

@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from pydantic import BaseModel, field_validator, EmailStr
 from pydantic_extra_types.country import CountryAlpha2, CountryAlpha3
 from pydantic_extra_types.phone_numbers import PhoneNumber
