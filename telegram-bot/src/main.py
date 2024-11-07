@@ -1,12 +1,12 @@
-from contextlib import asynccontextmanager
 import logging
 import os
-from fastapi import FastAPI
-from google.cloud import secretmanager
-from aiogram import Bot, Dispatcher, html
+from contextlib import asynccontextmanager
+
+from aiogram import Bot, Dispatcher, html, BaseMiddleware
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, BotCommand, Update
-from aiogram import BaseMiddleware
+from fastapi import FastAPI
+from google.cloud import secretmanager
 
 
 class UserValidationMiddleware(BaseMiddleware):
@@ -73,7 +73,8 @@ async def lifespan(app: FastAPI):
 
     main_menu_commands = [
         BotCommand(command="/survey", description="Пройти опрос"),
-        BotCommand(command="/view_profile", description="Посмотреть свою анкету"),
+        BotCommand(command="/view_profile",
+                   description="Посмотреть свою анкету"),
         BotCommand(command="/start", description="Start the bot"),
         BotCommand(command="/help", description="Help information"),
     ]

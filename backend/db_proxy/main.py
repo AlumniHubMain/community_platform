@@ -6,8 +6,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
-from users.router import router as users_router
 from media_storage.router import router as mds_router
+from users.router import router as users_router
 
 
 # Configure logging
@@ -45,6 +45,7 @@ app.add_middleware(
 app.include_router(users_router)
 app.include_router(mds_router)
 
+
 @app.get("/", response_class=HTMLResponse)
 async def login_page():
     login_page_content = f"""
@@ -59,9 +60,9 @@ async def login_page():
         <h1>Login with Telegram</h1>
         <div id="telegram-widget"></div>
         <script async src="https://telegram.org/js/telegram-widget.js?7"
-                data-telegram-login="yndx_cofee_bot" 
-                data-size="large" 
-                data-radius="10" 
+                data-telegram-login="yndx_cofee_bot"
+                data-size="large"
+                data-radius="10"
                 data-auth-url="{BASE_URL}/auth/callback"
                 data-request-access="write"></script>
         <script type="text/javascript">

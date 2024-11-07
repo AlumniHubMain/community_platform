@@ -1,9 +1,10 @@
+from aiogram.filters import BaseFilter
+from aiogram.types import Message
+
+from tg_bot.src.user.schemas import DTOTgBotUser
 from .crud_manager import StaffManager
 from .models import TgBotStaffRole
 from .schemas import DTOTgBotStaffRead, DTOTgBotStaffUpdate
-from ..user.schemas import DTOTgBotUser
-from aiogram.filters import BaseFilter
-from aiogram.types import Message
 
 
 class IsStaff(BaseFilter):
@@ -11,7 +12,8 @@ class IsStaff(BaseFilter):
     Фильтр для определения персонала бота. DTOTgBotStaffRead - если сотрудник, False - если нет.
     """
 
-    async def __call__(self, message: Message) -> bool | dict[str, DTOTgBotStaffRead]:
+    async def __call__(
+            self, message: Message) -> bool | dict[str, DTOTgBotStaffRead]:
         staff: DTOTgBotStaffRead | None = await StaffManager.get_staff(
             user=DTOTgBotUser(telegram_name=message.from_user.username, telegram_id=message.from_user.id))
         if staff is None:
@@ -27,9 +29,10 @@ class IsAdmin(BaseFilter):
     Фильтр для определения админа бота. DTOTgBotStaffRead - если админ, False - если нет.
     """
 
-    async def __call__(self, message: Message) -> bool | dict[str, DTOTgBotStaffRead]:
-        staff: DTOTgBotStaffRead | None = StaffManager.get_staff(
-            user=DTOTgBotUser(telegram_name=message.from_user.username, telegram_id=message.from_user.id))
+    async def __call__(
+            self, message: Message) -> bool | dict[str, DTOTgBotStaffRead]:
+        staff: DTOTgBotStaffRead | None = StaffManager.get_staff(user=DTOTgBotUser(
+            telegram_name=message.from_user.username, telegram_id=message.from_user.id))
         if staff:
             if staff.role == TgBotStaffRole.admin:
                 return {'admin': staff}

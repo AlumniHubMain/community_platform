@@ -1,12 +1,12 @@
-import asyncio
-import pytest
-from unittest import mock
-from aiogram import Bot, Dispatcher
-from aiogram.types import BotCommand, Message
-from aiogram.enums import ParseMode
-from ..main import get_secret, on_startup, init_bot, UserValidationMiddleware
-from aiogram.types import Message, User, Chat
 from datetime import datetime
+from unittest import mock
+
+import pytest
+from aiogram import Bot, Dispatcher
+from aiogram.enums import ParseMode
+from aiogram.types import BotCommand, Message, User, Chat
+
+from ..main import on_startup, UserValidationMiddleware
 
 
 @pytest.fixture
@@ -26,14 +26,19 @@ async def test_on_startup(mock_bot_and_dispatcher):
         await on_startup(bot_instance)
         mock_set_commands.assert_called_once_with(
             [
-                BotCommand(command="/survey", description="Пройти опрос"),
                 BotCommand(
-                    command="/view_profile", description="Посмотреть свою анкету"
-                ),
-                BotCommand(command="/start", description="Start the bot"),
-                BotCommand(command="/help", description="Help information"),
-            ]
-        )
+                    command="/survey",
+                    description="Пройти опрос"),
+                BotCommand(
+                    command="/view_profile",
+                    description="Посмотреть свою анкету"),
+                BotCommand(
+                    command="/start",
+                    description="Start the bot"),
+                BotCommand(
+                    command="/help",
+                    description="Help information"),
+            ])
 
 
 @pytest.mark.asyncio

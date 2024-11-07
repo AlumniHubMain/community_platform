@@ -1,7 +1,9 @@
-from backend.db_proxy.common_db.db_abstract import ObjectTable
 from enum import Enum as BaseEnum
+
 from sqlalchemy import Enum, BigInteger
 from sqlalchemy.orm import mapped_column, Mapped
+
+from backend.db_proxy.common_db.db_abstract import ObjectTable
 
 
 class TgBotStaffRole(BaseEnum):
@@ -26,7 +28,9 @@ class ORMTgBotStaff(ObjectTable):
     bio: Mapped[str | None]
     email: Mapped[str | None]
     phone_number: Mapped[str | None]
-    role: Mapped[TgBotStaffRole] = mapped_column(Enum(TgBotStaffRole,
-                                                      name='staff_role',
-                                                      inherit_schema=True),
-                                                 default=TgBotStaffRole.manager)
+    role: Mapped[TgBotStaffRole] = mapped_column(
+        Enum(
+            TgBotStaffRole,
+            name='staff_role',
+            inherit_schema=True),
+        default=TgBotStaffRole.manager)

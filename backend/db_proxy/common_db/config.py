@@ -1,7 +1,7 @@
+import os
+
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-import os
 
 
 class Settings(BaseSettings):
@@ -30,5 +30,6 @@ class Settings(BaseSettings):
     )
 
 
-# При импорте файла сразу создастся и провалидируется объект конфига, который можно далее импортировать из разных мест
+# При импорте файла сразу создастся и провалидируется объект конфига,
+# который можно далее импортировать из разных мест
 settings = Settings()

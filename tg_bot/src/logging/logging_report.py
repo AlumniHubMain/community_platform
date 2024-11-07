@@ -1,8 +1,11 @@
-from ..data.admitted_people import notified_people
-from ..loader import bot
-from aiogram.types import BufferedInputFile
 import logging
 from pathlib import Path
+
+from aiogram.types import BufferedInputFile
+
+from tg_bot.src.data.admitted_people import notified_people
+from tg_bot.src.loader import bot
+
 
 error_log: Path = Path('files', 'logs', 'error')
 info_log: Path = Path('files', 'logs', 'info')
@@ -49,4 +52,7 @@ async def report(description: str,
         except Exception as e:
             print(f'логирование в report свалилось с\n{e}')
         return
-    error_logger.exception(description if exception is None else description + '\n' + str(exception))
+    error_logger.exception(
+        description if exception is None else description +
+        '\n' +
+        str(exception))

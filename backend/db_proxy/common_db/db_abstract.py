@@ -1,5 +1,6 @@
-from .config import settings
 from datetime import datetime
+from typing import AsyncGenerator
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
@@ -8,7 +9,9 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
-from typing import AsyncGenerator
+
+from .config import settings
+
 
 schema: str = settings.db_schema
 

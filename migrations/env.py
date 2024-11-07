@@ -1,23 +1,21 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 from backend.db_proxy.common_db.config import settings
 from backend.db_proxy.common_db.db_abstract import Base, schema
 
-from backend.db_proxy.common_db.models import ORMUserProfile
-from tg_bot.src.staff.models import ORMTgBotStaff
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option(name='sqlalchemy.url',
-                       value=settings.database_url_asyncpg.get_secret_value() + '?async_fallback=True')
+config.set_main_option(
+    name='sqlalchemy.url',
+    value=settings.database_url_asyncpg.get_secret_value() +
+    '?async_fallback=True')
 
 target_metadata = Base.metadata
 
