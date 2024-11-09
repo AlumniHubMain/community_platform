@@ -28,6 +28,7 @@ def convert_into_webp(file: UploadFile) -> BytesIO:
 
 class GCSClient:
     def __init__(self):
+        # User must have 'Storage Object Admin' Role at S3 storage
         self._credentials_file = settings.google_application_credentials
         self._bucket_name = settings.google_cloud_bucket
         self._supported_extensions = ("jpg", "jpeg", "png")
