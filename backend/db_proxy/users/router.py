@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from backend.db_proxy.common_db.db_abstract import get_async_session
+from common_db.db_abstract import get_async_session
 from fastapi import (
     APIRouter,
     Depends,
