@@ -4,7 +4,7 @@ from io import BytesIO
 
 import aiohttp
 from PIL import Image
-from common_db import settings
+from backend.db_proxy.common_db import settings
 from fastapi import UploadFile
 from gcloud.aio.storage import Storage
 
