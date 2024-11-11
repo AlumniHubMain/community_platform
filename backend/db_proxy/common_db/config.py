@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     db_schema: str      # DB_SCHEMA=your_schema (default=public)
     google_application_credentials: str
     google_cloud_bucket: str
+    environment: str
+    
 
     @property
     def database_url_asyncpg(self) -> SecretStr:
