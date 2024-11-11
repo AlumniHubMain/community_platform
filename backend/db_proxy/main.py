@@ -1,13 +1,16 @@
 import logging
 import os
 from contextlib import asynccontextmanager
+from typing import Annotated
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Depends
+
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
 
-from media_storage.router import router as mds_router
+from auth.router import router as auth_router
 from users.router import router as users_router
+from media_storage.router import router as mds_router
+from auth.security import authorize
 
 
 # Configure logging
@@ -42,46 +45,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(users_router)
-app.include_router(mds_router)
-
-
-@app.get("/", response_class=HTMLResponse)
-async def login_page():
-    login_page_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Login with Telegram</title>
-    </head>
-    <body>
-        <h1>Login with Telegram</h1>
-        <div id="telegram-widget"></div>
-        <script async src="https://telegram.org/js/telegram-widget.js?7"
-                data-telegram-login="yndx_cofee_bot"
-                data-size="large"
-                data-radius="10"
-                data-auth-url="{BASE_URL}/auth/callback"
-                data-request-access="write"></script>
-        <script type="text/javascript">
-          function onTelegramAuth(user) {{
-            alert('Logged in as ' + user.first_name + ' ' + user.last_name + ' (' + user.id + (user.username ? ', @' + user.username : '') + ')');
-          }}
-        </script>
-    </body>
-    </html>
-    """  # TODO (anemirov) пока так, как будет фронт надо это туда утащить
-    return HTMLResponse(content=login_page_content)
-
-
-@app.get("/auth/callback")
-async def auth_callback(request: Request):
-    user_data = request.query_params
-    logger.info(f"Received user data: {user_data}")
-
-    return {"message": "Successfully authenticated", "user": user_data}
+app.include_router(auth_router)
+app.include_router(users_router, dependencies=[Depends(authorize)])
+app.include_router(mds_router, dependencies=[Depends(authorize)])
 
 
 if __name__ == "__main__":

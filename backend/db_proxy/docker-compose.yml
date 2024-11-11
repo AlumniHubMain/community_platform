@@ -5,10 +5,11 @@ services:
     build: .
     image: coffee-back:latest
     ports:
-      - "5000:8080"
+      - "8080:8080"
     container_name: coffee-back
-    env_file:
-      - .env
+    environment:
+      ENVIRONMENT: development
+      ACCESS_SECRET_KEY: test_secret
     depends_on:
       - coffee-db
     networks:
