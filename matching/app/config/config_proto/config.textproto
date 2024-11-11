@@ -1,0 +1,27 @@
+dev {
+  project_id: "astute-impulse-403618"
+  log_level: "INFO"
+  result_topic_id: "notificator-topic"
+  postgres_host: "10.100.128.3"
+  postgres_port: 5432
+  postgres_base: "communityp"
+  google_cloud_bucket: "matching_models"
+}
+prod {
+  project_id: "astute-impulse-403618"
+  log_level: "INFO"
+  result_topic_id: "notificator-topic"
+  postgres_host: "10.100.128.3"
+  postgres_port: 5432
+  postgres_base: "communityp"
+  google_cloud_bucket: "matching_models"
+}
+staging {
+  project_id: "astute-impulse-403618"
+  log_level: "INFO"
+  result_topic_id: "notificator-topic"
+  postgres_host: "10.100.128.3"
+  postgres_port: 5432
+  postgres_base: "communityp"
+  google_cloud_bucket: "matching_models"
+}
