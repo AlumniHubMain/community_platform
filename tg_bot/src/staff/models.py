@@ -29,8 +29,6 @@ class ORMTgBotStaff(ObjectTable):
     email: Mapped[str | None]
     phone_number: Mapped[str | None]
     role: Mapped[TgBotStaffRole] = mapped_column(
-        Enum(
-            TgBotStaffRole,
-            name='staff_role',
-            inherit_schema=True),
-        default=TgBotStaffRole.manager)
+        Enum(TgBotStaffRole, name='tg_staff_role', inherit_schema=True),
+        default=TgBotStaffRole.manager
+    )
