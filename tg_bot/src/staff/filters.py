@@ -12,8 +12,7 @@ class IsStaff(BaseFilter):
     Фильтр для определения персонала бота. DTOTgBotStaffRead - если сотрудник, False - если нет.
     """
 
-    async def __call__(
-            self, message: Message) -> bool | dict[str, DTOTgBotStaffRead]:
+    async def __call__(self, message: Message) -> bool | dict[str, DTOTgBotStaffRead]:
         staff: DTOTgBotStaffRead | None = await StaffManager.get_staff(
             user=DTOTgBotUser(telegram_name=message.from_user.username, telegram_id=message.from_user.id))
         if staff is None:
@@ -29,10 +28,9 @@ class IsAdmin(BaseFilter):
     Фильтр для определения админа бота. DTOTgBotStaffRead - если админ, False - если нет.
     """
 
-    async def __call__(
-            self, message: Message) -> bool | dict[str, DTOTgBotStaffRead]:
-        staff: DTOTgBotStaffRead | None = StaffManager.get_staff(user=DTOTgBotUser(
-            telegram_name=message.from_user.username, telegram_id=message.from_user.id))
+    async def __call__(self, message: Message) -> bool | dict[str, DTOTgBotStaffRead]:
+        staff: DTOTgBotStaffRead | None = await StaffManager.get_staff(
+            user=DTOTgBotUser(telegram_name=message.from_user.username, telegram_id=message.from_user.id))
         if staff:
             if staff.role == TgBotStaffRole.admin:
                 return {'admin': staff}
