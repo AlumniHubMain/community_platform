@@ -52,7 +52,4 @@ async def report(description: str,
         except Exception as e:
             print(f'логирование в report свалилось с\n{e}')
         return
-    error_logger.exception(
-        description if exception is None else description +
-        '\n' +
-        str(exception))
+    error_logger.exception(description if exception is None else description + '\n' + str(exception))

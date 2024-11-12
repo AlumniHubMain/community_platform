@@ -14,10 +14,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option(
-    name='sqlalchemy.url',
-    value=settings.database_url_asyncpg.get_secret_value() +
-    '?async_fallback=True')
+config.set_main_option(name='sqlalchemy.url',
+                       value=settings.database_url_asyncpg.get_secret_value() + '?async_fallback=True')
 
 target_metadata = Base.metadata
 
