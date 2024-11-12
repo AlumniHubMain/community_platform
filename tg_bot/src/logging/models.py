@@ -7,7 +7,7 @@ from backend.db_proxy.common_db.db_abstract import ObjectTable
 
 
 class TgBotEventType(BaseEnum):
-    command: str = 'message'
+    message: str = 'message'
     callback: str = 'callback'
 
 
