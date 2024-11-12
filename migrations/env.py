@@ -5,6 +5,8 @@ from sqlalchemy import engine_from_config, pool
 
 from backend.db_proxy.common_db.config import settings
 from backend.db_proxy.common_db.db_abstract import Base, schema
+from tg_bot.src.staff.models import ORMTgBotStaff
+from tg_bot.src.logging.models import ORMTgBotLoggingEvents
 
 
 config = context.config
