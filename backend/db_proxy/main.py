@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import FastAPI, Depends
+from fastapi.responses import HTMLResponse
+
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -49,6 +51,22 @@ app.include_router(auth_router)
 app.include_router(users_router, dependencies=[Depends(authorize)])
 app.include_router(mds_router, dependencies=[Depends(authorize)])
 
+@app.get("/", response_class=HTMLResponse)
+async def main_page(user=Depends(authorize)):
+    main_page_content = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Main Page</title>
+    </head>
+    <body>
+        <h1>MAIN PAGE</h1>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=main_page_content)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))  # Default to 8000 if not set

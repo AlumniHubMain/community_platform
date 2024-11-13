@@ -54,7 +54,7 @@ async def login_page():
         </script>
     </body>
     </html>
-    """  # TODO (anemirov) пока так, как будет фронт надо это туда утащить
+    """  # TODO (anemirov) пока так с колбэком, как будет фронт надо это переделать с onTelegramAuth
     return HTMLResponse(content=login_page_content)
 
 
@@ -96,29 +96,14 @@ async def callback(
                 "access_token": access_token,
                 "token_type": "bearer",
                 "expires_in": TOKEN_EXPIRY_SECONDS,
-                # TODO (anemirov) refresh token
+                # TODO (anemirov) Обсудить нужен ли refresh token или и так норм
             }
         else:
             raise HTTPException(status_code=404, detail="User not found")
     else:
         raise HTTPException(status_code=401, detail="Authentication failed")
 
-
-if os.getenv('ENVIRONMENT') == 'development':
-    from fastapi.security import HTTPBasicCredentials
-    from fastapi import Form
-    @router.post("/basic_auth_for_development")
-    async def basic_auth_for_development(
-        grant_type: str = Form(...),
-        username: str = Form(...),
-        password: str = Form(...),
-    ):
-        if grant_type != "password":
-            raise HTTPException(status_code=400, detail="Invalid grant type")
-
-        if username == "test" and password == "password":
-            user_data = {"telegram_id": "123456789"}
-            access_token = create_access_token(user_data)
-            return {"access_token": access_token, "token_type": "bearer"}
-        else:
-            raise HTTPException(status_code=401, detail="Authentication failed")
+@router.get("/logout")
+async def logout(response: Response):
+    response.delete_cookie(key="access_token")
+    return {"message": "Successfully logged out"}

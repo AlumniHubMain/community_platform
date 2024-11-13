@@ -2,7 +2,7 @@ import os
 from datetime import timedelta, datetime
 from typing import Optional
 
-from fastapi import Request, Depends
+from fastapi import Request, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 import jwt
@@ -28,17 +28,14 @@ class TelegramUser(BaseModel):
 
 def check_autorization(user_data: dict) -> bool:
     telegram_id = user_data.get("telegram_id")
-    # TODO (anemirov) return is_telegram_id_in_white_list(telegram_id) или что-то более сложное с user_data
+    # TODO (anemirov) return is_telegram_id_in_whitelist(telegram_id) или что-то более сложное с user_data
     return bool(telegram_id)
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/basic_auth_for_development")
 
-
-async def authorize(request: Request, token: str = Depends(oauth2_scheme)):
+async def authorize(request: Request):
     header = request.headers.get('Authorization')
     cookie = request.cookies.get("access_token")
-
     if header:
         try:
             token = header.split()[1]
