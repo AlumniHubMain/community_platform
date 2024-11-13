@@ -29,11 +29,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Community platform", lifespan=lifespan)
 
 
-BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
-
 # ToDo(evseev.dmsr) уточнить, что тут нужно
 origins = [
-    BASE_URL,
     "http://localhost:5173",
     "https://platform-web-flax.vercel.app",
     "https://platform-web-flax.vercel.app:3000",

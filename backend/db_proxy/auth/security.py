@@ -8,11 +8,14 @@ from pydantic import BaseModel
 import jwt
 import hashlib
 import hmac
+import logging
+
 
 ACCESS_SECRET_KEY = os.getenv("ACCESS_SECRET_KEY")
 ALGORITHM = "HS256"
 TOKEN_EXPIRY_SECONDS = 3600  # 1 hour
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+logger = logging.getLogger(__name__)
 
 
 class TelegramUser(BaseModel):
@@ -32,31 +35,37 @@ def check_autorization(user_data: dict) -> bool:
 
 
 async def authorize(request: Request):
+    unauthorized_exception = HTTPException(status_code=401, detail="Unathorized")
+    
     header = request.headers.get("Authorization")
     cookie = request.cookies.get("access_token")
     if header:
         try:
             token = header.split()[1]
         except IndexError:
-            raise HTTPException(
-                status_code=401, detail="Malformed Authorization header"
-            )
+            logger.warning("Malformed Authorization header")
+            raise unauthorized_exception
     elif cookie:
         token = cookie
     else:
-        raise HTTPException(status_code=401, detail="Authorization token missing")
+        logger.warning("Authorization token missing")
+        raise unauthorized_exception
 
     try:
         user_data = jwt.decode(token, ACCESS_SECRET_KEY, algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
+        logger.warning("Token expired")
+        raise unauthorized_exception
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        logger.warning("Invalid token")
+        raise unauthorized_exception
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Token decoding error: {str(e)}")
+        logger.warning("Token decoding error: {str(e)}")
+        raise unauthorized_exception
 
     if not check_autorization(user_data):
-        raise HTTPException(status_code=403, detail="Unauthorized user")
+        logger.warning("Unauthorized user")
+        raise unauthorized_exception
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None):

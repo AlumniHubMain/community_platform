@@ -28,13 +28,11 @@ from .security import (
 )
 
 
-BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
-
 router = APIRouter(tags=["Simple authentication and authorization"], prefix="/auth")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def login_page():
+async def login_page(request: Request):
     login_page_content = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -50,7 +48,7 @@ async def login_page():
                 data-telegram-login="yndx_cofee_bot" 
                 data-size="large" 
                 data-radius="10" 
-                data-auth-url="{BASE_URL}/auth/callback"
+                data-auth-url="{request.base_url}/auth/callback"
                 data-request-access="write"></script>
         <script type="text/javascript">
           function onTelegramAuth(user) {{

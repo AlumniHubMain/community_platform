@@ -10,6 +10,7 @@ services:
     environment:
       ENVIRONMENT: development
       ACCESS_SECRET_KEY: test_secret
+      BOT_TOKEN: ${BOT_TOKEN}
     depends_on:
       - coffee-db
     networks:
