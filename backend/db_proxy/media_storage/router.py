@@ -7,7 +7,7 @@ from .s3_proxy import gcs_client
 from .schemas import AvatarData
 
 
-router = APIRouter(tags=["Media data storage"], prefix='/mds')
+router = APIRouter(tags=["Media data storage"], prefix="/mds")
 
 summary = """
 Uploads avatar into S3 storage

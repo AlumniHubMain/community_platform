@@ -28,7 +28,8 @@ class UserProfileManager:
         cls, session: AsyncSession, profile: UserProfile
     ) -> SUserProfileRead:
         profile_orm = ORMUserProfile(
-            **profile.model_dump(exclude_unset=True, exclude_none=True))
+            **profile.model_dump(exclude_unset=True, exclude_none=True)
+        )
         session.add(profile_orm)
         await session.commit()
         return SUserProfileRead.model_validate(profile_orm)

@@ -9,11 +9,10 @@ import jwt
 import hashlib
 import hmac
 
-ACCESS_SECRET_KEY = os.getenv('ACCESS_SECRET_KEY')
+ACCESS_SECRET_KEY = os.getenv("ACCESS_SECRET_KEY")
 ALGORITHM = "HS256"
 TOKEN_EXPIRY_SECONDS = 3600  # 1 hour
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-
 
 
 class TelegramUser(BaseModel):
@@ -32,15 +31,16 @@ def check_autorization(user_data: dict) -> bool:
     return bool(telegram_id)
 
 
-
 async def authorize(request: Request):
-    header = request.headers.get('Authorization')
+    header = request.headers.get("Authorization")
     cookie = request.cookies.get("access_token")
     if header:
         try:
             token = header.split()[1]
         except IndexError:
-            raise HTTPException(status_code=401, detail="Malformed Authorization header")
+            raise HTTPException(
+                status_code=401, detail="Malformed Authorization header"
+            )
     elif cookie:
         token = cookie
     else:
@@ -73,7 +73,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 def get_user_by_telegram_id(telegram_id: str):
     user_data = {}
     # TODO (anemirov) user_data = get_user_data_from_db(telegram_id)
-    user_data['telegram_id'] = telegram_id
+    user_data["telegram_id"] = telegram_id
     return user_data
 
 
@@ -83,11 +83,13 @@ def validate_telegram_data(data: TelegramUser) -> bool:
     """
     if not data:
         return False
-    
+
     secret_key = hashlib.sha256(BOT_TOKEN.encode()).digest()
-    data_check_string = "\n".join(f"{key}={value}" for key, value in sorted(data.dict(exclude={"hash"}).items()))
-    
-    calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+    data_check_string = "\n".join(
+        f"{key}={value}" for key, value in sorted(data.dict(exclude={"hash"}).items())
+    )
+
+    calculated_hash = hmac.new(
+        secret_key, data_check_string.encode(), hashlib.sha256
+    ).hexdigest()
     return hmac.compare_digest(calculated_hash, data.hash)
-
-

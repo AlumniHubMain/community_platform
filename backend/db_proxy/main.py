@@ -51,6 +51,7 @@ app.include_router(auth_router)
 app.include_router(users_router, dependencies=[Depends(authorize)])
 app.include_router(mds_router, dependencies=[Depends(authorize)])
 
+
 @app.get("/", response_class=HTMLResponse)
 async def main_page(user=Depends(authorize)):
     main_page_content = """
@@ -67,6 +68,7 @@ async def main_page(user=Depends(authorize)):
     </html>
     """
     return HTMLResponse(content=main_page_content)
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))  # Default to 8000 if not set

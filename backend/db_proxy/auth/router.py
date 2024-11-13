@@ -1,4 +1,3 @@
-
 import os
 import hashlib
 import hmac
@@ -20,7 +19,13 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 import jwt
 import secrets
-from .security import create_access_token, validate_telegram_data, get_user_by_telegram_id, TelegramUser, TOKEN_EXPIRY_SECONDS
+from .security import (
+    create_access_token,
+    validate_telegram_data,
+    get_user_by_telegram_id,
+    TelegramUser,
+    TOKEN_EXPIRY_SECONDS,
+)
 
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
@@ -90,7 +95,7 @@ async def callback(
                 value=access_token,
                 httponly=True,
                 secure=True,
-                samesite="lax"
+                samesite="lax",
             )
             return {
                 "access_token": access_token,
@@ -102,6 +107,7 @@ async def callback(
             raise HTTPException(status_code=404, detail="User not found")
     else:
         raise HTTPException(status_code=401, detail="Authentication failed")
+
 
 @router.get("/logout")
 async def logout(response: Response):
