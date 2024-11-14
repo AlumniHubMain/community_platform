@@ -15,16 +15,16 @@ info_logger.setLevel(logging.INFO)
 error_logger = logging.getLogger(str(error_log))
 error_logger.setLevel(logging.ERROR)
 
-# настройка обработчика и форматировщика для логеров
+# configuring the handler and formatter for loggers
 handler_user_logger = logging.FileHandler(f"{str(info_log)}.log")
 handler_error_logger = logging.FileHandler(f"{str(error_log)}.log")
 formatter_logger = logging.Formatter("%(asctime)s %(message)s")
 
-# добавление форматировщика к обработчику
+# adding a formatter to a handler
 handler_user_logger.setFormatter(formatter_logger)
 handler_error_logger.setFormatter(formatter_logger)
 
-# добавление обработчиков к логерам
+# adding handlers to loggers
 info_logger.addHandler(handler_user_logger)
 error_logger.addHandler(handler_error_logger)
 
@@ -50,6 +50,6 @@ async def report(description: str,
         try:
             info_logger.info(description)
         except Exception as e:
-            print(f'логирование в report свалилось с\n{e}')
+            print(f'logging in the report has failed with:\n{e}')
         return
     error_logger.exception(description if exception is None else description + '\n' + str(exception))

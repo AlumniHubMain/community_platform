@@ -13,7 +13,7 @@ class TgBotEventType(BaseEnum):
 
 class ORMTgBotLoggingEvents(ObjectTable):
     """
-    Модель таблицы tg_bot_logging_events в Postgres (логирование телеграм ивентов)
+    The model of the tg_bot_logging_events table in Postgres (logging event telegrams).
     """
     __tablename__ = 'tg_bot_logging_events'
 
