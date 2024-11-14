@@ -18,3 +18,12 @@ class DTOUpdateBlockedStatus(BaseModel):
     telegram_id: int
     is_blocked: bool
     status_update_date: datetime = datetime.now(UTC)
+
+
+class DTOCheckUserBlockedBot(BaseModel):
+    telegram_id: int
+    is_tg_bot_blocked: bool
+    blocked_status_update_date: datetime | None = None
+
+    class Config:
+        from_attributes = True
