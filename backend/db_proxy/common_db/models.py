@@ -4,7 +4,7 @@ from typing import List
 from sqlalchemy import ARRAY, String, BIGINT, Index
 from sqlalchemy.orm import mapped_column, Mapped
 
-from .db_abstract import ObjectTable
+from .db_abstract import ObjectTable, schema
 
 
 class ORMUserProfile(ObjectTable):
@@ -35,4 +35,6 @@ class ORMUserProfile(ObjectTable):
     professional_interests: Mapped[List[str] |
                                    None] = mapped_column(ARRAY(String(100)))
 
-    __table_args__ = (Index('ix_users_telegram_id', 'telegram_id'),)
+    __table_args__ = (Index('ix_users_telegram_id', 'telegram_id'),
+                      {'schema': f"{schema}"}
+                      )
