@@ -4,15 +4,14 @@ from aiogram.types import Message, CallbackQuery
 from typing import Callable, Dict, Any, Awaitable
 
 from .crud_manager import LoggingManager
-from .logging_report import report
 from .models import TgBotEventType
 from .schemas import DTOTgBotLoggingEvents
 
 
 class LoggingCommands(BaseMiddleware):
     """
-            Мидлвари, логирующий ввод текстовых команд в боте.
-            """
+        Middleware, which logs the input of text commands in the bot.
+        """
 
     async def __call__(
             self,
@@ -20,10 +19,10 @@ class LoggingCommands(BaseMiddleware):
             event: Message,
             data: Dict[str, Any]
     ) -> Any:
-        # обработка события (message)
+        # event handling (message)
         result = await handler(event, data)
 
-        # объект DTOTgBotLoggingEvents с параметрами ивента
+        # DTOTgBotLoggingEvents object with event parameters
         new_event: DTOTgBotLoggingEvents = DTOTgBotLoggingEvents(
             telegram_name=event.from_user.username,
             telegram_id=event.from_user.id,
@@ -34,23 +33,15 @@ class LoggingCommands(BaseMiddleware):
             chat_title=event.chat.title,
             chat_id=event.chat.id)
 
-        try:
-            await LoggingManager.post_event(event=new_event)
-        except Exception as e:
-            await report(description=f'Ошибка при записи в базу ивента (message) {new_event.event_name}\n'
-                                     f'username: {new_event.telegram_name}\nid: {new_event.telegram_id}\n'
-                                     f'chat title: {new_event.chat_title}\nchat id: {new_event.chat_id}\n'
-                                     f'bot state: {new_event.bot_state}',
-                         extent='error',
-                         exception=e)
+        await LoggingManager.post_event(event=new_event)
 
         return result
 
 
 class LoggingCallbacks(BaseMiddleware):
     """
-            Мидлвари, логирующий срабатывание колбэков в боте.
-            """
+        Middleware, which logs the triggering of callbacks in the bot.
+        """
 
     async def __call__(
             self,
@@ -58,10 +49,10 @@ class LoggingCallbacks(BaseMiddleware):
             event: CallbackQuery,
             data: Dict[str, Any]
     ) -> Any:
-        # обработка события (callback)
+        # event handling (callback)
         result = await handler(event, data)
 
-        # объект DTOTgBotLoggingEvents с параметрами ивента
+        # DTOTgBotLoggingEvents object with event parameters
         new_event: DTOTgBotLoggingEvents = DTOTgBotLoggingEvents(
             telegram_name=event.from_user.username,
             telegram_id=event.from_user.id,
@@ -72,14 +63,6 @@ class LoggingCallbacks(BaseMiddleware):
             chat_title=event.chat_instance,
             chat_id=event.message.chat.id)
 
-        try:
-            await LoggingManager.post_event(event=new_event)
-        except Exception as e:
-            await report(description=f'Ошибка при записи в базу ивента (callback) {new_event.event_name}\n'
-                                     f'username: {new_event.telegram_name}\nid: {new_event.telegram_id}\n'
-                                     f'chat title: {new_event.chat_title}\nchat id: {new_event.chat_id}\n'
-                                     f'bot state: {new_event.bot_state}',
-                         extent='error',
-                         exception=e)
+        await LoggingManager.post_event(event=new_event)
 
         return result
