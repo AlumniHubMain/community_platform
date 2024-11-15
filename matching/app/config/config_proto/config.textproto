@@ -6,6 +6,7 @@ dev {
   postgres_port: 5432
   postgres_base: "communityp"
   google_cloud_bucket: "matching_models"
+  model_path: "catboost.m"
 }
 prod {
   project_id: "astute-impulse-403618"
@@ -15,6 +16,7 @@ prod {
   postgres_port: 5432
   postgres_base: "communityp"
   google_cloud_bucket: "matching_models"
+  model_path: "catboost.m"
 }
 staging {
   project_id: "astute-impulse-403618"
@@ -24,4 +26,5 @@ staging {
   postgres_port: 5432
   postgres_base: "communityp"
   google_cloud_bucket: "matching_models"
+  model_path: "catboost.m"
 }

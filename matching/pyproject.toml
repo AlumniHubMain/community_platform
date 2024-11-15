@@ -22,6 +22,7 @@ dependencies = [
     "debugpy>=1.8.7",
     "cloud-sql-python-connector>=1.13.0",
     "pg8000>=1.31.2",
+    "google-cloud-pubsub>=2.27.1",
 ]
 
 [tool.uv]

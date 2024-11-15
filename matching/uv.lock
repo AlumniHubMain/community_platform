@@ -496,6 +496,26 @@ wheels = [
 ]
 
 [[package]]
+name = "google-cloud-pubsub"
+version = "2.27.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "grpc-google-iam-v1" },
+    { name = "grpcio" },
+    { name = "grpcio-status" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-sdk" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bf/ab/39175fc8a3f7b4094e9c0bf781ea0e54841b8ae5706a169b9dcec84fb6b1/google_cloud_pubsub-2.27.1.tar.gz", hash = "sha256:7119dbc5af4b915ecdfa1289919f791a432927eaaa7bbfbeb740e6d7020c181e", size = 358515 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d2/af/8930228f1f7e411dac722fd90e4235e87ea5b96ba3c3d1b721b80b8c34e4/google_cloud_pubsub-2.27.1-py2.py3-none-any.whl", hash = "sha256:3ca8980c198a847ee464845ab60f05478d4819cf693c9950ee89da96f0b80a41", size = 289646 },
+]
+
+[[package]]
 name = "google-cloud-secret-manager"
 version = "2.21.0"
 source = { registry = "https://pypi.org/simple" }
@@ -755,6 +775,7 @@ dependencies = [
     { name = "debugpy" },
     { name = "fastapi", extra = ["standard"] },
     { name = "google-cloud-logging" },
+    { name = "google-cloud-pubsub" },
     { name = "google-cloud-secret-manager" },
     { name = "google-cloud-storage" },
     { name = "httpx" },
@@ -783,6 +804,7 @@ requires-dist = [
     { name = "debugpy", specifier = ">=1.8.7" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.2" },
     { name = "google-cloud-logging", specifier = ">=3.11.3" },
+    { name = "google-cloud-pubsub", specifier = ">=2.27.1" },
     { name = "google-cloud-secret-manager", specifier = ">=2.20.0" },
     { name = "google-cloud-storage", specifier = ">=2.18.2" },
     { name = "httpx", specifier = ">=0.27.2" },
@@ -855,6 +877,33 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/4e/f7/5f8771e591f7641ba019904e2a6be151998a6c8f3e1137654773ca060b04/opentelemetry_api-1.28.1.tar.gz", hash = "sha256:6fa7295a12c707f5aebef82da3d9ec5afe6992f3e42bfe7bec0339a44b3518e7", size = 62804 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d5/39/7a9c2fde8e0309e9fd339aa953110a49ebbdf8797eb497d8357f1933ec5d/opentelemetry_api-1.28.1-py3-none-any.whl", hash = "sha256:bfe86c95576cf19a914497f439fd79c9553a38de0adbdc26f7cfc46b0c00b16c", size = 64316 },
+]
+
+[[package]]
+name = "opentelemetry-sdk"
+version = "1.28.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-semantic-conventions" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f2/c8/83996963ca80c149583260c22492022c9b48c854d4ca877aa3b6be8fbd3d/opentelemetry_sdk-1.28.1.tar.gz", hash = "sha256:100fa371b2046ffba6a340c18f0b2a0463acad7461e5177e126693b613a6ca57", size = 157162 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7c/f3/09e86288ee3aace7306b2778127565f64c53d6ec1634dd67d128848d5a4f/opentelemetry_sdk-1.28.1-py3-none-any.whl", hash = "sha256:72aad7f5fcbe37113c4ab4899f6cdeb6ac77ed3e62f25a85e3627b12583dad0f", size = 118732 },
+]
+
+[[package]]
+name = "opentelemetry-semantic-conventions"
+version = "0.49b1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "deprecated" },
+    { name = "opentelemetry-api" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bf/61/2715d9d24842ef2250cbd6a44198b6d134b6238d515c6b2f9042ea5aee63/opentelemetry_semantic_conventions-0.49b1.tar.gz", hash = "sha256:91817883b159ffb94c2ca9548509c4fe0aafce7c24f437aa6ac3fc613aa9a758", size = 95221 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/04/1d/01ad9c2a8f8346258bf87c20fc024c8baa410492e2c6b397140383381a28/opentelemetry_semantic_conventions-0.49b1-py3-none-any.whl", hash = "sha256:dd6f3ac8169d2198c752e1a63f827e5f5e110ae9b0ce33f2aad9a3baf0739743", size = 159213 },
 ]
 
 [[package]]

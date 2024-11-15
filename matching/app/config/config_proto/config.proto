@@ -10,6 +10,7 @@ message ServiceConfig {
   string postgres_host = 5;
   int32 postgres_port = 6;
   string postgres_base = 7;
+  string model_path = 8;
 }
 
 message Config {
