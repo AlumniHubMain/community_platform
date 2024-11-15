@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 
 
 class TelegramUser(BaseModel):
-    id: int
+    id: str
     first_name: str
     last_name: Optional[str] = None
     username: Optional[str] = None
     photo_url: Optional[str] = None
-    auth_date: Optional[int] = None
+    auth_date: Optional[str] = None
     hash: str
 
 
@@ -94,9 +94,7 @@ def validate_telegram_data(data: TelegramUser) -> bool:
         return False
 
     secret_key = hashlib.sha256(BOT_TOKEN.encode()).digest()
-    data_check_string = "\n".join(
-        f"{key}={value}" for key, value in sorted(data.dict(exclude={"hash"}).items())
-    )
+    data_check_string = "\n".join(sorted(f"{key}={value}" for key, value in data.dict(exclude={"hash"}).items() if value))
 
     calculated_hash = hmac.new(
         secret_key, data_check_string.encode(), hashlib.sha256

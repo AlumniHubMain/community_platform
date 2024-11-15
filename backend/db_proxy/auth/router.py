@@ -64,12 +64,12 @@ async def login_page(request: Request):
 @router.get("/callback", response_model=dict)
 async def callback(
     response: Response,
-    id: int = Query(...),
+    id: str = Query(...),
     first_name: str = Query(...),
     last_name: Optional[str] = Query(None),
     username: Optional[str] = Query(None),
     photo_url: Optional[str] = Query(None),
-    auth_date: Optional[int] = Query(None),
+    auth_date: Optional[str] = Query(None),
     hash: str = Query(...),
 ):
     telegram_data = TelegramUser(
