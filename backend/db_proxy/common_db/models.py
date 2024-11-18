@@ -30,10 +30,8 @@ class ORMUserProfile(ObjectTable):
     is_tg_bot_blocked: Mapped[bool] = mapped_column(default=False)
     blocked_status_update_date: Mapped[datetime | None]
 
-    requests_to_society: Mapped[List[str] |
-                                None] = mapped_column(ARRAY(String(100)))
-    professional_interests: Mapped[List[str] |
-                                   None] = mapped_column(ARRAY(String(100)))
+    requests_to_society: Mapped[List[str] | None] = mapped_column(ARRAY(String(100)))
+    professional_interests: Mapped[List[str] | None] = mapped_column(ARRAY(String(100)))
 
     __table_args__ = (Index('ix_users_telegram_id', 'telegram_id'),
                       {'schema': f"{schema}"}
