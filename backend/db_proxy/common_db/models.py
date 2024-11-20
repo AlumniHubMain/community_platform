@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 from sqlalchemy import ARRAY, String, BIGINT, Index, Integer, Text, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import ENUM
@@ -19,7 +18,7 @@ class ORMUserProfile(ObjectTable):
     surname: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, nullable=False)
 
-    avatars: Mapped[List[str] | None] = mapped_column(ARRAY(String(300)))
+    avatars: Mapped[list[str] | None] = mapped_column(ARRAY(String(300)))
 
     city_live: Mapped[str | None] = mapped_column(String(200))
     country_live: Mapped[str | None] = mapped_column(String(100))
@@ -31,8 +30,13 @@ class ORMUserProfile(ObjectTable):
     is_tg_bot_blocked: Mapped[bool] = mapped_column(default=False)
     blocked_status_update_date: Mapped[datetime | None]
 
-    requests_to_society: Mapped[List[str] | None] = mapped_column(ARRAY(String(100)))
-    professional_interests: Mapped[List[str] | None] = mapped_column(ARRAY(String(100)))
+    requests_to_society: Mapped[list[str] | None] = mapped_column(ARRAY(String(100)))
+    professional_interests: Mapped[list[str] | None] = mapped_column(ARRAY(String(100)))
+
+    # Relationship for user_meetings, linking the user to their meetings with roles and responses
+    meeting_responses: Mapped[list["ORMUserMeeting"]] = relationship(
+        "ORMUserMeeting", back_populates="user", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (Index('ix_users_telegram_id', 'telegram_id'),
                       {'schema': f"{schema}"}
@@ -41,7 +45,7 @@ class ORMUserProfile(ObjectTable):
 
 class ORMMeeting(ObjectTable):
     """
-    Модель таблицы встреч.
+    Meetings table.
     """
 
     __tablename__ = 'meetings'
@@ -52,14 +56,13 @@ class ORMMeeting(ObjectTable):
     scheduled_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(ENUM('new', 'confirmed', 'archived', name='meeting_status'), nullable=False, default="new")
 
-    # Relationship to user_meetings table
-    users: Mapped[List[ORMUserProfile]] = relationship(
-        "ORMUserProfile", secondary="user_meetings", back_populates="meetings"
+    # Relationship to user_meetings table via ORMUserMeeting
+    user_responses: Mapped[list["ORMUserMeeting"]] = relationship(
+        "ORMUserMeeting", back_populates="meeting", cascade="all, delete-orphan"
     )
 
     @declared_attr
     def __table_args__(cls):
-        # Optionally, you could add any indexes or additional constraints here.
         return (
             Index('ix_meeting_status', 'status'),
         )
@@ -67,17 +70,18 @@ class ORMMeeting(ObjectTable):
 
 class ORMUserMeeting(ObjectTable):
     """
-    Модель для связи пользователей с встречами.
+    User's responses to meetings.
     """
 
     __tablename__ = 'user_meetings'
 
-    uid: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', ondelete="CASCADE"), primary_key=True)
+    # Two foreign keys, one for users and one for meetings
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', ondelete="CASCADE"), primary_key=True)
     meeting_id: Mapped[int] = mapped_column(Integer, ForeignKey('meetings.id', ondelete="CASCADE"), primary_key=True)
 
     role: Mapped[str] = mapped_column(ENUM('organizer', 'attendee', name='user_role'), nullable=False)
-    agreement: Mapped[str | None] = mapped_column(ENUM('confirmed', 'tentative', 'declined', name='agreement'))
+    response: Mapped[str | None] = mapped_column(ENUM('confirmed', 'tentative', 'declined', name='response'))
 
     # Relationships for back-population
-    user: Mapped[ORMUserProfile] = relationship("ORMUserProfile", back_populates="user_meetings")
-    meeting: Mapped[ORMMeeting] = relationship("ORMMeeting", back_populates="users")
+    user: Mapped["ORMUserProfile"] = relationship("ORMUserProfile", back_populates="meeting_responses")
+    meeting: Mapped["ORMMeeting"] = relationship("ORMMeeting", back_populates="user_responses")

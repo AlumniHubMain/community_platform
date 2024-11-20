@@ -1,35 +1,45 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+
+from pydantic import BaseModel
+
 
 # For creating meeting requests
 class MeetingRequestCreate(BaseModel):
-    description: Optional[str] = None
-    location: Optional[str] = None
-    date: Optional[datetime] = None
+    description: str | None = None
+    location: str | None = None
+    scheduled_time: datetime | None = None
 
-    organiser_id: int
+    organizer_id: int
+
 
 # For reading meeting requests
-class SMeetingRequestRead(BaseModel):
+class MeetingRequestRead(BaseModel):
     id: int
-    description: Optional[str] = None
-    location: Optional[str] = None
+    description: str | None = None
+    location: str | None = None
     scheduled_time: datetime
     status: str  # 'new', 'confirmed', 'archived'
-    users: list[MeetingUserStatus]  # List of users with their statuses
+    user_responses: list[MeetingUserStatus]  # List of users with their statuses
 
     class Config:
         from_attributes = True
 
+
+class MeetingUserInfo(BaseModel):
+    id: int
+    name: str
+    surname: str
+    email: str
+    # ToDo: add fields required in the frontend
+    # ToDo: This is probably some more generic "UserCard"
+
 # For user status in a meeting
 class MeetingUserStatus(BaseModel):
-    user_id: int
-    name: str
+    user: MeetingUserInfo
     role: str  # 'organizer', 'attendee'
-    agreement: Optional[str] = None  # 'confirmed', 'tentative', 'declined'
+    response: str | None = None  # 'confirmed', 'tentative', 'declined'
 
     class Config:
         from_attributes = True
