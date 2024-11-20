@@ -10,7 +10,7 @@ Content-Type: application/json
 
 > {%
     client.test("Request executed successfully", function () {
-        client.assert(response.status === 200, "Response status is not 400");
+        client.assert(response.status === 200, "Response status is not 200");
     });
     client.global.set("created_meeting_id", response.body.id);
 
@@ -24,13 +24,12 @@ Content-Type: application/json
 {
   "description": "test_meeting_updated",
   "location": null,
-  "scheduled_time": null,
-  "organizer_id": 1
+  "scheduled_time": null
 }
 
 > {%
     client.test("Request executed successfully", function () {
-        client.assert(response.status === 200, "Response status is not 400");
+        client.assert(response.status === 200, "Response status is not 200");
     });
     client.test("description updated", function () {
         client.assert(response.body["description"] === "test_meeting_updated", "value is wrong");
@@ -40,29 +39,11 @@ Content-Type: application/json
 
 ###
 
-PATCH http://localhost:8080/meetings/{{created_meeting_id}}
-Content-Type: application/json
-
-{
-  "description": "test_meeting_updated_v2",
-  "location": null,
-  "scheduled_time": null,
-  "organizer_id": 2
-}
-
-> {%
-    client.test("Request executed successfully", function () {
-        client.assert(response.status === 403, "Response status is not 400");
-    });
-%}
-
-###
-
 GET http://localhost:8080/meetings/{{created_meeting_id}}
 
 > {%
     client.test("Request executed successfully", function () {
-        client.assert(response.status === 200, "Response status is not 400");
+        client.assert(response.status === 200, "Response status is not 200");
     });
     client.test("description updated", function () {
         client.assert(response.body["description"] === "test_meeting_updated", "value is wrong");
@@ -76,10 +57,66 @@ GET http://localhost:8080/meetings?user_id=1&date_from=2024-11-01&date_to=2024-1
 
 > {%
     client.test("Request executed successfully", function () {
-        client.assert(response.status === 200, "Response status is not 400");
+        client.assert(response.status === 200, "Response status is not 200");
     });
-    client.test("description updated", function () {
-        client.assert(response.body["description"] === "test_meeting_updated", "value is wrong");
+    client.test("meetings retrieved", function () {
+        client.assert(response.body["meetings"].length > 0, "no meetings retrieved");
     });
 
 %}
+
+###
+
+GET http://localhost:8080/meetings?user_id=2&date_from=2024-11-01&date_to=2024-11-12
+
+> {%
+    client.test("Request executed successfully", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+    client.test("no meetings retrieved", function () {
+        client.assert(response.body["meetings"].length === 0, "meetings retrieved");
+    });
+
+%}
+
+###
+
+PATCH http://localhost:8080/meetings/{{created_meeting_id}}/user/1/response?status=declined
+
+> {%
+    client.test("Request executed successfully", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+###
+
+PATCH http://localhost:8080/meetings/{{created_meeting_id}}/user/2/response?status=declined
+
+> {%
+    client.test("Meeting invite not found", function () {
+        client.assert(response.status === 404, "Response status is not 404");
+    });
+%}
+
+###
+
+POST http://localhost:8080/meetings/{{created_meeting_id}}/add_user?user_id=2
+
+> {%
+    client.test("Request executed successfully", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+###
+
+PATCH http://localhost:8080/meetings/{{created_meeting_id}}/user/2/response?status=declined
+
+> {%
+    client.test("Request executed successfully", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+###
