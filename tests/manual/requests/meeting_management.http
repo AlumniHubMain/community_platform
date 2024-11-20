@@ -69,3 +69,17 @@ GET http://localhost:8080/meetings/{{created_meeting_id}}
     });
 
 %}
+
+###
+
+GET http://localhost:8080/meetings?user_id=1&date_from=2024-11-01&date_to=2024-11-12
+
+> {%
+    client.test("Request executed successfully", function () {
+        client.assert(response.status === 200, "Response status is not 400");
+    });
+    client.test("description updated", function () {
+        client.assert(response.body["description"] === "test_meeting_updated", "value is wrong");
+    });
+
+%}

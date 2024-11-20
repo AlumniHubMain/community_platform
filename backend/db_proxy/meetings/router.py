@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from common_db import get_async_session
 from .meeting_manager import MeetingManager
-from .schemas import MeetingRequestRead, MeetingRequestCreate
+from .schemas import MeetingRequestRead, MeetingRequestCreate, MeetingFilter
 
 router = APIRouter(tags=["Meetings"], prefix="/meetings")
 session_dependency = Depends(get_async_session)
@@ -43,17 +43,6 @@ async def update_meeting(
     """
     return await MeetingManager.update_meeting(session, meeting_id, update_request)
 
-
-@router.get("", response_model=List[MeetingRequestRead], summary="Get all meetings")
-async def get_all_meetings(
-        session: AsyncSession = session_dependency
-) -> List[MeetingRequestRead]:
-    """
-    Get a list of all meetings.
-    """
-    return await MeetingManager.get_all_meetings(session)
-
-
 @router.post("/{meeting_id}/add_user", status_code=204, summary="Add user to a meeting")
 async def add_user_to_meeting(
         meeting_id: int,
@@ -79,3 +68,10 @@ async def update_user_meeting_response(
     Update a user's response status for a specific meeting.
     """
     return await MeetingManager.update_user_meeting_response(session, meeting_id, user_id, status)
+
+
+@router.get("", response_model=list[MeetingRequestRead])
+async def get_meetings(
+    meeting_filter: MeetingFilter = Depends(), session: AsyncSession = Depends(get_async_session)
+):
+    return await MeetingManager.get_filtered_meetings(session, meeting_filter)

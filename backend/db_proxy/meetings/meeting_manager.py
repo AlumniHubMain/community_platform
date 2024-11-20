@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from common_db import ORMMeeting, ORMUserMeeting, ORMUserProfile
-from .schemas import MeetingRequestRead, MeetingRequestCreate
+from .schemas import MeetingRequestRead, MeetingRequestCreate, MeetingFilter
 
 
 class MeetingManager:
@@ -92,7 +92,7 @@ class MeetingManager:
             raise HTTPException(status_code=400, detail="User already added to the meeting")
 
         # Add the user to the meeting
-        user_meeting_orm = ORMUserMeeting(uid=user_id, meeting_id=meeting_id, role=role)
+        user_meeting_orm = ORMUserMeeting(user_id=user_id, meeting_id=meeting_id, role=role)
         session.add(user_meeting_orm)
 
         # ToDo: send a notification to the added user
@@ -128,3 +128,32 @@ class MeetingManager:
 
         # Return the updated meeting response
         return await cls.get_meeting(session, meeting_id)
+
+    @classmethod
+    async def get_filtered_meetings(cls, session: AsyncSession, filter: MeetingFilter) -> list[MeetingRequestRead]:
+        query = select(ORMMeeting).options(selectinload(ORMMeeting.user_responses).selectinload(ORMUserMeeting.user))
+
+        # Apply filters to the query
+        if filter.user_id:
+            # Filter by user_id: Meetings where the user is either the organizer or an attendee
+            query = query.join(ORMUserMeeting).where(
+                (ORMUserMeeting.user_id == filter.user_id)
+            )
+
+        if filter.date_from:
+            # Filter by date_from: Meetings starting after this date
+            query = query.where(ORMMeeting.scheduled_time >= filter.date_from)
+
+        if filter.date_to:
+            # Filter by date_to: Meetings ending before this date
+            query = query.where(ORMMeeting.scheduled_time <= filter.date_to)
+
+        # Execute the query
+        result = await session.execute(query)
+        meetings = result.scalars().all()
+
+        # If no meetings are found, raise a 404 error
+        if not meetings:
+            raise HTTPException(status_code=404, detail="No meetings found")
+
+        return [MeetingRequestRead.model_validate(m, from_attributes=True) for m in meetings]

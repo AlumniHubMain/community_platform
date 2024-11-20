@@ -37,9 +37,20 @@ class MeetingUserInfo(BaseModel):
 
 # For user status in a meeting
 class MeetingUserStatus(BaseModel):
-    user: MeetingUserInfo
+    user_id: int
     role: str  # 'organizer', 'attendee'
     response: str | None = None  # 'confirmed', 'tentative', 'declined'
 
     class Config:
         from_attributes = True
+
+
+# filter for user's meeting searches
+class MeetingFilter(BaseModel):
+    user_id: int | None = None
+    date_from: datetime | None = None
+    date_to: datetime | None = None
+
+
+class MeetingList(BaseModel):
+    meetings: list[MeetingRequestRead]
