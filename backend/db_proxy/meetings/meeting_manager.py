@@ -1,5 +1,3 @@
-import logging
-
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -76,7 +74,6 @@ class MeetingManager:
     @classmethod
     async def add_user_to_meeting(cls, session: AsyncSession, user_id: int, meeting_id: int,
                                   role: str) -> MeetingRequestRead:
-        logging.info("FOO")
         # Check if the meeting exists
         result = await session.execute(
             select(ORMMeeting).where(ORMMeeting.id == meeting_id).options(selectinload(ORMMeeting.user_responses)))
@@ -93,7 +90,6 @@ class MeetingManager:
 
         await session.commit()
         # ToDo: send a notification to the added user
-        logging.info(meeting)
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
     @classmethod
@@ -145,15 +141,12 @@ class MeetingManager:
             # Filter by date_to: Meetings scheduled before this date
             query = query.where(ORMMeeting.scheduled_time <= meeting_filter.date_to)
 
-        # Execute the query
         result = await session.execute(query)
         meetings = result.scalars().all()
 
-        # If no meetings are found, raise a 404 error
         if not meetings:
             return MeetingList(meetings=[])
 
-        # Validate each meeting instance individually
         response = MeetingList(
             meetings=[MeetingRequestRead.model_validate(meeting, from_attributes=True) for meeting in meetings])
 
