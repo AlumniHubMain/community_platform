@@ -10,10 +10,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from auth.router import router as auth_router
-from users.router import router as users_router
-from media_storage.router import router as mds_router
 from auth.security import authorize
-
+from media_storage.router import router as mds_router
+from meetings.router import router as meetings_router
+from users.router import router as users_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +47,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(users_router, dependencies=[Depends(authorize)])
 app.include_router(mds_router, dependencies=[Depends(authorize)])
+app.include_router(meetings_router)
 
 
 @app.get("/", response_class=HTMLResponse)
