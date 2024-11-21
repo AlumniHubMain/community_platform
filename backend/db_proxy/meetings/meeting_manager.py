@@ -32,7 +32,6 @@ class MeetingManager:
 
     @classmethod
     async def create_meeting(cls, session: AsyncSession, request: MeetingRequestCreate) -> MeetingRequestRead:
-
         organizer: ORMUserProfile | None = await session.get(ORMUserProfile, request.organizer_id)
         if not organizer:
             raise HTTPException(status_code=400, detail="Organiser not found")
@@ -41,8 +40,12 @@ class MeetingManager:
             user=organizer,
             role="organizer",
             response="confirmed",
-            meeting=ORMMeeting(status="new", description=request.description, location=request.location,
-                               scheduled_time=request.scheduled_time, )
+            meeting=ORMMeeting(
+                status="new",
+                description=request.description,
+                location=request.location,
+                scheduled_time=request.scheduled_time,
+            ),
         )
         session.add(user_meeting)
         await session.commit()
@@ -52,18 +55,20 @@ class MeetingManager:
         return created_meeting
 
     @classmethod
-    async def update_meeting(cls, session: AsyncSession, meeting_id: int, user_id: int,
-                             request: MeetingRequestUpdate) -> MeetingRequestRead:
-        stmt = (select(ORMMeeting).where(ORMMeeting.id == meeting_id)
-                .options(selectinload(ORMMeeting.user_responses).selectinload(ORMMeetingResponse.user))
-                .with_for_update()  # Lock the row for update
-                )
+    async def update_meeting(
+        cls, session: AsyncSession, meeting_id: int, user_id: int, request: MeetingRequestUpdate
+    ) -> MeetingRequestRead:
+        stmt = (
+            select(ORMMeeting)
+            .where(ORMMeeting.id == meeting_id)
+            .options(selectinload(ORMMeeting.user_responses).selectinload(ORMMeetingResponse.user))
+            .with_for_update()  # Lock the row for update
+        )
         result = await session.execute(stmt)
         meeting = result.scalar_one_or_none()
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
-        organizer_response = [r for r in meeting.user_responses if
-                              r.role == "organizer" and r.user_id == user_id]
+        organizer_response = [r for r in meeting.user_responses if r.role == "organizer" and r.user_id == user_id]
         if not organizer_response:
             raise HTTPException(status_code=403, detail="Wrong organizer")
 
@@ -76,54 +81,60 @@ class MeetingManager:
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
     @classmethod
-    async def add_user_to_meeting(cls, session: AsyncSession, user_id: int, meeting_id: int,
-                                  role: str) -> MeetingRequestRead:
+    async def add_user_to_meeting(
+        cls, session: AsyncSession, user_id: int, meeting_id: int, role: str
+    ) -> MeetingRequestRead:
         # Check if the meeting exists
         result = await session.execute(
-            select(ORMMeeting).where(ORMMeeting.id == meeting_id).options(selectinload(ORMMeeting.user_responses)))
+            select(ORMMeeting).where(ORMMeeting.id == meeting_id).options(selectinload(ORMMeeting.user_responses))
+        )
         meeting = result.scalar_one_or_none()
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
-        if existing_response := next((resp for resp in meeting.user_responses if resp.user_id == user_id), None):
+        if next((resp for resp in meeting.user_responses if resp.user_id == user_id), None):
             # this user is already invited, although maybe without a response
             return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
         # Add the user to the meeting
-        meeting.user_responses.append(
-            ORMMeetingResponse(user_id=user_id, meeting=meeting, role=role))
+        meeting.user_responses.append(ORMMeetingResponse(user_id=user_id, meeting=meeting, role=role))
 
         await session.commit()
 
         # Check for an organizer and emit an event
         # ToDo: can use the authenticated user instead
-        if organizer := next((user for user in meeting.user_responses if user.role == 'organizer'), None):
+        if organizer := next((user for user in meeting.user_responses if user.role == "organizer"), None):
             organizer_id: int = organizer.user_id
             EventEmitter(message_format="json", target="log").emit(
-                MeetingInviteEvent(invited_id=user_id, meeting_id=meeting_id, inviter_id=organizer_id))
+                MeetingInviteEvent(invited_id=user_id, meeting_id=meeting_id, inviter_id=organizer_id)
+            )
         else:
             logging.warning(f"Meeting {meeting_id} has no organizer")
 
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
     @classmethod
-    async def update_user_meeting_response(cls, session: AsyncSession, meeting_id: int, user_id: int,
-                                           response: str) -> MeetingRequestRead:
+    async def update_user_meeting_response(
+        cls, session: AsyncSession, meeting_id: int, user_id: int, response: str
+    ) -> MeetingRequestRead:
         # Validate the response status
-        if response not in ['confirmed', 'tentative', 'declined']:
+        if response not in ["confirmed", "tentative", "declined"]:
             raise HTTPException(status_code=400, detail="Invalid response status")
 
         # Fetch the meeting to ensure it exists
-        result = await session.execute(select(ORMMeeting).where(ORMMeeting.id == meeting_id).options(
-            selectinload(ORMMeeting.user_responses)))
+        result = await session.execute(
+            select(ORMMeeting).where(ORMMeeting.id == meeting_id).options(selectinload(ORMMeeting.user_responses))
+        )
         meeting = result.scalar_one_or_none()
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
         # Fetch the user_meeting entry to check if the user is already part of the meeting
         result = await session.execute(
-            select(ORMMeetingResponse).where(ORMMeetingResponse.meeting_id == meeting_id,
-                                             ORMMeetingResponse.user_id == user_id))
+            select(ORMMeetingResponse).where(
+                ORMMeetingResponse.meeting_id == meeting_id, ORMMeetingResponse.user_id == user_id
+            )
+        )
         user_meeting = result.scalar_one_or_none()
 
         if not user_meeting:
@@ -138,7 +149,8 @@ class MeetingManager:
         await session.commit()
 
         EventEmitter(message_format="json", target="log").emit(
-            MeetingResponseEvent(user_id=user_id, meeting_id=meeting_id))
+            MeetingResponseEvent(user_id=user_id, meeting_id=meeting_id)
+        )
 
         # Return the updated meeting response
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
@@ -150,9 +162,7 @@ class MeetingManager:
         # Apply filters to the query
         if meeting_filter.user_id:
             # Filter by user_id: Meetings where the user is either the organizer or an attendee
-            query = query.join(ORMMeetingResponse).where(
-                (ORMMeetingResponse.user_id == meeting_filter.user_id)
-            )
+            query = query.join(ORMMeetingResponse).where((ORMMeetingResponse.user_id == meeting_filter.user_id))
 
         if meeting_filter.date_from:
             # Filter by date_from: Meetings scheduled after this date
@@ -169,6 +179,7 @@ class MeetingManager:
             return MeetingList(meetings=[])
 
         response = MeetingList(
-            meetings=[MeetingRequestRead.model_validate(meeting, from_attributes=True) for meeting in meetings])
+            meetings=[MeetingRequestRead.model_validate(meeting, from_attributes=True) for meeting in meetings]
+        )
 
         return MeetingList.model_validate(response)
