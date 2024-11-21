@@ -140,7 +140,9 @@ def upgrade() -> None:
         schema="alh_community_platform",
     )
     op.create_index(
-        "ix_users_telegram_id", "users", ["telegram_id"], unique=False
+        "ix_users_telegram_id", "users", ["telegram_id"],
+        unique=False,
+        schema='alh_community_platform'
     )
     # предоставляем необходимые доступы для пользователя YNDXFamily_db_owner
     op.execute(f'GRANT USAGE ON SCHEMA {schema} TO "YNDXFamily_db_owner"')
