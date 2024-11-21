@@ -1,9 +1,13 @@
+import logging
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile
+from event_emitter import EventEmitter, MeetingInviteEvent
+from event_emitter import MeetingResponseEvent
 from .schemas import MeetingRequestRead, MeetingRequestCreate, MeetingFilter, MeetingList, MeetingRequestUpdate
 
 
@@ -81,15 +85,25 @@ class MeetingManager:
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
-        for response in meeting.user_responses:
-            if response.user_id == user_id:
-                return MeetingRequestRead.model_validate(meeting, from_attributes=True)
+        if existing_response := next((resp for resp in meeting.user_responses if resp.user_id == user_id), None):
+            # this user is already invited, although maybe without a response
+            return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
         # Add the user to the meeting
-        meeting.user_responses.append(ORMMeetingResponse(user_id=user_id, meeting=meeting, role=role, response="tentative"))
+        meeting.user_responses.append(
+            ORMMeetingResponse(user_id=user_id, meeting=meeting, role=role))
 
         await session.commit()
-        # ToDo: send a notification to the added user
+
+        # Check for an organizer and emit an event
+        # ToDo: can use the authenticated user instead
+        if organizer := next((user for user in meeting.user_responses if user.role == 'organizer'), None):
+            organizer_id: int = organizer.user_id
+            EventEmitter(message_format="json", target="log").emit(
+                MeetingInviteEvent(invited_id=user_id, meeting_id=meeting_id, inviter_id=organizer_id))
+        else:
+            logging.warning(f"Meeting {meeting_id} has no organizer")
+
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
     @classmethod
@@ -100,27 +114,34 @@ class MeetingManager:
             raise HTTPException(status_code=400, detail="Invalid response status")
 
         # Fetch the meeting to ensure it exists
-        result = await session.execute(select(ORMMeeting).where(ORMMeeting.id == meeting_id))
+        result = await session.execute(select(ORMMeeting).where(ORMMeeting.id == meeting_id).options(
+            selectinload(ORMMeeting.user_responses)))
         meeting = result.scalar_one_or_none()
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
         # Fetch the user_meeting entry to check if the user is already part of the meeting
         result = await session.execute(
-            select(ORMMeetingResponse).where(ORMMeetingResponse.meeting_id == meeting_id, ORMMeetingResponse.user_id == user_id))
+            select(ORMMeetingResponse).where(ORMMeetingResponse.meeting_id == meeting_id,
+                                             ORMMeetingResponse.user_id == user_id))
         user_meeting = result.scalar_one_or_none()
 
         if not user_meeting:
             raise HTTPException(status_code=404, detail="User is not part of this meeting")
 
+        # If the response is unchanged, return early
+        if user_meeting.response == response:
+            return MeetingRequestRead.model_validate(meeting, from_attributes=True)
+
         # Update the user's response status
         user_meeting.response = response
         await session.commit()
 
-        # ToDo: send a notification to the organiser
+        EventEmitter(message_format="json", target="log").emit(
+            MeetingResponseEvent(user_id=user_id, meeting_id=meeting_id))
 
         # Return the updated meeting response
-        return await cls.get_meeting(session, meeting_id)
+        return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
     @classmethod
     async def get_filtered_meetings(cls, session: AsyncSession, meeting_filter: MeetingFilter) -> MeetingList:
