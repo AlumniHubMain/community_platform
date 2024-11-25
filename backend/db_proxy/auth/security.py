@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta, datetime
+from common_db.config import settings
 from typing import Optional
 
 from fastapi import Request, Depends, HTTPException
@@ -11,11 +12,27 @@ import hmac
 import logging
 
 
-ACCESS_SECRET_KEY = os.getenv("ACCESS_SECRET_KEY")
-ALGORITHM = "HS256"
-TOKEN_EXPIRY_SECONDS = 3600  # 1 hour
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+
 logger = logging.getLogger(__name__)
+ACCESS_SECRET_KEY = None
+BOT_TOKEN = None
+
+try:
+    with open(settings.access_secret_file) as f:
+        ACCESS_SECRET_KEY = f.read()
+except Exception as e:
+    logger.critical(f"Unable to read access secret file {settings.access_secret_file}")
+    raise
+
+try:
+    with open(settings.bot_token_file) as f:
+        BOT_TOKEN = f.read()
+except Exception as e:
+    logger.critical(f"Unable to read telegram token file {settings.bot_token_file}")
+    raise
+
+ALGORITHM = "HS256"
+TOKEN_EXPIRY_SECONDS = 3600  # 1 hour]
 
 
 class TelegramUser(BaseModel):

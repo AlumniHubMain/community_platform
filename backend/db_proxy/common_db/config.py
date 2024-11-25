@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     google_application_credentials: str
     google_cloud_bucket: str
     environment: str
+    bot_token_file: str
+    access_secret_file: str
 
     @property
     def database_url_asyncpg(self) -> SecretStr:

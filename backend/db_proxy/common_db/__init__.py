@@ -1,3 +1,4 @@
 from .db_abstract import get_async_session
-from .models import *
+from .user_model import *
+from .meetings import *
 from .config import settings
