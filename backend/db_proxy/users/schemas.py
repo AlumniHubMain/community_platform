@@ -24,8 +24,10 @@ class UserProfile(BaseModel):
     professional_interests: List[str] | None
 
 
-class SUserProfileRead(UserProfile):
+class SUserProfileUpdate(UserProfile):
     id: int
 
+
+class SUserProfileRead(SUserProfileUpdate):
     class Config:
         from_attributes = True

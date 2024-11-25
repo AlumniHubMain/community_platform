@@ -1,22 +1,21 @@
 """creation base
 
-Revision ID: a7c86619c69a
+Revision ID: a3dbef6ded92
 Revises: 
-Create Date: 2024-11-12 20:02:45.385815
+Create Date: 2024-11-24 19:41:19.869506
 
 """
 
 from typing import Sequence, Union
+from backend.db_proxy.common_db.db_abstract import schema
 
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-from backend.db_proxy.common_db.db_abstract import schema
-
 
 # revision identifiers, used by Alembic.
-revision: str = "a7c86619c69a"
+revision: str = "a3dbef6ded92"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -106,12 +105,26 @@ def upgrade() -> None:
         sa.Column("surname", sa.String(), nullable=False),
         sa.Column("email", sa.String(), nullable=False),
         sa.Column("avatars", sa.ARRAY(sa.String(length=300)), nullable=True),
-        sa.Column("city_live", sa.String(length=200), nullable=True),
-        sa.Column("country_live", sa.String(length=100), nullable=True),
-        sa.Column("phone_number", sa.String(length=20), nullable=True),
+        sa.Column("about", sa.String(length=300), nullable=True),
+        sa.Column(
+            "interests",
+            sa.ARRAY(
+                sa.Enum(
+                    "interest1",
+                    "interest2",
+                    name="interests_enum",
+                    schema="alh_community_platform",
+                    inherit_schema=True,
+                )
+            ),
+            nullable=True,
+        ),
         sa.Column("linkedin_link", sa.String(length=100), nullable=True),
         sa.Column("telegram_name", sa.String(length=200), nullable=True),
         sa.Column("telegram_id", sa.BIGINT(), nullable=True),
+        sa.Column("city_live", sa.String(length=200), nullable=True),
+        sa.Column("country_live", sa.String(length=100), nullable=True),
+        sa.Column("phone_number", sa.String(length=20), nullable=True),
         sa.Column("is_tg_bot_blocked", sa.Boolean(), nullable=False),
         sa.Column("blocked_status_update_date", sa.DateTime(), nullable=True),
         sa.Column(
@@ -141,6 +154,7 @@ def upgrade() -> None:
         schema="alh_community_platform",
     )
     op.create_index(
+<<<<<<< HEAD:migrations/versions/a7c86619c69a_creation_base.py
         "ix_users_telegram_id", "users", ["telegram_id"],
         unique=False,
         schema='alh_community_platform'
@@ -238,6 +252,12 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("user_id", "meeting_id"),
         schema="alh_community_platform",
     )
+        "ix_users_telegram_id",
+        "users",
+        ["telegram_id"],
+        unique=False,
+        schema="alh_community_platform",
+    )
     # ### end Alembic commands ###
 
 
@@ -263,9 +283,19 @@ def downgrade() -> None:
     # ^ Meetings and responses
 
     op.drop_index("ix_users_telegram_id", table_name="users", schema="alh_community_platform")
+    op.drop_index(
+        "ix_users_telegram_id",
+        table_name="users",
+        schema="alh_community_platform",
+    )
     op.drop_table("users", schema="alh_community_platform")
     op.drop_table("tg_bot_staff", schema="alh_community_platform")
     op.drop_table("tg_bot_logging_events", schema="alh_community_platform")
     op.execute(f"DROP TYPE {schema}.tg_event_type")
     op.execute(f"DROP TYPE {schema}.tg_staff_role")
+    op.execute(f"DROP TYPE {schema}.meeting_response")
+    op.execute(f"DROP TYPE {schema}.meeting_status")
+    op.execute(f"DROP TYPE {schema}.meeting_user_role")
+    op.execute(f"DROP TYPE {schema}.interests_enum")
+
     # ### end Alembic commands ###
