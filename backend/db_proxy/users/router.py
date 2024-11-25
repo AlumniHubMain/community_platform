@@ -23,7 +23,7 @@ async def get_profile(
 
 # ToDo: evseev.dmsr check user id before patch
 # https://app.clickup.com/t/86c11fz94
-@router.patch("/{user_id}", response_model=SUserProfileRead, summary="Modify user's profile")
+@router.patch("", response_model=SUserProfileRead, summary="Modify user's profile")
 async def update_profile(
     profile: SUserProfileUpdate, session: Annotated[AsyncSession, Depends(get_async_session)]
 ) -> SUserProfileRead:

@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import ARRAY, String, BIGINT, Index, Integer, Text, DateTime, ForeignKey, PrimaryKeyConstraint
+from sqlalchemy import String, Index, Integer, Text, DateTime, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
-from .db_abstract import ObjectTable, schema, Base
+from .db_abstract import ObjectTable, schema
 
 
 class ORMMeeting(ObjectTable):

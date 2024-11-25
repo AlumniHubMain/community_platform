@@ -4,7 +4,7 @@ from typing import List
 
 from sqlalchemy import ARRAY, String, BIGINT, Index
 from sqlalchemy import Enum as PGEnum
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from .db_abstract import ObjectTable, schema
 
@@ -243,7 +243,7 @@ class ERequestsToCommunity(Enum):
 
 
 InterestsPGEnum = PGEnum(EInterests, name='user_interests_enum', inherit_schema=True)
-ExpertiseAreaPGEnum = PGEnum(EExpertiseArea, name='user_interests_enum', inherit_schema=True)
+ExpertiseAreaPGEnum = PGEnum(EExpertiseArea, name='user_expertise_enum', inherit_schema=True)
 SpecialisationPGEnum = PGEnum(ESpecialisation, name='user_specialisation_enum', inherit_schema=True)
 GradePGEnum = PGEnum(EGrade, name='user_grade_enum', inherit_schema=True)
 IndustryPGEnum = PGEnum(EIndustry, name='user_industry_enum', inherit_schema=True)
@@ -289,6 +289,11 @@ class ORMUserProfile(ObjectTable):
 
     is_tg_bot_blocked: Mapped[bool] = mapped_column(default=False)
     blocked_status_update_date: Mapped[datetime | None]
+
+    # Relationship for user_meetings, linking the user to their meetings with roles and responses
+    meeting_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
+        "ORMMeetingResponse", back_populates="user", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (Index('ix_users_telegram_id', 'telegram_id'),
                       {'schema': f"{schema}"}
