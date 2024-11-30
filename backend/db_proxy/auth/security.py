@@ -32,7 +32,7 @@ except Exception as e:
     raise
 
 ALGORITHM = "HS256"
-TOKEN_EXPIRY_SECONDS = 3600  # 1 hour]
+TOKEN_EXPIRY_SECONDS = 3600  # 1 hour
 
 
 class TelegramUser(BaseModel):
