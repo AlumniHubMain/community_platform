@@ -33,18 +33,14 @@ class ObjectTable(Base):
     __allow_unmapped__ = True
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    created_at: Mapped[datetime] = mapped_column(
-        server_default=text("TIMEZONE('utc', now())")
-    )
+    created_at: Mapped[datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
     updated_at: Mapped[datetime] = mapped_column(
         server_default=text("TIMEZONE('utc', now())"),
         onupdate=text("TIMEZONE('utc', now())"),
     )
 
 
-engine: AsyncEngine = create_async_engine(
-    url=settings.database_url_asyncpg.get_secret_value()
-)
+engine: AsyncEngine = create_async_engine(url=settings.database_url_asyncpg.get_secret_value())
 session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 

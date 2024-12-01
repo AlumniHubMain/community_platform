@@ -26,10 +26,9 @@ class ORMUserProfile(ObjectTable):
     telegram_name: Mapped[str | None] = mapped_column(String(200))
     telegram_id: Mapped[int | None] = mapped_column(BIGINT)
 
-    requests_to_society: Mapped[list[str] |
-                                None] = mapped_column(ARRAY(String(100)))
-    professional_interests: Mapped[list[str] |
-                                   None] = mapped_column(ARRAY(String(100)))
+    requests_to_society: Mapped[list[str] | None] = mapped_column(ARRAY(String(100)))
+    professional_interests: Mapped[list[str] | None] = mapped_column(ARRAY(String(100)))
+
 
 class ORMLinkedInProfile(ObjectTable):
     """
@@ -47,7 +46,7 @@ class ORMLinkedInProfile(ObjectTable):
     location_name: Mapped[str | None] = mapped_column(String(100))
     industry: Mapped[str | None] = mapped_column(String(100))
     summary: Mapped[str | None] = mapped_column(String(1000))
-    
+
     experience: Mapped[list[dict] | None] = mapped_column(ARRAY(JSON))
     # Each dict in the list has the following structure:
     # {
@@ -82,12 +81,12 @@ class ORMLinkedInProfile(ObjectTable):
     skills: Mapped[dict | None] = mapped_column(JSON)
     # Dict has the following structure:
     # {
-    #   "skill": weight 
+    #   "skill": weight
     # }
     connections: Mapped[dict | None] = mapped_column(JSON)
     # Dict has the following structure:
     # {
-    #   "type_of_connection(twitter/tg)": link 
+    #   "type_of_connection(twitter/tg)": link
     # }
 
 
@@ -100,53 +99,57 @@ class ORMMeetingIntents(ObjectTable):
 
     user_id: Mapped[int] = mapped_column(BIGINT, ForeignKey("users.id"))
 
-    meeting_type: Mapped[Literal['online', 'offline', 'both']] = mapped_column(String(100))
+    meeting_type: Mapped[Literal["online", "offline", "both"]] = mapped_column(String(100))
 
     query_type: Mapped[
         Literal[
-            'interests_chatting',
-            'offline_meeting',
-            'news_discussion',
-            'startup_discussion',
-            'feedback',
-            'cooperative_learning',
-            'practical_discussion',
-            'tools_discussion',
-            'exam_preparation',
-            'help_request',
-            'looking_for',
-            'mentoring',
-            'other',
-        ]] = mapped_column(String(100))
-    
+            "interests_chatting",
+            "offline_meeting",
+            "news_discussion",
+            "startup_discussion",
+            "feedback",
+            "cooperative_learning",
+            "practical_discussion",
+            "tools_discussion",
+            "exam_preparation",
+            "help_request",
+            "looking_for",
+            "mentoring",
+            "other",
+        ]
+    ] = mapped_column(String(100))
+
     help_request_type: Mapped[
         Literal[
-            'management',
-            'product',
-            'development',
-            'design',
-            'marketing',
-            'sales',
-            'finance',
-            'enterpreneurship',
-            'hr',
-            'business development',
-            'law',
-            'other',
-        ] | None] = mapped_column(String(100))
-    
+            "management",
+            "product",
+            "development",
+            "design",
+            "marketing",
+            "sales",
+            "finance",
+            "enterpreneurship",
+            "hr",
+            "business development",
+            "law",
+            "other",
+        ]
+        | None
+    ] = mapped_column(String(100))
+
     looking_for_type: Mapped[
         Literal[
-            'work',
-            'part_time',
-            'recommendation',
-            'pet_project',
-            'mock_interview_partner',
-            'mentor',
-            'mentee',
-            'cofounder',
-            'contributor',
-        ] | None] = mapped_column(String(100))
-    
+            "work",
+            "part_time",
+            "recommendation",
+            "pet_project",
+            "mock_interview_partner",
+            "mentor",
+            "mentee",
+            "cofounder",
+            "contributor",
+        ]
+        | None
+    ] = mapped_column(String(100))
+
     text_intent: Mapped[str | None] = mapped_column(String(500))
-    

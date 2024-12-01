@@ -23,6 +23,9 @@ dependencies = [
     "cloud-sql-python-connector>=1.13.0",
     "pg8000>=1.31.2",
     "google-cloud-pubsub>=2.27.1",
+    "catboost>=1.2.5",
+    "pandas>=2.1.4",
+    "numpy>=1.26.4",
 ]
 
 [tool.uv]

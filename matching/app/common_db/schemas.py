@@ -74,13 +74,12 @@ class LinkedInProfile(BaseModel):
     skills: dict | None
     # Dict has the following structure:
     # {
-    #   "skill": weight 
+    #   "skill": weight
     # }
     connections: dict | None
 
 
 class SLinkedInProfileRead(LinkedInProfile):
-
     class Config:
         from_attributes = True
 
@@ -94,52 +93,59 @@ class MeetingIntent(BaseModel):
 
     user_id: int
 
-    meeting_type: Literal['online', 'offline', 'both']
+    meeting_type: Literal["online", "offline", "both"]
 
     query_type: Literal[
-            'interests_chatting',
-            'offline_meeting',
-            'news_discussion',
-            'startup_discussion',
-            'feedback',
-            'cooperative_learning',
-            'practical_discussion',
-            'tools_discussion',
-            'exam_preparation',
-            'help_request',
-            'looking_for',
-            'mentoring',
-            'other',
+        "interests_chatting",
+        "offline_meeting",
+        "news_discussion",
+        "startup_discussion",
+        "feedback",
+        "cooperative_learning",
+        "practical_discussion",
+        "tools_discussion",
+        "exam_preparation",
+        "help_request",
+        "looking_for",
+        "mentoring",
+        "other",
+    ]
+
+    help_request_type: (
+        Literal[
+            "management",
+            "product",
+            "development",
+            "design",
+            "marketing",
+            "sales",
+            "finance",
+            "enterpreneurship",
+            "hr",
+            "business development",
+            "law",
+            "other",
         ]
-    
-    help_request_type: Literal[
-            'management',
-            'product',
-            'development',
-            'design',
-            'marketing',
-            'sales',
-            'finance',
-            'enterpreneurship',
-            'hr',
-            'business development',
-            'law',
-            'other',
-        ] | None
-    
-    looking_for_type: Literal[
-            'work',
-            'part_time',
-            'recommendation',
-            'pet_project',
-            'mock_interview_partner',
-            'mentor',
-            'mentee',
-            'cofounder',
-            'contributor',
-        ] | None
-    
+        | None
+    )
+
+    looking_for_type: (
+        Literal[
+            "work",
+            "part_time",
+            "recommendation",
+            "pet_project",
+            "mock_interview_partner",
+            "mentor",
+            "mentee",
+            "cofounder",
+            "contributor",
+        ]
+        | None
+    )
+
     text_intent: str | None
+
 
 class SMeetingIntentRead(MeetingIntent):
     id: int

@@ -1,8 +1,10 @@
 """Основной модуль приложения"""
+
 import os
 from typing import Annotated
 from contextlib import asynccontextmanager
 
+import pandas as pd
 from fastapi import (
     Depends,
     FastAPI,
@@ -16,12 +18,13 @@ from app.transport.persistent_storage import CloudStorageAdapter, PSClient
 from app.transport.queueing import GoogleQueueManager
 from .data_loader import DataLoader
 from .services import psclient, queue_manager
+from .model import ModelSettings, ModelType, Model
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI): # pylint: disable=unused-argument,redefined-outer-name
+async def lifespan(app: FastAPI):  # pylint: disable=unused-argument,redefined-outer-name
     """Lifecycle func"""
-    global psclient, queue_manager # pylint: disable=global-statement
+    global psclient, queue_manager  # pylint: disable=global-statement
     psadapter = CloudStorageAdapter()
     await psadapter.initialize()
     psclient = PSClient()
@@ -31,6 +34,7 @@ async def lifespan(app: FastAPI): # pylint: disable=unused-argument,redefined-ou
     await queue_manager.initialize(config)
     print("Service started")
     yield
+
 
 app = FastAPI(title="Community platform matching service", lifespan=lifespan)
 
@@ -51,18 +55,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get('/get_matches/{user_id}/{meeting_intent_id}')
+
+@app.get("/get_matches/{user_id}/{meeting_intent_id}")
 async def get_matches(
-    user_id: int, meeting_intent_id: int, session: Annotated[AsyncSession, Depends(get_async_session)]
+    user_id: int,
+    meeting_intent_id: int,
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+    n: int = 10,
 ):
     """Get matches for user and send result to topic"""
     config.logger.info(
-        "Recieved matching request user_id: %d, meeting_intent_id: %d", user_id, meeting_intent_id,
+        "Recieved matching request user_id: %d, meeting_intent_id: %d",
+        user_id,
+        meeting_intent_id,
     )
-    user_info = await DataLoader.get_user_profile(session, user_id)
-    linkedin_info = await DataLoader.get_linkedin_profile(session, user_id)
-    intent_info = await DataLoader.get_meeting_intent(session, meeting_intent_id)
-    model = psclient.get_file(os.getenv('google_cloud_bucket'), os.getenv('model_path'), 'model.m')
-
-    await queue_manager.put_to_queue(os.getenv('result_topic_id'), {'matches': []})
+    all_users = await DataLoader.get_all_user_profiles(session)
+    all_linkedin = await DataLoader.get_all_linkedin_profiles(session)
+    all_intents = await DataLoader.get_all_meeting_intents(session)
+    users_df = pd.DataFrame(all_users)
+    linkedin_df = pd.DataFrame(all_linkedin)
+    intents_df = pd.DataFrame(all_intents)
+    features_df = users_df.merge(linkedin_df, on="user_id", how="left")
+    features_df = features_df.merge(intents_df, on="user_id", how="left")
+    model = psclient.get_file(os.getenv("google_cloud_bucket"), os.getenv("model_path"), "model.m")
+    model_settings = ModelSettings(
+        model_type=ModelType.CATBOOST,
+        model_path=model,
+        filters=[],
+        diversifications=[],
+        exclude_users=[],
+        exclude_companies=[],
+    )
+    matcher = Model(model_settings)
+    matcher.load_model(model)
+    predictions = matcher.predict(features_df, user_id)
+    await queue_manager.put_to_queue(os.getenv("result_topic_id"), {"matches": predictions.user_id.tolist()[:n]})
     await session.close()
