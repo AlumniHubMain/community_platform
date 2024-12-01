@@ -7,3 +7,5 @@ __pycache__
 *.db
 *.json
 *.log
+backend/db_proxy/access_secret_file
+backend/db_proxy/token

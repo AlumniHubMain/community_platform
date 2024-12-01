@@ -10,6 +10,5 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=os.environ.get('DOTENV', '.env'), env_file_encoding='utf8')
 
 
-# При импорте файла сразу создастся и провалидируется объект конфига,
-# который можно далее импортировать из разных мест
+# При импорте файла сразу создастся и провалидируется объект конфига, который можно далее импортировать из разных мест
 settings = Settings()

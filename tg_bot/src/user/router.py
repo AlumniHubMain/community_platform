@@ -1,8 +1,10 @@
 from aiogram import Router
 
-from tg_bot.src.user.handlers.general import router as user_general_router
+from .handlers.general import router as user_general_router
+from .handlers.other import router as user_other_router
 
 
-# Инициализируем и заполняем роутер уровня модуля
+# Initialize and fill in the router of the module level
 router: Router = Router()
 router.include_router(user_general_router)
+router.include_router(user_other_router)

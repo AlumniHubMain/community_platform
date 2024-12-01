@@ -11,9 +11,9 @@ from gcloud.aio.storage import Storage
 
 def make_hash(file: UploadFile) -> str:
     hash_calc = md5()
-    hash_calc.update(file.filename.encode('utf-8'))
-    timestamp = datetime.now().strftime('%Y%m%d%H%M')
-    hash_calc.update(timestamp.encode('utf-8'))
+    hash_calc.update(file.filename.encode("utf-8"))
+    timestamp = datetime.now().strftime("%Y%m%d%H%M")
+    hash_calc.update(timestamp.encode("utf-8"))
     return hash_calc.hexdigest()
 
 
@@ -21,7 +21,7 @@ def convert_into_webp(file: UploadFile) -> BytesIO:
     image = Image.open(BytesIO(file.file.read()))
     file.file.seek(0)
     result = BytesIO()
-    image.save(result, 'webp')
+    image.save(result, "webp")
     result.seek(0)
     return result
 
@@ -35,8 +35,11 @@ class GCSClient:
 
     def check_file_extension(self, file: UploadFile) -> str:
         original_filename = file.filename
-        name, extension = original_filename.rsplit(
-            '.', 1) if '.' in original_filename else (original_filename, '')
+        name, extension = (
+            original_filename.rsplit(".", 1)
+            if "." in original_filename
+            else (original_filename, "")
+        )
         extension = extension.lower()
         if extension not in self._supported_extensions:
             raise Exception("Unsupported image extension")
@@ -44,8 +47,7 @@ class GCSClient:
 
     async def upload_avatar(self, file: UploadFile) -> dict:
         async with aiohttp.ClientSession() as session:
-            client = Storage(
-                session=session, service_file=self._credentials_file)
+            client = Storage(session=session, service_file=self._credentials_file)
             extension = self.check_file_extension(file)
             dir_name = make_hash(file)
 
@@ -53,13 +55,17 @@ class GCSClient:
             webp_name = f"{dir_name}/webp.webp"
             webp_data = convert_into_webp(file)
 
-            orig_status = await client.upload(self._bucket_name, orig_name, file.file.read())
-            webp_status = await client.upload(self._bucket_name, webp_name, webp_data.read())
+            orig_status = await client.upload(
+                self._bucket_name, orig_name, file.file.read()
+            )
+            webp_status = await client.upload(
+                self._bucket_name, webp_name, webp_data.read()
+            )
 
             # ToDo(evseev.dmsr): Extract media links from API
             result = {
-                'orig': f'https://storage.googleapis.com/{self._bucket_name}/{orig_status['name']}',
-                'webp': f'https://storage.googleapis.com/{self._bucket_name}/{webp_status['name']}'
+                "orig": f"https://storage.googleapis.com/{self._bucket_name}/{orig_status['name']}",
+                "webp": f"https://storage.googleapis.com/{self._bucket_name}/{webp_status['name']}",
             }
             return result
 

@@ -10,9 +10,12 @@ class Settings(BaseSettings):
     db_name: SecretStr
     db_user: SecretStr
     db_pass: SecretStr
-    db_schema: str      # DB_SCHEMA=your_schema (default=public)
+    db_schema: str  # DB_SCHEMA=your_schema (default=public)
     google_application_credentials: str
     google_cloud_bucket: str
+    environment: str
+    bot_token_file: str
+    access_secret_file: str
 
     @property
     def database_url_asyncpg(self) -> SecretStr:

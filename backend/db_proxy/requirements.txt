@@ -1,4 +1,5 @@
 asyncpg
+black
 certifi
 eval_type_backport
 gcloud-aio-storage

@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+  coffee-back:
+    build: .
+    image: coffee-back:latest
+    ports:
+      - "8080:8080"
+    container_name: coffee-back
+    environment:
+      ENVIRONMENT: development
+      ACCESS_SECRET_KEY: test_secret
+      BOT_TOKEN: ${BOT_TOKEN}
+    depends_on:
+      - coffee-db
+    networks:
+      - coffee-network
+
+  coffee-db:
+    image: postgres:13
+    container_name: coffee-db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+
+    ports:
+      - "5432:5432"
+    networks:
+      - coffee-network
+
+networks:
+  coffee-network:
+    driver: bridge
