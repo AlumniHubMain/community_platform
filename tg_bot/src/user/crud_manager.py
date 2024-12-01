@@ -3,7 +3,7 @@ from sqlalchemy.future import select
 
 from .schemas import DTOTgBotUser, DTOTgBotUserUpdate, DTOTgBotUserRead
 from backend.db_proxy.common_db.db_abstract import get_async_session
-from backend.db_proxy.common_db.models import ORMUserProfile
+from backend.db_proxy.common_db.user_model import ORMUserProfile
 
 
 class UserManager:
