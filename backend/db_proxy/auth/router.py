@@ -12,11 +12,10 @@ from fastapi import (
     Response,
     HTTPException,
 )
-from fastapi.security import OAuth2PasswordBearer
-
 from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+from users.user_profile_manager import UserProfileManager
+
 import jwt
 import secrets
 
@@ -24,7 +23,6 @@ from common_db.config import settings
 from .security import (
     create_access_token,
     validate_telegram_data,
-    get_user_by_telegram_id,
     TelegramUser,
     TOKEN_EXPIRY_SECONDS,
 )
@@ -86,10 +84,14 @@ async def callback(
 
     if validate_telegram_data(telegram_data):
         telegram_id = telegram_data.id
-        user_data = get_user_by_telegram_id(telegram_id)
-
+        user_id = UserProfileManager.get_user_id_by_telegram_id(telegram_id)
+        
+        if not user_id:
+            raise HTTPException(status=404)
+        
+        user_data = {'user_id': user_id}
         if user_data:
-            access_token = create_access_token(user_data)
+            access_token = create_access_token({user_data})
             response.set_cookie(
                 key="access_token",
                 value=access_token,
@@ -103,10 +105,10 @@ async def callback(
                 "expires_in": TOKEN_EXPIRY_SECONDS,
                 # TODO (anemirov) Обсудить нужен ли refresh token или и так норм
             }
-        else:
-            raise HTTPException(status_code=404, detail="User not found")
-    else:
-        raise HTTPException(status_code=401, detail="Authentication failed")
+
+        raise HTTPException(status_code=404, detail="User not found")
+
+    raise HTTPException(status_code=401, detail="Authentication failed")
 
 
 @router.get("/logout")
