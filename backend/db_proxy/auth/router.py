@@ -19,6 +19,8 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 import jwt
 import secrets
+
+from common_db.config import settings
 from .security import (
     create_access_token,
     validate_telegram_data,
@@ -111,3 +113,24 @@ async def callback(
 async def logout(response: Response):
     response.delete_cookie(key="access_token")
     return {"message": "Successfully logged out"}
+
+
+if settings.environment == 'development':
+    @router.get("/auth_for_development", response_model=dict)
+    async def dev_auth(
+        response: Response,
+    ):
+        user_data = get_user_by_telegram_id('12345')
+        access_token = create_access_token(user_data)
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+        )
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "expires_in": TOKEN_EXPIRY_SECONDS,
+        }
