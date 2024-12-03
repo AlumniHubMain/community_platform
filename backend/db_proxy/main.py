@@ -47,7 +47,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(users_router, dependencies=[Depends(authorize)])
 app.include_router(mds_router, dependencies=[Depends(authorize)])
-app.include_router(meetings_router)
+app.include_router(meetings_router, dependencies=[Depends(authorize)])
 
 
 @app.get("/", response_class=HTMLResponse)

@@ -48,3 +48,13 @@ class UserProfileManager:
         session.add(profile_orm)
         await session.commit()
         return SUserProfileRead.model_validate(profile_orm)
+    
+    @classmethod
+    async def get_user_id_by_telegram_id(cls, session: AsyncSession, tg_id: int) -> int:
+        result = await session.execute(
+            select(ORMUserProfile.user_id).where(ORMUserProfile.telegram_id == tg_id)
+        )
+        user_id = result.scalar_one_or_none()
+        if user_id is None:
+            raise HTTPException(status_code=404, detail="Profile not found")
+        return user_id
