@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+  matching:
+    build: 
+      context: .
+      dockerfile: matching/Dockerfile
+    volumes:
+      - ./db_common:/usr/local/lib/python3.13/site-packages/db_common
+      - ./matching/app:/app
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=communityp
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_SCHEMA=alh_community_platform
+      - GOOGLE_CLOUD_BUCKET=${GOOGLE_CLOUD_BUCKET}
+      - MODEL_PATH=${MODEL_PATH}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    volumes:
+      - ./db_common:/usr/local/lib/python3.13/site-packages/db_common
+      - ./backend/app:/app
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=communityp
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_SCHEMA=alh_community_platform
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=communityp
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data: 

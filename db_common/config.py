@@ -1,18 +1,23 @@
 import os
-
+from typing import Optional
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
-class Settings(BaseSettings):
+class DatabaseSettings(BaseSettings):
     db_host: SecretStr
     db_port: int
     db_name: SecretStr
     db_user: SecretStr
     db_pass: SecretStr
-    db_schema: str  # DB_SCHEMA=your_schema (default=public)
-    google_application_credentials: str
-    google_cloud_bucket: str
+    db_schema: str = "alh_community_platform"
+    
+    # Google Cloud settings
+    google_application_credentials: Optional[str] = None
+    google_cloud_bucket: Optional[str] = None
+    
+    # Service-specific settings
+    environment: str = "development"
+    service_name: str  # Will be set by each service
 
     @property
     def database_url_asyncpg(self) -> SecretStr:
@@ -25,9 +30,9 @@ class Settings(BaseSettings):
             f"{self.db_name.get_secret_value()}"
         )
 
-    model_config = SettingsConfigDict(env_file=os.environ.get("DOTENV", ".env"), env_file_encoding="utf8")
-
-
-# При импорте файла сразу создастся и провалидируется объект конфига,
-# который можно далее импортировать из разных мест
-settings = Settings()
+    model_config = SettingsConfigDict(
+        env_file=os.environ.get("DOTENV", ".env"),
+        env_file_encoding="utf8"
+    ) 
+    
+settings = DatabaseSettings()

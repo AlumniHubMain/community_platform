@@ -1,68 +1,57 @@
 from logging.config import fileConfig
-
-from alembic import context
 from sqlalchemy import engine_from_config, pool
+import alembic
+from alembic import context
 
-from backend.db_proxy.common_db.config import settings
-from backend.db_proxy.common_db.db_abstract import Base, schema
-from tg_bot.src.staff.models import ORMTgBotStaff
-from tg_bot.src.logging.models import ORMTgBotLoggingEvents
+from db_common.config import settings
+from db_common.models.base import Base
+from db_common.models.users import ORMUserProfile
+from db_common.models.linkedin import ORMLinkedInProfile
+from db_common.models.meetings import ORMMeeting, ORMMeetingResponse
+from db_common.models.meeting_intents import ORMMeetingIntent
 
-
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use
 config = context.config
 
+# Interpret the config file for Python logging.
+# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option(name='sqlalchemy.url',
-                       value=settings.database_url_asyncpg.get_secret_value() + '?async_fallback=True')
+# Set SQLAlchemy URL from settings
+config.set_main_option('sqlalchemy.url', settings.database_url_asyncpg.get_secret_value())
 
+# add your model's MetaData object here
+# for 'autogenerate' support
 target_metadata = Base.metadata
 
-
 def include_name(name, type_, parent_names):
-    """Функция для фильтрации схем."""
+    """Filter schemas to include"""
     if type_ == "schema":
-        return name == schema  # Включает только нужную схему
-    return True  # Включает все остальные объекты
-
+        return name in [settings.db_schema]
+    return True
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
-    """
+    """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        version_table_schema=schema,
-        include_schemas=True,  # Включение всех схем
-        include_name=include_name  # Фильтрация по имени схемы
+        include_schemas=True,
+        include_name=include_name,
+        version_table_schema=settings.db_schema
     )
 
     with context.begin_transaction():
         context.run_migrations()
 
-
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
+    """Run migrations in 'online' mode."""
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
@@ -71,14 +60,13 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            version_table_schema=schema,
             include_schemas=True,
-            include_name=include_name
+            include_name=include_name,
+            version_table_schema=settings.db_schema
         )
 
         with context.begin_transaction():
             context.run_migrations()
-
 
 if context.is_offline_mode():
     run_migrations_offline()
