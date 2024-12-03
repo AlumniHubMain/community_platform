@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from common_db import get_async_session
-from .schemas import Form, SFormRead, EIntentType
 from typing import Annotated
-from forms_manager import FormsManager
+from .schemas import Form, SFormRead, EIntentType
+from .forms_manager import FormsManager
 
 
 router = APIRouter(tags=["Forms"], prefix="/forms")

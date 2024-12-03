@@ -1,8 +1,8 @@
 """creation base
 
-Revision ID: 562766e4eead
+Revision ID: dc1a2a81fb17
 Revises: 
-Create Date: 2024-11-25 14:30:19.311600
+Create Date: 2024-12-03 13:57:51.546574
 
 """
 
@@ -14,7 +14,7 @@ from backend.db_proxy.common_db.db_abstract import schema
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = "562766e4eead"
+revision: str = "dc1a2a81fb17"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -441,6 +441,58 @@ def upgrade() -> None:
         schema="alh_community_platform",
     )
     op.create_table(
+        "forms",
+        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column("form", sa.Text(), nullable=False),
+        sa.Column("description", sa.Text(), nullable=True),
+        sa.Column(
+            "intent_type",
+            postgresql.ENUM(
+                "connect",
+                "mentoring",
+                "mock_interview",
+                "help_request",
+                "referal",
+                name="e_intent_type",
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "meeting_format",
+            postgresql.ENUM(
+                "offline", "online", "both", name="e_meeting_format"
+            ),
+            nullable=False,
+        ),
+        sa.Column("calendar", sa.String(length=200), nullable=False),
+        sa.Column("available_meetings_count", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.text("TIMEZONE('utc', now())"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.text("TIMEZONE('utc', now())"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["user_id"], ["alh_community_platform.users.id"], ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("user_id", "id"),
+        schema="alh_community_platform",
+    )
+    op.create_index(
+        "ix_form_intent_type",
+        "forms",
+        ["intent_type"],
+        unique=False,
+        schema="alh_community_platform",
+    )
+    op.create_table(
         "meeting_responses",
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("meeting_id", sa.Integer(), nullable=False),
@@ -492,6 +544,8 @@ def downgrade() -> None:
         table_name="users",
         schema="alh_community_platform",
     )
+    op.drop_index("ix_form_intent_type", table_name="forms", schema="alh_community_platform")
+    op.drop_table("forms", schema="alh_community_platform")
     op.drop_table("users", schema="alh_community_platform")
     op.drop_table("tg_bot_staff", schema="alh_community_platform")
     op.drop_table("tg_bot_logging_events", schema="alh_community_platform")
@@ -521,4 +575,6 @@ def downgrade() -> None:
     op.execute(f"DROP TYPE {schema}.user_company_services_enum")
     op.execute(f"DROP TYPE {schema}.user_location_enum")
     op.execute(f"DROP TYPE {schema}.user_requests_to_community_enum")
+    op.execute(f"DROP TYPE {schema}.e_meeting_format")
+    op.execute(f"DROP TYPE {schema}.e_intent_type")
     # ### end Alembic commands ###

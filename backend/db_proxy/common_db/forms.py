@@ -1,7 +1,6 @@
 from sqlalchemy import String, Index, Integer, Text, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import mapped_column, Mapped
-from forms.schemas import EIntentType, EMeetingFormat
 from .db_abstract import ObjectTable, schema
 from enum import Enum
 
