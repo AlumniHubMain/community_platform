@@ -1,7 +1,7 @@
 import logging
 import os
 from contextlib import asynccontextmanager
-from typing import Annotated
+from common_db import settings
 
 from fastapi import FastAPI, Depends
 from fastapi.responses import HTMLResponse
@@ -26,7 +26,10 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Community platform", lifespan=lifespan)
+production_env = settings.environment == 'production'
+docs_path = None if production_env else '/docs'
+redoc_path = None if production_env else '/redoc'
+app = FastAPI(title="Community platform", lifespan=lifespan, docs_url=docs_path, redoc_url=redoc_path)
 
 
 # ToDo(evseev.dmsr) уточнить, что тут нужно
