@@ -6,8 +6,8 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile
-from event_emitter import EventEmitter, MeetingInviteEvent
-from event_emitter import MeetingResponseEvent
+from event_emitter import EventEmitter, MeetingInviteEvent, MeetingResponseEvent
+from common_db.config import settings
 from .schemas import MeetingRequestRead, MeetingRequestCreate, MeetingFilter, MeetingList, MeetingRequestUpdate
 
 
@@ -105,7 +105,7 @@ class MeetingManager:
         # ToDo: can use the authenticated user instead
         if organizer := next((user for user in meeting.user_responses if user.role == "organizer"), None):
             organizer_id: int = organizer.user_id
-            EventEmitter(message_format="json", target="log").emit(
+            EventEmitter(message_format=settings.notification_format, target=settings.notification_target).emit(
                 MeetingInviteEvent(invited_id=user_id, meeting_id=meeting_id, inviter_id=organizer_id)
             )
         else:
@@ -148,7 +148,7 @@ class MeetingManager:
         user_meeting.response = response
         await session.commit()
 
-        EventEmitter(message_format="json", target="log").emit(
+        EventEmitter(message_format=settings.notification_format, target=settings.notification_target).emit(
             MeetingResponseEvent(user_id=user_id, meeting_id=meeting_id)
         )
 
