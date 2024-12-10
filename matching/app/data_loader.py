@@ -2,8 +2,8 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.common_db import ORMUserProfile, ORMLinkedInProfile, ORMMeetingIntents
-from app.common_db.schemas import SUserProfileRead, SLinkedInProfileRead, SMeetingIntentRead
+from db_common.models import ORMUserProfile, ORMLinkedInProfile, ORMMeetingIntent
+from db_common.schemas import SUserProfileRead, SLinkedInProfileRead, SMeetingIntentRead
 
 
 class DataLoader:
@@ -37,7 +37,7 @@ class DataLoader:
 
     @classmethod
     async def get_meeting_intent(cls, session: AsyncSession, intent_id: int) -> SMeetingIntentRead:
-        result = await session.execute(select(ORMMeetingIntents).where(ORMMeetingIntents.id == intent_id))
+        result = await session.execute(select(ORMMeetingIntent).where(ORMMeetingIntent.id == intent_id))
         profile = result.scalar_one_or_none()
         if profile is None:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -45,6 +45,6 @@ class DataLoader:
 
     @classmethod
     async def get_all_meeting_intents(cls, session: AsyncSession) -> list[SMeetingIntentRead]:
-        result = await session.execute(select(ORMMeetingIntents))
+        result = await session.execute(select(ORMMeetingIntent))
         intents = result.scalars().all()
         return [SMeetingIntentRead.model_validate(i) for i in intents]

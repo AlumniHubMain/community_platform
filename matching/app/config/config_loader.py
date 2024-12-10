@@ -80,7 +80,7 @@ class ConfigLoader:
         self,
     ):
         for key, value in (self.variables | self.config_dict).items():
-            os.environ[key] = value
+            os.environ[key] = str(value)
 
 
 config = ConfigLoader()

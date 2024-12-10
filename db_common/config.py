@@ -17,7 +17,7 @@ class DatabaseSettings(BaseSettings):
     
     # Service-specific settings
     environment: str = "development"
-    service_name: str  # Will be set by each service
+    service_name: str = os.getenv("SERVICE_NAME", "db_common")
 
     @property
     def database_url_asyncpg(self) -> SecretStr:
@@ -31,8 +31,11 @@ class DatabaseSettings(BaseSettings):
         )
 
     model_config = SettingsConfigDict(
-        env_file=os.environ.get("DOTENV", ".env"),
-        env_file_encoding="utf8"
-    ) 
+        env_file=".env",
+        env_file_encoding="utf8",
+        env_nested_delimiter="__",
+        case_sensitive=False,
+        env_ignore_empty=True
+    )
     
 settings = DatabaseSettings()

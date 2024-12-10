@@ -7,6 +7,7 @@ setup(
     install_requires=[
         "sqlalchemy>=2.0.36",
         "pydantic>=2.9.2",
+        "pydantic-settings>=2.6.0",
         "asyncpg>=0.30.0",
     ],
 ) 

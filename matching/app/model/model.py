@@ -43,7 +43,7 @@ class Model:
 
         return results_df.sort_values("score", ascending=False)
 
-    def _apply_filter(self, df: pd.DataFrame, filter_setting) -> pd.DataFrame:
+    def _apply_filter(self, df: pd.DataFrame, filter_setting, row_callable=None) -> pd.DataFrame:
         """Apply filter based on settings"""
         if filter_setting.filter_type == FilterType.STRICT:
             return df[df[filter_setting.filter_column] == filter_setting.filter_rule]
@@ -51,6 +51,9 @@ class Model:
             mask = df[filter_setting.filter_column] == filter_setting.filter_rule
             df.loc[~mask, "score"] *= 0.5
             return df
+        elif filter_setting.filter_type == FilterType.CUSTOM:
+            df['filter_result'] = df.apply(row_callable, axis=1)
+            return df[df['filter_result']]
         return df
 
     def _apply_diversification(self, df: pd.DataFrame, div_setting) -> pd.DataFrame:

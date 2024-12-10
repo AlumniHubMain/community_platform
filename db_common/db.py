@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     AsyncSession,
 )
-from config import DatabaseSettings
+from db_common.config import DatabaseSettings
 
 class DatabaseManager:
     def __init__(self, settings: DatabaseSettings):

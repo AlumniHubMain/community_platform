@@ -9,6 +9,7 @@ class FilterType(Enum):
 
     STRICT = "strict"
     SOFT = "soft"
+    CUSTOM = "custom"
 
 
 class DiversificationType(Enum):
