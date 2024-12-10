@@ -5,7 +5,8 @@
 FROM python:3.13-slim
 
 COPY requirements.txt ./
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt \
+    --extra-index-url = https://europe-west3-python.pkg.dev/communityp-440714/community-platform/simple/
 COPY . .
 
 # WORKDIR "backend/db_proxy"

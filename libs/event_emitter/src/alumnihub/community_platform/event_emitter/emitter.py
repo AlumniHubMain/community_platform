@@ -3,15 +3,18 @@ import logging
 from google.cloud import pubsub_v1
 from google.protobuf import json_format
 
-from common_db import config
-from event_emitter.generated import events_pb2
-from .schemas import MeetingInviteEvent, MeetingResponseEvent
+from generated import events_pb2
+from schemas import MeetingInviteEvent, MeetingResponseEvent
 
 
 class EventEmitter:
-    def __init__(self, target: str = "log", message_format: str = "json"):
+    def __init__(self, topic: str = None, target: str = "log", message_format: str = "json"):
         self.target = target
         self.format = message_format
+        self.topic = topic
+
+        if self.target == "pubsub" and not self.topic:
+            raise RuntimeError("A topic must be specified when using PubSub")
 
         if target == "pubsub":
             self.publisher = pubsub_v1.PublisherClient()
@@ -60,10 +63,11 @@ class EventEmitter:
         logging.info(event_data)
 
     def _send_to_pubsub(self, event_data: bytes):
-        res = self.publisher.publish(config.settings.google_pubsub_notification_topic, data=event_data).result()
+        res = self.publisher.publish(self.topic, data=event_data).result()
+        logging.info("Publish result: %s", res)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    e = EventEmitter(target="log", message_format="protobuf_binary")
+    e = EventEmitter(target="log", message_format="protobuf_json")
     e.emit(MeetingInviteEvent(inviter_id=123, invited_id=321, meeting_id=333))
