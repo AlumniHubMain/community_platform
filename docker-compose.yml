@@ -6,15 +6,10 @@ services:
       context: .
       dockerfile: matching/Dockerfile
     environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=communityp
-      - DB_USER=postgres
-      - DB_PASS=postgres
-      - DB_SCHEMA=alh_community_platform
-      - 
-      - GOOGLE_CLOUD_BUCKET=${GOOGLE_CLOUD_BUCKET}
-      - MODEL_PATH=${MODEL_PATH}
+      - ENVIRONMENT=dev
+      - GOOGLE_APPLICATION_CREDENTIALS=/credentials/service_account_credentials.json
+    volumes:
+      - ./credentials:/credentials
     ports:
       - "8080:8080"
     depends_on:

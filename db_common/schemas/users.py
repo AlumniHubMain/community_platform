@@ -1,10 +1,18 @@
 from datetime import datetime
 from db_common.enums.users import (
-    EInterests, EExpertiseArea, ESpecialisation, EGrade, EIndustry,
-    ESkills, ELocation, ERequestsToCommunity, ECompanyServices,
+    EInterests,
+    EExpertiseArea,
+    ESpecialisation,
+    EGrade,
+    EIndustry,
+    ESkills,
+    ELocation,
+    ERequestsToCommunity,
+    ECompanyServices,
 )
 from db_common.schemas.base import TimestampedSchema
 from db_common.schemas.meetings import MeetingResponseRead
+
 
 class UserProfile(TimestampedSchema):
     name: str

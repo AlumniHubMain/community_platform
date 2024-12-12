@@ -11,3 +11,7 @@ backend/db_proxy/access_secret_file
 backend/db_proxy/token
 service-account-credentials.json
 .ruff_cache
+build/
+*.egg-info/
+Dockerfile-matching
+

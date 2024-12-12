@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class DatabaseSettings(BaseSettings):
     db_host: SecretStr
     db_port: int
@@ -10,11 +11,11 @@ class DatabaseSettings(BaseSettings):
     db_user: SecretStr
     db_pass: SecretStr
     db_schema: str = "alh_community_platform"
-    
+
     # Google Cloud settings
     google_application_credentials: Optional[str] = None
     google_cloud_bucket: Optional[str] = None
-    
+
     # Service-specific settings
     environment: str = "development"
     service_name: str = os.getenv("SERVICE_NAME", "db_common")
@@ -35,7 +36,8 @@ class DatabaseSettings(BaseSettings):
         env_file_encoding="utf8",
         env_nested_delimiter="__",
         case_sensitive=False,
-        env_ignore_empty=True
+        env_ignore_empty=True,
     )
-    
+
+
 settings = DatabaseSettings()

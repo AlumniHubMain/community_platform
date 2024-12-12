@@ -1,6 +1,7 @@
 """Модуль для управления конфигурацией сервиса."""
 
 import os
+import re
 import logging
 from typing import Literal
 import json
@@ -16,14 +17,15 @@ class ConfigLoader:
 
     def __init__(
         self,
-        instance_stage: Literal["prod", "staging", "dev"] = "prod",
         logging_stream: Literal["google", "default"] = "google",
     ):
-        self.instance_stage = instance_stage
         self.logging_stream = logging_stream
-        self._load_config()
+        self.environment = os.environ.get("ENVIRONMENT")
+        self.variables = {}
         self._init_logger()
-        self._load_secrets_google()
+        self._load_config()
+        if self.environment != "dev":
+            self._load_secrets_google()
         self._load_to_env()
 
     def _load_config(self):
@@ -34,20 +36,25 @@ class ConfigLoader:
         self.proto_config = ConfigProto()
         text_format.Parse(config_text, self.proto_config)
         json_config = json_format.MessageToJson(self.proto_config)
-        self.config_dict = json.loads(json_config)[self.instance_stage]
+        self.config_dict = {
+            self.camel_to_snake(key): value for key, value in json.loads(json_config)[self.environment].items()
+        }
 
     def _init_logger(self):
-        if self.logging_stream == "google":
-            client = google_cloud_logging.Client()
-            client.setup_logging(log_level=self.active_config.log_level)
+        if self.environment != "dev":
+            if self.logging_stream == "google":
+                client = google_cloud_logging.Client()
+                client.setup_logging(log_level=self.active_config.log_level)
+            else:
+                logging.basicConfig(level=self.active_config.log_level)
         else:
-            logging.basicConfig(level=self.active_config.log_level)
+            logging.basicConfig(level=logging.DEBUG)
         self.logger = logging.getLogger()
 
     @property
     def active_config(self):
         """Возвращает активную конфигурацию в зависимости от текущей среды."""
-        match self.instance_stage:
+        match self.environment:
             case "prod":
                 return self.proto_config.prod
             case "staging":
@@ -69,7 +76,7 @@ class ConfigLoader:
             self.variables = json.loads(secret)
         else:
             client = secretmanager.SecretManagerServiceClient()
-            project_id = os.getenv("PROJECT_ID", "communityp")
+            project_id = os.getenv("PROJECT_ID", "communityp-440714")
             secret_id = os.getenv("SECRET_ID", "matching_service_config")
             version_id = os.getenv("VERSION_SECRET", "latest")
             name = f"projects/{project_id}/secrets/{secret_id}/versions/{version_id}"
@@ -81,6 +88,13 @@ class ConfigLoader:
     ):
         for key, value in (self.variables | self.config_dict).items():
             os.environ[key] = str(value)
+            setattr(self, key, value)
+
+    @staticmethod
+    def camel_to_snake(name):
+        """Convert camelCase to snake_case."""
+        pattern = re.compile(r"(?<!^)(?=[A-Z])")
+        return pattern.sub("_", name).lower()
 
 
 config = ConfigLoader()

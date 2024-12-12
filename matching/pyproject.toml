@@ -26,6 +26,7 @@ dependencies = [
     "catboost==1.2.7",
     "pandas>=2.1.4",
     "numpy>=1.26.4",
+    "db-common",
 ]
 
 [tool.uv]
@@ -34,3 +35,6 @@ dev-dependencies = [
     "pylint>=3.3.1",
     "ruff>=0.7.0",
 ]
+
+[tool.uv.sources]
+db-common = { path = "db_common" }

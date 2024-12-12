@@ -35,6 +35,8 @@ ENV PATH="/.venv/bin:$PATH"
 # Copy the application code and db_common
 COPY --chown=appuser:appuser matching/app /app
 COPY --from=builder /db_common /db_common
+COPY alembic.ini /alembic.ini
+COPY migrations /migrations
 
 WORKDIR /app
 USER appuser

@@ -2,21 +2,26 @@ from datetime import datetime
 from sqlalchemy import String, DateTime, Integer, ForeignKey, Index, PrimaryKeyConstraint, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from db_common.enums.meetings import (
-    EMeetingStatus, MeetingStatusPGEnum, EMeetingUserRole, 
-    MeetingUserRolePGEnum, EMeetingResponse, MeetingResponsePGEnum
+    EMeetingStatus,
+    MeetingStatusPGEnum,
+    EMeetingUserRole,
+    MeetingUserRolePGEnum,
+    EMeetingResponse,
+    MeetingResponsePGEnum,
 )
 from .base import ObjectTable, schema
+
 
 class ORMMeeting(ObjectTable):
     """
     Meetings table.
     """
 
-    __tablename__ = 'meetings'
+    __tablename__ = "meetings"
     __table_args__ = (
-        Index('ix_meeting_status', 'status'),
-        Index('ix_meeting_time', 'scheduled_time'),
-        {'schema': schema},
+        Index("ix_meeting_status", "status"),
+        Index("ix_meeting_time", "scheduled_time"),
+        {"schema": schema},
     )
 
     # Meeting-specific fields
@@ -36,18 +41,20 @@ class ORMMeetingResponse(ObjectTable):
     User's responses to meetings.
     """
 
-    __tablename__ = 'meeting_responses'
+    __tablename__ = "meeting_responses"
     __table_args__ = (
-        PrimaryKeyConstraint('user_id', 'meeting_id'),
-        {'schema': schema},
+        PrimaryKeyConstraint("user_id", "meeting_id"),
+        {"schema": schema},
     )
     id = None  # no separate ids
 
     # Two foreign keys, one for users and one for meetings
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.users.id', ondelete="CASCADE"),
-                                         primary_key=True)
-    meeting_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.meetings.id', ondelete="CASCADE"),
-                                            primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey(f"{schema}.users.id", ondelete="CASCADE"), primary_key=True
+    )
+    meeting_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey(f"{schema}.meetings.id", ondelete="CASCADE"), primary_key=True
+    )
 
     role: Mapped[EMeetingUserRole] = mapped_column(MeetingUserRolePGEnum, nullable=False)
     response: Mapped[EMeetingResponse | None] = mapped_column(MeetingResponsePGEnum)

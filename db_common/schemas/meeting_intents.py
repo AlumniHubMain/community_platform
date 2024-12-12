@@ -11,6 +11,7 @@ class MeetingIntent(BaseModel):
     """
     Модель таблицы (шаблон) Meeting intents.
     """
+
     user_id: int
     meeting_type: EMeetingIntentMeetingType
 
@@ -21,7 +22,6 @@ class MeetingIntent(BaseModel):
     looking_for_type: EMeetingIntentLookingForType
 
     text_intent: str | None
-
 
 
 class SMeetingIntentRead(MeetingIntent):

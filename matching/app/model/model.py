@@ -2,8 +2,11 @@
 
 import pandas as pd
 
+from db_common.schemas import convert_enum_value
+
 from .model_settings import ModelSettings, FilterType, DiversificationType, ModelType
 from .predictors import CatBoostPredictor, HeuristicPredictor
+from db_common.schemas import UserProfile, LinkedInProfile, MeetingIntent
 
 
 class Model:
@@ -17,31 +20,53 @@ class Model:
     def load_model(self, model_path: str):
         """Load model predictor based on settings"""
         if self.model_settings.model_type == ModelType.HEURISTIC:
-            self.predictor = HeuristicPredictor(self.model_settings)
+            self.predictor = HeuristicPredictor(self.model_settings.rules)
         elif self.model_settings.model_type == ModelType.CATBOOST:
             self.predictor = CatBoostPredictor()
             self.predictor.load_model(model_path)
 
-    def predict(self, features: pd.DataFrame, user_id: int) -> pd.DataFrame:
+    def create_features(self, features_df: pd.DataFrame, user_id: int) -> pd.DataFrame:
+        """Create features for the model"""
+        return features_df
+
+    def predict(
+        self,
+        all_users: list[UserProfile],
+        all_linkedin: list[LinkedInProfile],
+        intent: MeetingIntent,
+        user_id: int,
+        n: int,
+    ) -> list[int]:
         """Make predictions and apply filters and diversification"""
         if self.predictor is None:
             raise ValueError("Model not loaded")
-
-        created_features = self.create_features(features, user_id)
-
+        users_data = [user.model_dump() for user in all_users]
+        linkedin_data = [profile.model_dump() for profile in all_linkedin]
+        intent_data = intent.model_dump()
+        for i, user in enumerate(users_data):
+            for field, value in user.items():
+                users_data[i][field] = convert_enum_value(value)
+        for i, profile in enumerate(linkedin_data):
+            for field, value in profile.items():
+                linkedin_data[i][field] = convert_enum_value(value)
+        for field, value in intent_data.items():
+            intent_data[field] = convert_enum_value(value)
+        users_df = pd.DataFrame(users_data).rename(columns={"id": "user_id"})
+        linkedin_df = pd.DataFrame(linkedin_data)
+        intents_df = pd.DataFrame([intent_data])
+        features_df = users_df.merge(linkedin_df, on="user_id", how="left")
+        features_df = features_df.merge(intents_df, on="user_id", how="left")
+        created_features = self.create_features(features_df, user_id)
         predictions = self.predictor.predict(created_features)
-        results_df = features.copy()
+        results_df = features_df.copy()
         results_df["score"] = predictions
-
         for filter_setting in self.model_settings.filters:
             results_df = self._apply_filter(results_df, filter_setting)
-
         for div_setting in self.model_settings.diversifications:
             results_df = self._apply_diversification(results_df, div_setting)
-
         results_df = self._apply_exclusions(results_df)
-
-        return results_df.sort_values("score", ascending=False)
+        results_df = results_df.sort_values("score", ascending=False)
+        return results_df.user_id.tolist()[:n]
 
     def _apply_filter(self, df: pd.DataFrame, filter_setting, row_callable=None) -> pd.DataFrame:
         """Apply filter based on settings"""
@@ -52,8 +77,8 @@ class Model:
             df.loc[~mask, "score"] *= 0.5
             return df
         elif filter_setting.filter_type == FilterType.CUSTOM:
-            df['filter_result'] = df.apply(row_callable, axis=1)
-            return df[df['filter_result']]
+            df["filter_result"] = df.apply(row_callable, axis=1)
+            return df[df["filter_result"]]
         return df
 
     def _apply_diversification(self, df: pd.DataFrame, div_setting) -> pd.DataFrame:

@@ -1,15 +1,21 @@
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
-from db_common.models import ORMUserProfile, ORMLinkedInProfile, ORMMeetingIntent
+from db_common.models import ORMUserProfile, ORMLinkedInProfile, ORMMeetingIntent, ORMMeetingResponse
 from db_common.schemas import SUserProfileRead, SLinkedInProfileRead, SMeetingIntentRead
 
 
 class DataLoader:
     @classmethod
     async def get_user_profile(cls, session: AsyncSession, user_id: int) -> SUserProfileRead:
-        result = await session.execute(select(ORMUserProfile).where(ORMUserProfile.id == user_id))
+        stmt = (
+            select(ORMUserProfile)
+            .where(ORMUserProfile.id == user_id)
+            .options(selectinload(ORMUserProfile.meeting_responses).selectinload(ORMMeetingResponse.meeting))
+        )
+        result = await session.execute(stmt)
         profile = result.scalar_one_or_none()
         if profile is None:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -17,7 +23,10 @@ class DataLoader:
 
     @classmethod
     async def get_all_user_profiles(cls, session: AsyncSession) -> list[SUserProfileRead]:
-        result = await session.execute(select(ORMUserProfile))
+        stmt = select(ORMUserProfile).options(
+            selectinload(ORMUserProfile.meeting_responses).selectinload(ORMMeetingResponse.meeting)
+        )
+        result = await session.execute(stmt)
         profiles = result.scalars().all()
         return [SUserProfileRead.model_validate(p) for p in profiles]
 

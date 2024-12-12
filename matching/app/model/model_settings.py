@@ -47,9 +47,46 @@ class ModelType(Enum):
 class ModelSettings(BaseModel):
     """Model settings"""
 
-    model_type: ModelType
-    model_path: str | None = None
+    settings_name: str | None = None
     filters: list[FilterSettings] = []
     diversifications: list[DiversificationSettings] = []
     exclude_users: list[int] = []
     exclude_companies: list[str] = []
+
+
+class CatBoostModelSettings(ModelSettings):
+    """CatBoost model settings"""
+
+    model_type: ModelType = ModelType.CATBOOST
+    model_path: str
+
+
+class HeuristicModelSettings(ModelSettings):
+    """Heuristic model settings"""
+
+    model_type: ModelType = ModelType.HEURISTIC
+    rules: list[dict]
+
+
+model_settings_preset_catboost = CatBoostModelSettings(
+    model_path="gs://matching-model-bucket/model.m",
+    filters=[],
+    diversifications=[],
+    exclude_users=[],
+    exclude_companies=[],
+    settings_name="catboost",
+)
+
+model_settings_preset_heuristic = HeuristicModelSettings(
+    rules=[],
+    filters=[],
+    diversifications=[],
+    exclude_users=[],
+    exclude_companies=[],
+    settings_name="heuristic",
+)
+
+model_settings_presets = {
+    model_settings_preset_catboost.settings_name: model_settings_preset_catboost,
+    model_settings_preset_heuristic.settings_name: model_settings_preset_heuristic,
+}

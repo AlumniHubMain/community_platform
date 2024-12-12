@@ -1,30 +1,39 @@
 dev {
-  project_id: "astute-impulse-403618"
+  project_id: "communityp-440714"
   log_level: "INFO"
   result_topic_id: "notificator-topic"
-  postgres_host: "10.100.128.3"
-  postgres_port: 5432
-  postgres_base: "communityp"
+  db_host: "db"
+  db_port: 5432
+  db_name: "communityp"
+  db_user: "postgres"
+  db_pass: "postgres"
+  db_schema: "alh_community_platform"
   google_cloud_bucket: "matching_models"
   model_path: "catboost.m"
 }
 prod {
-  project_id: "astute-impulse-403618"
+  project_id: "communityp-440714"
   log_level: "INFO"
   result_topic_id: "notificator-topic"
-  postgres_host: "10.100.128.3"
-  postgres_port: 5432
-  postgres_base: "communityp"
+  db_host: "10.100.128.3"
+  db_port: 5432
+  db_name: "communityp"
+  db_user: "postgres"
+  db_pass: "postgres"
+  db_schema: "alh_community_platform"
   google_cloud_bucket: "matching_models"
   model_path: "catboost.m"
 }
 staging {
-  project_id: "astute-impulse-403618"
+  project_id: "communityp-440714"
   log_level: "INFO"
   result_topic_id: "notificator-topic"
-  postgres_host: "10.100.128.3"
-  postgres_port: 5432
-  postgres_base: "communityp"
+  db_host: "10.100.128.3"
+  db_port: 5432
+  db_name: "communityp"
+  db_user: "postgres"
+  db_pass: "postgres"
+  db_schema: "alh_community_platform"
   google_cloud_bucket: "matching_models"
   model_path: "catboost.m"
 }

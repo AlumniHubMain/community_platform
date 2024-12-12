@@ -1,0 +1,8 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.2.2
+    hooks:
+      - id: ruff-format
+        files: ^(matching/|db_common/|tests/)
+        types_or: [python, pyi, jupyter]
+        args: [--config=ruff.toml]

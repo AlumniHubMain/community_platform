@@ -1,8 +1,8 @@
-"""creation base
+"""add linkedin and intents
 
-Revision ID: 562766e4eead
+Revision ID: 834dc3f3b784
 Revises: 
-Create Date: 2024-11-25 14:30:19.311600
+Create Date: 2024-12-12 12:51:27.787503
 
 """
 
@@ -10,11 +10,10 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from backend.db_proxy.common_db.db_abstract import schema
-from sqlalchemy.dialects import postgresql
+
 
 # revision identifiers, used by Alembic.
-revision: str = "562766e4eead"
+revision: str = "834dc3f3b784"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -31,8 +30,13 @@ def upgrade() -> None:
         ),
         sa.Column(
             "status",
-            postgresql.ENUM(
-                "new", "confirmed", "archived", name="meeting_status"
+            sa.Enum(
+                "new",
+                "confirmed",
+                "archived",
+                name="meeting_status",
+                schema="alh_community_platform",
+                inherit_schema=True,
             ),
             nullable=False,
         ),
@@ -64,82 +68,6 @@ def upgrade() -> None:
         "meetings",
         ["scheduled_time"],
         unique=False,
-        schema="alh_community_platform",
-    )
-    op.create_table(
-        "tg_bot_logging_events",
-        sa.Column("telegram_name", sa.String(), nullable=True),
-        sa.Column("telegram_id", sa.BigInteger(), nullable=False),
-        sa.Column(
-            "event_type",
-            sa.Enum(
-                "message",
-                "callback",
-                name="tg_event_type",
-                schema="alh_community_platform",
-                inherit_schema=True,
-            ),
-            nullable=False,
-        ),
-        sa.Column("event_name", sa.String(), nullable=False),
-        sa.Column("bot_state", sa.String(), nullable=True),
-        sa.Column("content", sa.String(), nullable=True),
-        sa.Column("chat_title", sa.String(), nullable=True),
-        sa.Column("chat_id", sa.BigInteger(), nullable=False),
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column(
-            "created_at",
-            sa.DateTime(),
-            server_default=sa.text("TIMEZONE('utc', now())"),
-            nullable=False,
-        ),
-        sa.Column(
-            "updated_at",
-            sa.DateTime(),
-            server_default=sa.text("TIMEZONE('utc', now())"),
-            nullable=False,
-        ),
-        sa.PrimaryKeyConstraint("id"),
-        schema="alh_community_platform",
-    )
-    op.create_table(
-        "tg_bot_staff",
-        sa.Column("telegram_name", sa.String(), nullable=False),
-        sa.Column("telegram_id", sa.BigInteger(), nullable=True),
-        sa.Column("name", sa.String(), nullable=True),
-        sa.Column("surname", sa.String(), nullable=True),
-        sa.Column("bio", sa.String(), nullable=True),
-        sa.Column("email", sa.String(), nullable=True),
-        sa.Column("phone_number", sa.String(), nullable=True),
-        sa.Column(
-            "role",
-            sa.Enum(
-                "admin",
-                "manager",
-                "community_manager",
-                "activists_manager",
-                "recruitment_manager",
-                "mentoring_manager",
-                name="tg_staff_role",
-                schema="alh_community_platform",
-                inherit_schema=True,
-            ),
-            nullable=False,
-        ),
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column(
-            "created_at",
-            sa.DateTime(),
-            server_default=sa.text("TIMEZONE('utc', now())"),
-            nullable=False,
-        ),
-        sa.Column(
-            "updated_at",
-            sa.DateTime(),
-            server_default=sa.text("TIMEZONE('utc', now())"),
-            nullable=False,
-        ),
-        sa.PrimaryKeyConstraint("id"),
         schema="alh_community_platform",
     )
     op.create_table(
@@ -441,18 +369,160 @@ def upgrade() -> None:
         schema="alh_community_platform",
     )
     op.create_table(
+        "linkedin_profiles",
+        sa.Column("user_id", sa.BIGINT(), nullable=False),
+        sa.Column("profile_url", sa.String(), nullable=False),
+        sa.Column("email", sa.String(length=100), nullable=True),
+        sa.Column("headline", sa.String(length=100), nullable=True),
+        sa.Column("location_name", sa.String(length=100), nullable=True),
+        sa.Column("industry", sa.String(length=100), nullable=True),
+        sa.Column("summary", sa.String(length=1000), nullable=True),
+        sa.Column("experience", sa.ARRAY(sa.JSON()), nullable=True),
+        sa.Column("education", sa.ARRAY(sa.JSON()), nullable=True),
+        sa.Column("languages", sa.ARRAY(sa.JSON()), nullable=True),
+        sa.Column("skills", sa.JSON(), nullable=True),
+        sa.Column("connections", sa.JSON(), nullable=True),
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.text("TIMEZONE('utc', now())"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.text("TIMEZONE('utc', now())"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["user_id"],
+            ["alh_community_platform.users.id"],
+        ),
+        sa.PrimaryKeyConstraint("user_id", "id"),
+        schema="alh_community_platform",
+    )
+    op.create_table(
+        "meeting_intents",
+        sa.Column("user_id", sa.BIGINT(), nullable=False),
+        sa.Column(
+            "meeting_type",
+            sa.Enum(
+                "online",
+                "offline",
+                "both",
+                name="meeting_intent_meeting_type",
+                schema="alh_community_platform",
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "query_type",
+            sa.Enum(
+                "interests_chatting",
+                "offline_meeting",
+                "news_discussion",
+                "startup_discussion",
+                "feedback",
+                "cooperative_learning",
+                "practical_discussion",
+                "tools_discussion",
+                "exam_preparation",
+                "help_request",
+                "looking_for",
+                "mentoring",
+                "other",
+                name="meeting_intent_query_type",
+                schema="alh_community_platform",
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "help_request_type",
+            sa.Enum(
+                "management",
+                "product",
+                "development",
+                "design",
+                "marketing",
+                "sales",
+                "finance",
+                "entrepreneurship",
+                "hr",
+                "business_development",
+                "law",
+                "other",
+                name="meeting_intent_help_request_type",
+                schema="alh_community_platform",
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "looking_for_type",
+            sa.Enum(
+                "work",
+                "part_time",
+                "recommendation",
+                "pet_project",
+                "mock_interview_partner",
+                "mentor",
+                "mentee",
+                "cofounder",
+                "contributor",
+                name="meeting_intent_looking_for_type",
+                schema="alh_community_platform",
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column("text_intent", sa.String(length=500), nullable=True),
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.text("TIMEZONE('utc', now())"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.text("TIMEZONE('utc', now())"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["user_id"],
+            ["alh_community_platform.users.id"],
+        ),
+        sa.PrimaryKeyConstraint("id"),
+        schema="alh_community_platform",
+    )
+    op.create_table(
         "meeting_responses",
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("meeting_id", sa.Integer(), nullable=False),
         sa.Column(
             "role",
-            postgresql.ENUM("organizer", "attendee", name="meeting_user_role"),
+            sa.Enum(
+                "organizer",
+                "attendee",
+                name="meeting_user_role",
+                schema="alh_community_platform",
+                inherit_schema=True,
+            ),
             nullable=False,
         ),
         sa.Column(
             "response",
-            postgresql.ENUM(
-                "confirmed", "tentative", "declined", name="meeting_response"
+            sa.Enum(
+                "confirmed",
+                "tentative",
+                "declined",
+                name="meeting_response",
+                schema="alh_community_platform",
+                inherit_schema=True,
             ),
             nullable=True,
         ),
@@ -487,14 +557,14 @@ def upgrade() -> None:
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table("meeting_responses", schema="alh_community_platform")
+    op.drop_table("meeting_intents", schema="alh_community_platform")
+    op.drop_table("linkedin_profiles", schema="alh_community_platform")
     op.drop_index(
         "ix_users_telegram_id",
         table_name="users",
         schema="alh_community_platform",
     )
     op.drop_table("users", schema="alh_community_platform")
-    op.drop_table("tg_bot_staff", schema="alh_community_platform")
-    op.drop_table("tg_bot_logging_events", schema="alh_community_platform")
     op.drop_index(
         "ix_meeting_time",
         table_name="meetings",
@@ -506,19 +576,4 @@ def downgrade() -> None:
         schema="alh_community_platform",
     )
     op.drop_table("meetings", schema="alh_community_platform")
-
-    op.execute(f"DROP TYPE {schema}.tg_event_type")
-    op.execute(f"DROP TYPE {schema}.tg_staff_role")
-    op.execute(f"DROP TYPE {schema}.meeting_response")
-    op.execute(f"DROP TYPE {schema}.meeting_status")
-    op.execute(f"DROP TYPE {schema}.meeting_user_role")
-    op.execute(f"DROP TYPE {schema}.user_interests_enum")
-    op.execute(f"DROP TYPE {schema}.user_expertise_enum")
-    op.execute(f"DROP TYPE {schema}.user_specialisation_enum")
-    op.execute(f"DROP TYPE {schema}.user_grade_enum")
-    op.execute(f"DROP TYPE {schema}.user_industry_enum")
-    op.execute(f"DROP TYPE {schema}.user_skills_enum")
-    op.execute(f"DROP TYPE {schema}.user_company_services_enum")
-    op.execute(f"DROP TYPE {schema}.user_location_enum")
-    op.execute(f"DROP TYPE {schema}.user_requests_to_community_enum")
     # ### end Alembic commands ###

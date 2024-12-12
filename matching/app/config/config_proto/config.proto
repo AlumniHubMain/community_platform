@@ -7,10 +7,13 @@ message ServiceConfig {
   string log_level = 2;
   string google_cloud_bucket = 3;
   string result_topic_id = 4;
-  string postgres_host = 5;
-  int32 postgres_port = 6;
-  string postgres_base = 7;
-  string model_path = 8;
+  string db_host = 5;
+  int32 db_port = 6;
+  string db_name = 7;
+  string db_user = 8;
+  string db_pass = 9;
+  string db_schema = 10;
+  string model_path = 11;
 }
 
 message Config {

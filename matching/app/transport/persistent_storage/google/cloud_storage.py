@@ -7,10 +7,10 @@ import aiofiles
 from google.cloud import storage
 
 from app.config import config
-from app.persistent_storage.persistent_adapter import PersistentStorage
+from app.transport.persistent_storage.persistent_adapter import PersistentAdapter
 
 
-class CloudStorageAdapter(PersistentStorage):
+class CloudStorageAdapter(PersistentAdapter):
     """Google Cloud Storage adapter"""
 
     def __init__(self):

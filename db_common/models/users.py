@@ -2,19 +2,34 @@ from datetime import datetime
 from sqlalchemy import String, ARRAY, BIGINT, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from db_common.enums.users import (
-    ExpertiseAreaPGEnum, SpecialisationPGEnum, GradePGEnum, CompanyServicesPGEnum,
-    IndustryPGEnum, SkillsPGEnum, LocationPGEnum, RequestsToCommunityPGEnum, InterestsPGEnum,
-    EInterests, EExpertiseArea, ESpecialisation, EGrade, EIndustry, ESkills, ELocation, ERequestsToCommunity,
+    ExpertiseAreaPGEnum,
+    SpecialisationPGEnum,
+    GradePGEnum,
+    CompanyServicesPGEnum,
+    IndustryPGEnum,
+    SkillsPGEnum,
+    LocationPGEnum,
+    RequestsToCommunityPGEnum,
+    InterestsPGEnum,
+    EInterests,
+    EExpertiseArea,
+    ESpecialisation,
+    EGrade,
+    EIndustry,
+    ESkills,
+    ELocation,
+    ERequestsToCommunity,
     ECompanyServices,
 )
 from .base import ObjectTable, schema
+
 
 class ORMUserProfile(ObjectTable):
     """
     Модель таблицы (шаблон) пользователей.
     """
 
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     name: Mapped[str] = mapped_column(String, nullable=False)
     surname: Mapped[str] = mapped_column(String, nullable=False)
@@ -51,6 +66,4 @@ class ORMUserProfile(ObjectTable):
         "ORMMeetingResponse", back_populates="user", cascade="all, delete-orphan"
     )
 
-    __table_args__ = (Index('ix_users_telegram_id', 'telegram_id'),
-                      {'schema': f"{schema}"}
-                      )
+    __table_args__ = (Index("ix_users_telegram_id", "telegram_id"), {"schema": f"{schema}"})

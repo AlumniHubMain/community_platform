@@ -1,6 +1,6 @@
 """Persistent storage client"""
 
-from .google.cloud_storage import CloudStorageAdapter
+from app.transport.persistent_storage.google.cloud_storage import CloudStorageAdapter
 
 
 class PSClient:

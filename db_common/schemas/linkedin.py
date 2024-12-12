@@ -1,5 +1,6 @@
 from .base import TimestampedSchema
 
+
 class LinkedInProfile(TimestampedSchema):
     user_id: int
     profile_url: str
@@ -13,6 +14,7 @@ class LinkedInProfile(TimestampedSchema):
     languages: list[dict] | None = None
     skills: dict | None = None
     connections: dict | None = None
+
 
 class SLinkedInProfileRead(LinkedInProfile):
     class Config:

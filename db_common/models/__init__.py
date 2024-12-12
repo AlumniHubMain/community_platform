@@ -5,11 +5,11 @@ from .meetings import ORMMeeting, ORMMeetingResponse
 from .meeting_intents import ORMMeetingIntent
 
 __all__ = [
-    'Base',
-    'ObjectTable',
-    'ORMUserProfile',
-    'ORMLinkedInProfile',
-    'ORMMeeting',
-    'ORMMeetingResponse',
-    'ORMMeetingIntent',
-] 
+    "Base",
+    "ObjectTable",
+    "ORMUserProfile",
+    "ORMLinkedInProfile",
+    "ORMMeeting",
+    "ORMMeetingResponse",
+    "ORMMeetingIntent",
+]
