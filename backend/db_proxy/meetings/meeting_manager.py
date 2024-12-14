@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile, EMeetingResponseStatus, EMeetingsStatus, EMeetingUserRole
+from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile, EMeetingResponseStatus, EMeetingStatus, EMeetingUserRole
 from .schemas import MeetingRequestRead, MeetingRequestCreate, MeetingFilter, MeetingList, MeetingRequestUpdate
 
 
@@ -37,7 +37,7 @@ class MeetingManager:
             user=organizer,
             role=EMeetingUserRole.organizer,
             response=EMeetingResponseStatus.confirmed,
-            meeting=ORMMeeting(status=EMeetingsStatus.new, description=request.description, location=request.location,
+            meeting=ORMMeeting(status=EMeetingStatus.new, description=request.description, location=request.location,
                                scheduled_time=request.scheduled_time, )
         )
         session.add(user_meeting)
@@ -73,7 +73,7 @@ class MeetingManager:
 
     @classmethod
     async def add_user_to_meeting(cls, session: AsyncSession, user_id: int, meeting_id: int,
-                                  role: str) -> MeetingRequestRead:
+                                  role: EMeetingUserRole) -> MeetingRequestRead:
         # Check if the meeting exists
         result = await session.execute(
             select(ORMMeeting).where(ORMMeeting.id == meeting_id).options(selectinload(ORMMeeting.user_responses)))

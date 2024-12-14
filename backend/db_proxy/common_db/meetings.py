@@ -8,7 +8,7 @@ from sqlalchemy.orm import mapped_column, Mapped, relationship
 from .db_abstract import ObjectTable, schema
 
 
-class EMeetingsStatus(Enum):
+class EMeetingStatus(Enum):
     new = 'new'
     archived = 'archived'
     confirmed = 'confirmed'
@@ -41,9 +41,9 @@ class ORMMeeting(ObjectTable):
     description: Mapped[str | None] = mapped_column(Text)
     location: Mapped[str | None] = mapped_column(String(200))
     scheduled_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    status: Mapped[str] = mapped_column(ENUM(EMeetingsStatus, name='meeting_status'), 
+    status: Mapped[str] = mapped_column(ENUM(EMeetingStatus, name='meeting_status'), 
                                         nullable=False,
-                                        default=EMeetingsStatus.new)
+                                        default=EMeetingStatus.new)
 
     # Relationship to user_meetings table via ORMUserMeeting
     user_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
