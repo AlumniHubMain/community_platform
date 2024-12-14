@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile
+from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile, EMeetingResponseStatus, EMeetingsStatus, EMeetingUserRole
 from .schemas import MeetingRequestRead, MeetingRequestCreate, MeetingFilter, MeetingList, MeetingRequestUpdate
 
 
@@ -35,9 +35,9 @@ class MeetingManager:
 
         user_meeting = ORMMeetingResponse(
             user=organizer,
-            role="organizer",
-            response="confirmed",
-            meeting=ORMMeeting(status="new", description=request.description, location=request.location,
+            role=EMeetingUserRole.organizer,
+            response=EMeetingResponseStatus.confirmed,
+            meeting=ORMMeeting(status=EMeetingsStatus.new, description=request.description, location=request.location,
                                scheduled_time=request.scheduled_time, )
         )
         session.add(user_meeting)
@@ -59,7 +59,7 @@ class MeetingManager:
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
         organizer_response = [r for r in meeting.user_responses if
-                              r.role == "organizer" and r.user_id == user_id]
+                              r.role == EMeetingUserRole.organizer and r.user_id == user_id]
         if not organizer_response:
             raise HTTPException(status_code=403, detail="Wrong organizer")
 
@@ -86,7 +86,7 @@ class MeetingManager:
                 return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
         # Add the user to the meeting
-        meeting.user_responses.append(ORMMeetingResponse(user_id=user_id, meeting=meeting, role=role, response="tentative"))
+        meeting.user_responses.append(ORMMeetingResponse(user_id=user_id, meeting=meeting, role=role, response=EMeetingResponseStatus.tentative))
 
         await session.commit()
         # ToDo: send a notification to the added user
@@ -94,10 +94,7 @@ class MeetingManager:
 
     @classmethod
     async def update_user_meeting_response(cls, session: AsyncSession, meeting_id: int, user_id: int,
-                                           response: str) -> MeetingRequestRead:
-        # Validate the response status
-        if response not in ['confirmed', 'tentative', 'declined']:
-            raise HTTPException(status_code=400, detail="Invalid response status")
+                                           response: EMeetingResponseStatus) -> MeetingRequestRead:
 
         # Fetch the meeting to ensure it exists
         result = await session.execute(select(ORMMeeting).where(ORMMeeting.id == meeting_id))

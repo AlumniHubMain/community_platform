@@ -1,10 +1,28 @@
 from datetime import datetime
+from enum import Enum
 
 from sqlalchemy import String, Index, Integer, Text, DateTime, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from .db_abstract import ObjectTable, schema
+
+
+class EMeetingsStatus(Enum):
+    new = 'new'
+    archived = 'archived'
+    confirmed = 'confirmed'
+
+
+class EMeetingResponseStatus(Enum):
+    confirmed = 'confirmed' 
+    tentative = 'tentative' 
+    declined = 'declined'
+
+
+class EMeetingUserRole(Enum):
+    organizer = 'organizer'
+    attendee = 'attendee'
 
 
 class ORMMeeting(ObjectTable):
@@ -23,8 +41,9 @@ class ORMMeeting(ObjectTable):
     description: Mapped[str | None] = mapped_column(Text)
     location: Mapped[str | None] = mapped_column(String(200))
     scheduled_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    status: Mapped[str] = mapped_column(ENUM('new', 'confirmed', 'archived', name='meeting_status'), nullable=False,
-                                        default="new")
+    status: Mapped[str] = mapped_column(ENUM(EMeetingsStatus, name='meeting_status'), 
+                                        nullable=False,
+                                        default=EMeetingsStatus.new)
 
     # Relationship to user_meetings table via ORMUserMeeting
     user_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
@@ -50,8 +69,8 @@ class ORMMeetingResponse(ObjectTable):
     meeting_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.meetings.id', ondelete="CASCADE"),
                                             primary_key=True)
 
-    role: Mapped[str] = mapped_column(ENUM('organizer', 'attendee', name='meeting_user_role'), nullable=False)
-    response: Mapped[str | None] = mapped_column(ENUM('confirmed', 'tentative', 'declined', name='meeting_response'))
+    role: Mapped[str] = mapped_column(ENUM(EMeetingUserRole, name='meeting_user_role'), nullable=False)
+    response: Mapped[str | None] = mapped_column(ENUM(EMeetingResponseStatus, name='meeting_response'))
 
     # Relationships for back-population
     user: Mapped["ORMUserProfile"] = relationship("ORMUserProfile", back_populates="meeting_responses")
