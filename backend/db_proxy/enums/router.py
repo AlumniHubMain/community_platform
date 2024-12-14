@@ -12,7 +12,9 @@ EIndustry,
 ESkills,
 ECompanyServices,
 ELocation,
-ERequestsToCommunity
+ERequestsToCommunity,
+EWithWhom,
+EVisibilitySettings
 )
 
 
@@ -28,7 +30,9 @@ path_to_type = {
     'ESkills': ESkills,
     'ECompanyServices': ECompanyServices,
     'ELocation': ELocation,
-    'ERequestsToCommunity': ERequestsToCommunity
+    'ERequestsToCommunity': ERequestsToCommunity,
+    'EWithWhom': EWithWhom,
+    'EVisibilitySettings': EVisibilitySettings,
 }
 
 @router.get("/{type}", response_model=EnumValues, summary="Returns possible values of enum class")
