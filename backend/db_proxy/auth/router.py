@@ -122,13 +122,13 @@ if settings.environment == 'development':
     async def dev_auth(
         response: Response,
     ):
-        user_data = get_user_by_telegram_id('12345')
+        user_data = {'user_id': 1}
         access_token = create_access_token(user_data)
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,
+            # secure=True,
             samesite="lax",
         )
         return {
