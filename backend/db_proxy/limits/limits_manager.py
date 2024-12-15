@@ -1,3 +1,5 @@
+import os
+
 from limits.config import LimitsConfig, EDefaultUserLimits
 from users.schemas import SUserProfileRead
 from users.user_profile_manager import UserProfileManager
@@ -5,10 +7,10 @@ from meetings.schemas import MeetingsUserLimits
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
+from common_db.config import settings
 
 
-config_path = '/configs/limits_config.json'
-config = LimitsConfig(config_path=config_path)
+config = LimitsConfig(config_path=os.path.join(settings.configs_dir, 'limits_config.json'))
 
 
 class LimitsManager:
@@ -40,14 +42,3 @@ class LimitsManager:
         
         if user_limits.available_meeting_pendings == 0:
             raise HTTPException(status_code=400, detail="Exceeded the limit of pended meetings for user")
-
-        """cases
-        1. Create meeting
-        2. Add user to meeting
-        3. Update user meeting response
-        3.1 Declined -> Confirmed
-        3.2 Declined -> Pended
-        3.3 Pended -> Confirmed
-        4. Passed meeting
-        """
-    
