@@ -81,8 +81,7 @@ class UserProfileManager:
         confirmed_count: int = len([1 for response in responses 
                                       if response.response in (EMeetingResponseStatus.tentative, EMeetingResponseStatus.confirmed)
                                     ])
-        print([(response.user_id, response.response) for response in responses])
-        
+
         # Meetings with user response in (None, tentative, confirmed)
         pended_count: int = len([1 for response in responses if response.response is EMeetingResponseStatus.no_answer])
         pended_count += confirmed_count
