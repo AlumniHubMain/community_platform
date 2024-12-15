@@ -15,6 +15,7 @@ class EMeetingStatus(Enum):
 
 
 class EMeetingResponseStatus(Enum):
+    no_answer = 'no_answer'
     confirmed = 'confirmed' 
     tentative = 'tentative' 
     declined = 'declined'
@@ -70,7 +71,7 @@ class ORMMeetingResponse(ObjectTable):
                                             primary_key=True)
 
     role: Mapped[str] = mapped_column(ENUM(EMeetingUserRole, name='meeting_user_role'), nullable=False)
-    response: Mapped[str | None] = mapped_column(ENUM(EMeetingResponseStatus, name='meeting_response'))
+    response: Mapped[str] = mapped_column(ENUM(EMeetingResponseStatus, name='meeting_response'), nullable=False)
 
     # Relationships for back-population
     user: Mapped["ORMUserProfile"] = relationship("ORMUserProfile", back_populates="meeting_responses")

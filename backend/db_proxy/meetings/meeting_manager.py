@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile, EMeetingResponseStatus, EMeetingStatus, EMeetingUserRole
 from .schemas import MeetingRequestRead, MeetingRequestCreate, MeetingFilter, MeetingList, MeetingRequestUpdate
+from limits.limits_manager import LimitsManager
 
 
 class MeetingManager:
@@ -31,7 +32,15 @@ class MeetingManager:
 
         organizer: ORMUserProfile | None = await session.get(ORMUserProfile, request.organizer_id)
         if not organizer:
-            raise HTTPException(status_code=400, detail="Organiser not found")
+            raise HTTPException(status_code=404, detail="Organiser not found")
+
+        # Check user limits
+        user_limits = await LimitsManager.get_user_meetings_limits(session, request.organizer_id)
+        if user_limits.available_meeting_confirmations == 0:
+            raise HTTPException(status_code=400, detail="Exceeded the limit of confirmed meetings for user")
+        
+        if user_limits.available_meeting_pendings == 0:
+            raise HTTPException(status_code=400, detail="Exceeded the limit of pended meetings for user")
 
         user_meeting = ORMMeetingResponse(
             user=organizer,
@@ -41,6 +50,7 @@ class MeetingManager:
                                scheduled_time=request.scheduled_time, )
         )
         session.add(user_meeting)
+        await LimitsManager.update_user_limits(session, request.organizer_id)
         await session.commit()
 
         # Return the meeting with the user information and responses
@@ -84,9 +94,20 @@ class MeetingManager:
         for response in meeting.user_responses:
             if response.user_id == user_id:
                 return MeetingRequestRead.model_validate(meeting, from_attributes=True)
-
+        
+        # Check user limits
+        user_limits = await LimitsManager.get_user_meetings_limits(session, user_id)
+        if user_limits.available_meeting_confirmations == 0:
+            raise HTTPException(status_code=400, detail="Exceeded the limit of confirmed meetings for user")
+        
+        if user_limits.available_meeting_pendings == 0:
+            raise HTTPException(status_code=400, detail="Exceeded the limit of pended meetings for user")
+        
         # Add the user to the meeting
-        meeting.user_responses.append(ORMMeetingResponse(user_id=user_id, meeting=meeting, role=role, response=EMeetingResponseStatus.tentative))
+        meeting.user_responses.append(ORMMeetingResponse(user_id=user_id, meeting=meeting, role=role, response=EMeetingResponseStatus.no_answer))
+
+        # Update the user's limits
+        await LimitsManager.update_user_limits(session, user_id)
 
         await session.commit()
         # ToDo: send a notification to the added user
@@ -110,8 +131,41 @@ class MeetingManager:
         if not user_meeting:
             raise HTTPException(status_code=404, detail="User is not part of this meeting")
 
+        # Check user limits
+        user_limits = await LimitsManager.get_user_meetings_limits(session, user_id)
+        declined_statuses = {EMeetingResponseStatus.declined}
+        pended_statuses = {None, EMeetingResponseStatus.confirmed, EMeetingResponseStatus.tentative}
+        confirmed_statuses = {EMeetingResponseStatus.confirmed, EMeetingResponseStatus.tentative}
+        
+        # Check limits if state change
+        #      From         To          Limits types
+        # 1. Declined -> Confirmed - pending confirmation
+        # 2. Declined -> Pended    - pending 
+        # 3. Pended -> Confirmed   -         confirmation
+        is_check_pendings, is_check_confirmations = False, False
+        
+        # Change state from declined status to confirmed/pended
+        if user_meeting.response in declined_statuses:
+            if response in confirmed_statuses:
+                is_check_confirmations, is_check_pendings = True, True
+            elif response in pended_statuses:
+                is_check_pendings = True
+        # Change state from pended status to confirmed
+        elif user_meeting.response in pended_statuses and response in confirmed_statuses:
+            is_check_confirmations = True
+        
+        if is_check_confirmations and user_limits.available_meeting_confirmations == 0:
+            raise HTTPException(status_code=400, detail="Exceeded the limit of confirmed meetings for user")
+        
+        if is_check_pendings and user_limits.available_meeting_pendings == 0:
+            raise HTTPException(status_code=400, detail="Exceeded the limit of pended meetings for user")
+        
         # Update the user's response status
         user_meeting.response = response
+        
+        # Update the user's limits
+        await LimitsManager.update_user_limits(session, user_id)
+
         await session.commit()
 
         # ToDo: send a notification to the organiser
