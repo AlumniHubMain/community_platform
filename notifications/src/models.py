@@ -1,6 +1,4 @@
-from enum import Enum as BaseEnum
-
-from sqlalchemy import Enum, BigInteger, ForeignKey, ARRAY
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import mapped_column, Mapped
 
 from backend.db_proxy.common_db.db_abstract import ObjectTable, schema
@@ -17,3 +15,5 @@ class ORMNotificationSettings(ObjectTable):
     is_tg_notify: Mapped[bool] = False
     is_email_notify: Mapped[bool] = False
     is_telephone_notify: Mapped[bool] = False
+
+    # TODO: наверное стоит эту модельку просто в user добавить (чтобы не плодить связи 1-1)

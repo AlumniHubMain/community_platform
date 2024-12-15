@@ -9,7 +9,6 @@ class Settings(BaseSettings):
     bot_token: SecretStr
     ps_credentials_path: str
     ps_project_id: str
-    ps_notification_tg_topic: str
     ps_notification_tg_sub_name: str
 
     model_config = SettingsConfigDict(env_file=os.environ.get('DOTENV', '.env'), env_file_encoding='utf8')
