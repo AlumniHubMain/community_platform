@@ -20,7 +20,7 @@ async def exit_button(callback: types.CallbackQuery, state: FSMContext):
 
 async def unknown_command_onboard(message: types.Message):
     """
-    Handler that is triggered by a body that is not a command.
+    Handler that is triggered by a text that is not a command.
     """
     # deleting the trigger message
     await message.delete()
@@ -35,7 +35,7 @@ async def unknown_command_onboard(message: types.Message):
 
 async def command_not_onboard(message: types.Message):
     """
-    Handler that works on the body if the person is not onboarded.
+    Handler that works on the text if the person is not onboarded.
     """
     # deleting the trigger message
     await message.delete()
@@ -54,4 +54,4 @@ router.message.middleware(LoggingCommands())
 router.callback_query.middleware(LoggingCallbacks())
 
 router.callback_query.register(exit_button, F.data.startswith("exit"))
-router.message.register(command_not_onboard, F.body, F.chat.type == "private")
+router.message.register(command_not_onboard, F.text, F.chat.type == "private")
