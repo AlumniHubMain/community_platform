@@ -1,7 +1,7 @@
 """add linkedin and intents
 
 Revision ID: 834dc3f3b784
-Revises: 
+Revises:
 Create Date: 2024-12-12 12:51:27.787503
 
 """
@@ -25,9 +25,7 @@ def upgrade() -> None:
         "meetings",
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("location", sa.String(length=200), nullable=True),
-        sa.Column(
-            "scheduled_time", sa.DateTime(timezone=True), nullable=False
-        ),
+        sa.Column("scheduled_time", sa.DateTime(timezone=True), nullable=False),
         sa.Column(
             "status",
             sa.Enum(

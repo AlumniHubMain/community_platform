@@ -49,7 +49,6 @@ def setup_database():
 
     # Create schema if it doesn't exist
     db = DatabaseManager(settings)
-    print(db.settings.database_url_asyncpg.get_secret_value())
     asyncio.run(create_schema_if_not_exists(db))
 
     # Run migrations

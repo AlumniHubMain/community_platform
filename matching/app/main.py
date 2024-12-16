@@ -2,11 +2,10 @@
 
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import config
 
-print(os.environ)
 from db_common.config import DatabaseSettings
 from db_common.db import DatabaseManager
 from app.data_loader import DataLoader
@@ -69,9 +68,14 @@ async def get_matches(
         n,
     )
     async with db.session() as session:
-        all_users = await DataLoader.get_all_user_profiles(session)
-        all_linkedin = await DataLoader.get_all_linkedin_profiles(session)
-        intent = await DataLoader.get_meeting_intent(session, meeting_intent_id)
+        try:
+            all_users = await DataLoader.get_all_user_profiles(session)
+            all_linkedin = await DataLoader.get_all_linkedin_profiles(session)
+            intent = await DataLoader.get_meeting_intent(session, meeting_intent_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        if model_settings_preset not in model_settings_presets:
+            raise HTTPException(status_code=500, detail="Invalid model settings preset")
         model_settings = model_settings_presets[model_settings_preset]
         model = None
         if model_settings.model_type == ModelType.CATBOOST:

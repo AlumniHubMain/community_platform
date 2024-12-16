@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from db_common.enums.meeting_intents import (
     EMeetingIntentMeetingType,
     EMeetingIntentQueryType,
@@ -27,5 +27,4 @@ class MeetingIntent(BaseModel):
 class SMeetingIntentRead(MeetingIntent):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

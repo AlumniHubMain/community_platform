@@ -1,4 +1,5 @@
 from datetime import datetime
+from pydantic import ConfigDict
 from db_common.enums.users import (
     EInterests,
     EExpertiseArea,
@@ -44,5 +45,4 @@ class SUserProfileUpdate(UserProfile):
 
 
 class SUserProfileRead(SUserProfileUpdate):
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -49,7 +49,7 @@ class DataLoader:
         result = await session.execute(select(ORMMeetingIntent).where(ORMMeetingIntent.id == intent_id))
         profile = result.scalar_one_or_none()
         if profile is None:
-            raise HTTPException(status_code=404, detail="Profile not found")
+            raise HTTPException(status_code=404, detail="Intent not found")
         return SMeetingIntentRead.model_validate(profile)
 
     @classmethod

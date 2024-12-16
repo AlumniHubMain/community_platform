@@ -1,4 +1,4 @@
-dev {
+development {
   project_id: "communityp-440714"
   log_level: "INFO"
   result_topic_id: "notificator-topic"

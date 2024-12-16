@@ -22,9 +22,9 @@ class ConfigLoader:
         self.logging_stream = logging_stream
         self.environment = os.environ.get("ENVIRONMENT")
         self.variables = {}
-        self._init_logger()
         self._load_config()
-        if self.environment != "dev":
+        self._init_logger()
+        if self.environment != "development":
             self._load_secrets_google()
         self._load_to_env()
 
@@ -41,28 +41,15 @@ class ConfigLoader:
         }
 
     def _init_logger(self):
-        if self.environment != "dev":
+        if self.environment != "development":
             if self.logging_stream == "google":
                 client = google_cloud_logging.Client()
-                client.setup_logging(log_level=self.active_config.log_level)
+                client.setup_logging(log_level=self.config_dict["log_level"])
             else:
-                logging.basicConfig(level=self.active_config.log_level)
+                logging.basicConfig(level=self.config_dict["log_level"])
         else:
             logging.basicConfig(level=logging.DEBUG)
         self.logger = logging.getLogger()
-
-    @property
-    def active_config(self):
-        """Возвращает активную конфигурацию в зависимости от текущей среды."""
-        match self.environment:
-            case "prod":
-                return self.proto_config.prod
-            case "staging":
-                return self.proto_config.staging
-            case "dev":
-                return self.proto_config.dev
-            case _:
-                return {}
 
     def _load_secrets_google(
         self,

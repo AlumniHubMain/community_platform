@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from db_common.enums.meetings import EMeetingStatus, EMeetingUserRole, EMeetingResponse
 from .base import BaseSchema, TimestampedSchema
 
@@ -40,8 +40,7 @@ class MeetingResponse(BaseModel):
     role: EMeetingUserRole  # 'organizer', 'attendee'
     response: EMeetingResponse | None = None  # 'confirmed', 'tentative', 'declined'
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MeetingRequestRead(BaseModel):
@@ -52,8 +51,7 @@ class MeetingRequestRead(BaseModel):
     status: EMeetingStatus  # 'new', 'confirmed', 'archived'
     user_responses: list[MeetingResponse]  # List of users with their statuses
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MeetingFilter(BaseModel):

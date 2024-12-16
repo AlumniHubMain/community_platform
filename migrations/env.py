@@ -20,17 +20,22 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Set SQLAlchemy URL from settings
-config.set_main_option('sqlalchemy.url', settings.database_url_asyncpg.get_secret_value().replace("postgresql+asyncpg", "postgresql+psycopg2"))
+config.set_main_option(
+    "sqlalchemy.url",
+    settings.database_url_asyncpg.get_secret_value().replace("postgresql+asyncpg", "postgresql+psycopg2"),
+)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
 target_metadata = Base.metadata
+
 
 def include_name(name, type_, parent_names):
     """Filter schemas to include"""
     if type_ == "schema":
         return name in [settings.db_schema]
     return True
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
@@ -42,11 +47,12 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         include_schemas=True,
         include_name=include_name,
-        version_table_schema=settings.db_schema
+        version_table_schema=settings.db_schema,
     )
 
     with context.begin_transaction():
         context.run_migrations()
+
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
@@ -62,11 +68,12 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             include_schemas=True,
             include_name=include_name,
-            version_table_schema=settings.db_schema
+            version_table_schema=settings.db_schema,
         )
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x63onfig.proto\x12\x10matching_service\"\xe8\x01\n\rServiceConfig\x12\x12\n\nproject_id\x18\x01 \x01(\t\x12\x11\n\tlog_level\x18\x02 \x01(\t\x12\x1b\n\x13google_cloud_bucket\x18\x03 \x01(\t\x12\x17\n\x0fresult_topic_id\x18\x04 \x01(\t\x12\x0f\n\x07\x64\x62_host\x18\x05 \x01(\t\x12\x0f\n\x07\x64\x62_port\x18\x06 \x01(\x05\x12\x0f\n\x07\x64\x62_name\x18\x07 \x01(\t\x12\x0f\n\x07\x64\x62_user\x18\x08 \x01(\t\x12\x0f\n\x07\x64\x62_pass\x18\t \x01(\t\x12\x11\n\tdb_schema\x18\n \x01(\t\x12\x12\n\nmodel_path\x18\x0b \x01(\t\"\x97\x01\n\x06\x43onfig\x12,\n\x03\x64\x65v\x18\x01 \x01(\x0b\x32\x1f.matching_service.ServiceConfig\x12-\n\x04prod\x18\x02 \x01(\x0b\x32\x1f.matching_service.ServiceConfig\x12\x30\n\x07staging\x18\x03 \x01(\x0b\x32\x1f.matching_service.ServiceConfigb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x63onfig.proto\x12\x10matching_service\"\xe8\x01\n\rServiceConfig\x12\x12\n\nproject_id\x18\x01 \x01(\t\x12\x11\n\tlog_level\x18\x02 \x01(\t\x12\x1b\n\x13google_cloud_bucket\x18\x03 \x01(\t\x12\x17\n\x0fresult_topic_id\x18\x04 \x01(\t\x12\x0f\n\x07\x64\x62_host\x18\x05 \x01(\t\x12\x0f\n\x07\x64\x62_port\x18\x06 \x01(\x05\x12\x0f\n\x07\x64\x62_name\x18\x07 \x01(\t\x12\x0f\n\x07\x64\x62_user\x18\x08 \x01(\t\x12\x0f\n\x07\x64\x62_pass\x18\t \x01(\t\x12\x11\n\tdb_schema\x18\n \x01(\t\x12\x12\n\nmodel_path\x18\x0b \x01(\t\"\x9f\x01\n\x06\x43onfig\x12\x34\n\x0b\x64\x65velopment\x18\x01 \x01(\x0b\x32\x1f.matching_service.ServiceConfig\x12-\n\x04prod\x18\x02 \x01(\x0b\x32\x1f.matching_service.ServiceConfig\x12\x30\n\x07staging\x18\x03 \x01(\x0b\x32\x1f.matching_service.ServiceConfigb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -24,5 +24,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['_SERVICECONFIG']._serialized_start=35
   _globals['_SERVICECONFIG']._serialized_end=267
   _globals['_CONFIG']._serialized_start=270
-  _globals['_CONFIG']._serialized_end=421
+  _globals['_CONFIG']._serialized_end=429
 # @@protoc_insertion_point(module_scope)

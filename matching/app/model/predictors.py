@@ -67,4 +67,6 @@ class HeuristicPredictor(BasePredictor):
 
             scores[mask] += weight
 
-        return scores / len(self.rules)  # Normalize to 0-1
+        if len(self.rules) == 0:
+            return scores
+        return scores / len(self.rules)

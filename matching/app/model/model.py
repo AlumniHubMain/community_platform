@@ -17,7 +17,7 @@ class Model:
         self.model_settings = model_settings
         self.predictor = None
 
-    def load_model(self, model_path: str):
+    def load_model(self, model_path: str | None = None):
         """Load model predictor based on settings"""
         if self.model_settings.model_type == ModelType.HEURISTIC:
             self.predictor = HeuristicPredictor(self.model_settings.rules)
@@ -54,8 +54,8 @@ class Model:
         users_df = pd.DataFrame(users_data).rename(columns={"id": "user_id"})
         linkedin_df = pd.DataFrame(linkedin_data)
         intents_df = pd.DataFrame([intent_data])
-        features_df = users_df.merge(linkedin_df, on="user_id", how="left")
-        features_df = features_df.merge(intents_df, on="user_id", how="left")
+        features_df = users_df.merge(linkedin_df, on="user_id", how="left", suffixes=("_user", "_linkedin"))
+        features_df = intents_df.merge(features_df, on="user_id", how="left", suffixes=("_intent", "_features"))
         created_features = self.create_features(features_df, user_id)
         predictions = self.predictor.predict(created_features)
         results_df = features_df.copy()

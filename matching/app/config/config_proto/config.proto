@@ -17,7 +17,7 @@ message ServiceConfig {
 }
 
 message Config {
-  ServiceConfig dev = 1;
+  ServiceConfig development = 1;
   ServiceConfig prod = 2;
   ServiceConfig staging = 3;
 }
