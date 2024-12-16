@@ -19,10 +19,10 @@ async def send(telegram_id: int,
     A function for sending a message that verifies that the bot isn't banned by the user.
 
     telegram_id - telegram_id of the message recipient (you can send it only to the user who started the bot);
-    text - message text;
+    body - message body;
     image - picture to the message (header), optional;
     reply_markup - keyboard, optional;
-    parse_mode - format text (Markdown, HTML, etc.).
+    parse_mode - format body (Markdown, HTML, etc.).
 
     Returns None if successful and the date the bot was blocked otherwise.
     """

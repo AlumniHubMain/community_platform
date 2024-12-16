@@ -8,7 +8,8 @@ class DTONotificationMessage(BaseModel):
     """Incoming notification scheme"""
     user_id: int
     type: str
-    text: str
+    head: str | None = None
+    body: str | None = None
     timestamp: datetime | None
 
 
@@ -17,6 +18,7 @@ class DTONotificationSettings(BaseModel):
     timezone: TimeZoneName | None = None
     is_tg_notify: bool | None = None
     is_email_notify: bool | None = None
+    is_push_notify: bool | None = None
     is_telephone_notify: bool | None = None
 
 

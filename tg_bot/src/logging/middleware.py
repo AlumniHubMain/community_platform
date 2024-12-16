@@ -10,7 +10,7 @@ from .schemas import DTOTgBotLoggingEvents
 
 class LoggingCommands(BaseMiddleware):
     """
-        Middleware, which logs the input of text commands in the bot.
+        Middleware, which logs the input of body commands in the bot.
         """
 
     async def __call__(
