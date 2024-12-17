@@ -9,3 +9,7 @@ __pycache__
 *.log
 backend/db_proxy/access_secret_file
 backend/db_proxy/token
+
+build/
+*.egg-info/
+*_pb2.py*

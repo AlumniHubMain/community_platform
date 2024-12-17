@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from alumnihub.community_platform.event_emitter import EventEmitter, MeetingInviteEvent, MeetingResponseEvent
+from alumnihub.community_platform.event_emitter import IEventEmitter, MeetingInviteEvent, MeetingResponseEvent
 from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile
 from common_db.config import settings
 from .schemas import MeetingRequestRead, MeetingRequestCreate, MeetingFilter, MeetingList, MeetingRequestUpdate
