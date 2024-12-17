@@ -1,4 +1,3 @@
-alumnihub_event_emitter
 asyncpg
 black
 certifi
@@ -13,3 +12,6 @@ pydantic_settings
 python-multipart
 SQLAlchemy
 uvicorn
+
+# private packages
+alumnihub_event_emitter

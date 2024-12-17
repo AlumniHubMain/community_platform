@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     access_secret_file: str
     google_pubsub_notification_topic: str
     notification_target: str = "pubsub"
-    notification_format: str = "protobuf_binary"
 
     @property
     def database_url_asyncpg(self) -> SecretStr:

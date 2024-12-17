@@ -4,9 +4,12 @@
 
 FROM python:3.13-slim
 
+ARG ACCESS_TOKEN
+ENV ACCESS_TOKEN=${ACCESS_TOKEN}
 COPY requirements.txt ./
 RUN pip install -r requirements.txt \
-    --extra-index-url = https://europe-west3-python.pkg.dev/communityp-440714/community-platform/simple/
+    --extra-index-url=https://oauth2accesstoken:${ACCESS_TOKEN}@europe-west3-python.pkg.dev/communityp-440714/community-platform/simple/
+
 COPY . .
 
 # WORKDIR "backend/db_proxy"
