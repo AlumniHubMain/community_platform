@@ -1,10 +1,8 @@
 import logging
 
 from google.cloud import pubsub_v1
-from google.protobuf import json_format
 
-from schemas import MeetingInviteEvent, MeetingResponseEvent
-from protobuf_event_converter import ProtobufEventConverter
+from . import events_pb2
 
 
 class PubsubEventEmitter:
@@ -14,16 +12,12 @@ class PubsubEventEmitter:
         if not self.topic:
             raise RuntimeError("A topic must be specified when using PubSub")
 
-        self.converter = ProtobufEventConverter()
         self.publisher = pubsub_v1.PublisherClient()
 
-    def emit(self, event: MeetingInviteEvent | MeetingResponseEvent):
-        self._send_to_pubsub(self.converter.convert_notification(event))
+    def emit(self, event: events_pb2.Event):
+        res = self.publisher.publish(self.topic, data=event.SerializeToString()).result()
+        logging.info("Publish result: %s", res)
 
     @staticmethod
     def _log_event(event_data: str):
         logging.info(event_data)
-
-    def _send_to_pubsub(self, event_data: bytes):
-        res = self.publisher.publish(self.topic, data=event_data).result()
-        logging.info("Publish result: %s", res)

@@ -16,6 +16,12 @@ class MeetingManager:
     Class for managing meetings and user participation in meetings.
     """
 
+    @property
+    @classmethod
+    def notification_sender(cls) -> IEventEmitter:
+        # if c
+        pass
+
     @classmethod
     async def get_meeting(cls, session: AsyncSession, meeting_id: int) -> MeetingRequestRead:
         meeting = await session.execute(
