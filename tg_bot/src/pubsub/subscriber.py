@@ -24,7 +24,7 @@ class NotificationReceiver:
         # TODO: обсудить типы уведомлений (общие текстовые, с картинками, ссылками, кнопками и пр.)
         # случай обычного текстового уведомления
         if notification.type == 'general':
-            await send(telegram_id=notification.user.telegram_id, text=notification.text)
+            await send(telegram_id=notification.user.telegram_id, text=notification.body)
 
         message.ack()
 

@@ -9,7 +9,13 @@ from alumnihub.community_platform.event_emitter import EmitterFactory, IEventEmi
 from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile
 from common_db.config import settings
 from notification_event_builder import NotificationEventBuilder
-from schemas import (MeetingFilter, MeetingList, MeetingRequestCreate, MeetingRequestRead, MeetingRequestUpdate)
+from schemas import (
+    MeetingFilter,
+    MeetingList,
+    MeetingRequestCreate,
+    MeetingRequestRead,
+    MeetingRequestUpdate,
+)
 
 
 class MeetingManager:
@@ -140,7 +146,9 @@ class MeetingManager:
 
         # Add the user to the meeting
         meeting.user_responses.append(
-            ORMMeetingResponse(user_id=user_id, meeting=meeting, role=role)
+            ORMMeetingResponse(
+                user_id=user_id, meeting=meeting, role=role, response="tentative"
+            )
         )
 
         await session.commit()
