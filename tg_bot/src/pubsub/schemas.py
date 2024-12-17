@@ -17,6 +17,7 @@ class DTONotificationMessage(BaseModel):
     """The scheme of the prepared notification"""
     user_id: int
     type: str
-    text: str
+    head: str | None = None
+    body: str | None = None
     timestamp: datetime | None
     user: DTONotifiedUserProfile
