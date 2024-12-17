@@ -31,6 +31,7 @@ class MeetingRequestUpdate(BaseModel):
     location: str | None = None
     scheduled_time: datetime | None = None
 
+
 # For user status in a meeting
 class MeetingResponse(BaseModel):
     user_id: int
