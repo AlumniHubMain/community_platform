@@ -1,14 +1,19 @@
+import logging
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
+from alumnihub.community_platform.event_emitter import EmitterFactory, IEventEmitter
 from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile
-from .schemas import (
-    MeetingRequestRead,
-    MeetingRequestCreate,
+from common_db.config import settings
+from notification_event_builder import NotificationEventBuilder
+from schemas import (
     MeetingFilter,
     MeetingList,
+    MeetingRequestCreate,
+    MeetingRequestRead,
     MeetingRequestUpdate,
 )
 
@@ -17,6 +22,17 @@ class MeetingManager:
     """
     Class for managing meetings and user participation in meetings.
     """
+
+    __notification_event_emitter: IEventEmitter = None
+
+    @classmethod
+    def notification_sender(cls) -> IEventEmitter:
+        if not cls.__notification_event_emitter:
+            cls.__notification_event_emitter = EmitterFactory.create_event_emitter(
+                target=settings.notification_target,
+                topic=settings.google_pubsub_notification_topic,
+            )
+        return cls.__notification_event_emitter
 
     @classmethod
     async def get_meeting(
@@ -122,9 +138,11 @@ class MeetingManager:
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
-        for response in meeting.user_responses:
-            if response.user_id == user_id:
-                return MeetingRequestRead.model_validate(meeting, from_attributes=True)
+        if next(
+            (resp for resp in meeting.user_responses if resp.user_id == user_id), None
+        ):
+            # this user is already invited, although maybe without a response
+            return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
         # Add the user to the meeting
         meeting.user_responses.append(
@@ -134,7 +152,21 @@ class MeetingManager:
         )
 
         await session.commit()
-        # ToDo: send a notification to the added user
+
+        # Check for an organizer and emit an event
+        # ToDo: can use the authenticated user instead
+        if organizer := next(
+            (user for user in meeting.user_responses if user.role == "organizer"), None
+        ):
+            organizer_id: int = organizer.user_id
+            cls.notification_sender().emit(
+                NotificationEventBuilder.build_meeting_invitation_event(
+                    invited_id=user_id, meeting_id=meeting_id, inviter_id=organizer_id
+                )
+            )
+        else:
+            logging.warning(f"Meeting {meeting_id} has no organizer")
+
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
     @classmethod
@@ -147,7 +179,9 @@ class MeetingManager:
 
         # Fetch the meeting to ensure it exists
         result = await session.execute(
-            select(ORMMeeting).where(ORMMeeting.id == meeting_id)
+            select(ORMMeeting)
+            .where(ORMMeeting.id == meeting_id)
+            .options(selectinload(ORMMeeting.user_responses))
         )
         meeting = result.scalar_one_or_none()
         if not meeting:
@@ -167,14 +201,22 @@ class MeetingManager:
                 status_code=404, detail="User is not part of this meeting"
             )
 
+        # If the response is unchanged, return early
+        if user_meeting.response == response:
+            return MeetingRequestRead.model_validate(meeting, from_attributes=True)
+
         # Update the user's response status
         user_meeting.response = response
         await session.commit()
 
-        # ToDo: send a notification to the organiser
+        cls.notification_sender().emit(
+            NotificationEventBuilder.build_meeting_response_event(
+                user_id=user_id, meeting_id=meeting_id
+            )
+        )
 
         # Return the updated meeting response
-        return await cls.get_meeting(session, meeting_id)
+        return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
     @classmethod
     async def get_filtered_meetings(
