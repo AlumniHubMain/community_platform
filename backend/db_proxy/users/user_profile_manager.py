@@ -70,21 +70,32 @@ class UserProfileManager:
     ) -> SUserProfileRead:
         
         # Select user meeting responses
-        query = select(ORMMeetingResponse).options(selectinload(ORMMeetingResponse.meeting)) \
-                                  .join(ORMMeeting).where(ORMMeeting.scheduled_time >= datetime.now()) \
-                                  .where(ORMMeetingResponse.user_id == user_id)
+        reponses_query = select(ORMMeetingResponse).options(selectinload(ORMMeetingResponse.meeting)) \
+                         .where(ORMMeetingResponse.user_id == user_id) \
+                         .join(ORMMeeting).where(ORMMeeting.scheduled_time >= datetime.now())
 
-        result = await session.execute(query)
+        result = await session.execute(reponses_query)
         responses = result.scalars().all()
+
+        # Select user filtered meetings with all responses
+        meeting_ids = tuple({response.meeting.id for response in responses})
+        meetings_query = select(ORMMeeting).options(selectinload(ORMMeeting.user_responses)) \
+                         .filter(ORMMeeting.id.in_(meeting_ids))
+
+        result = await session.execute(meetings_query)
+        user_meetings = result.scalars().all()
         
-        # Meetings with user response in (tentative, confirmed)
-        confirmed_count: int = len([1 for response in responses 
-                                      if response.response in (EMeetingResponseStatus.tentative, EMeetingResponseStatus.confirmed)
-                                    ])
+        # Find meetings which all users confirm
+        confirmed_count = 0
+        for user_meeting in user_meetings:
+            is_all_confirm = True
+            for response in user_meeting.user_responses:
+                is_all_confirm = is_all_confirm and response.response.is_confirmed_status()
+            confirmed_count += int(is_all_confirm)
 
         # Meetings with user response in (None, tentative, confirmed)
-        pended_count: int = len([1 for response in responses if response.response is EMeetingResponseStatus.no_answer])
-        pended_count += confirmed_count
+        pended_count: int = len([1 for response in responses 
+                                   if (response.response.is_pended_status() and response.user_id == user_id)])
         
         confirmation_limit = config.get("max_user_confirmed_meetings_count", 
                                         default=EDefaultUserLimits.MAX_CONFIRMED_MEETINGS_COUNT)
