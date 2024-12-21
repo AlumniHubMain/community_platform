@@ -10,14 +10,11 @@ services:
     environment:
       ENVIRONMENT: development
       ACCESS_SECRET_KEY: test_secret
-      CONFIGS_DIR: /configs
       BOT_TOKEN: ${BOT_TOKEN}
     depends_on:
       - coffee-db
     networks:
       - coffee-network
-    volumes:
-      - ./limits/limits_config.json:/configs/limits_config.json
 
   coffee-db:
     image: postgres:13

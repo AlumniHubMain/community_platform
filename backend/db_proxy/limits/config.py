@@ -33,10 +33,19 @@ class LimitsConfig:
         return True
 
     def update(self) -> bool:
+        # Copy actual state
+        new_config = self.config
+        update_timestamp = self.last_update
+        
+        # Try to update config state
         try:
             with open(self.config_path, 'r') as file:
-                self.config = json.load(file)
-                self.last_update = dt.datetime.now()
-                return True
+                new_config = json.load(file)
+                update_timestamp = dt.datetime.now()
         except Exception:
             return False
+
+        # Save state with consistency guarantee
+        self.config = new_config
+        self.last_update = update_timestamp
+        return True

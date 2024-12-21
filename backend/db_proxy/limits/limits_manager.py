@@ -10,7 +10,7 @@ from fastapi import HTTPException
 from common_db.config import settings
 
 
-config = LimitsConfig(config_path=os.path.join(settings.configs_dir, 'limits_config.json'))
+config = LimitsConfig(config_path=settings.limits_config_file)
 
 
 class LimitsManager:

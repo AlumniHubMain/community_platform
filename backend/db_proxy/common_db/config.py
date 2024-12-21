@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     environment: str
     bot_token_file: str
     access_secret_file: str
-    configs_dir: os.PathLike
+    limits_config_file: str
 
     @property
     def database_url_asyncpg(self) -> SecretStr:
