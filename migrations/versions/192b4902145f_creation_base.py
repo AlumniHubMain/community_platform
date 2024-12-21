@@ -33,7 +33,7 @@ def upgrade() -> None:
         sa.Column(
             "status",
             postgresql.ENUM(
-                "new", "archived", "confirmed", name="meeting_status"
+                "new", "archived", "confirmed", name="meeting_status_enum"
             ),
             nullable=False,
         ),
@@ -507,7 +507,7 @@ def upgrade() -> None:
         sa.Column("meeting_id", sa.Integer(), nullable=False),
         sa.Column(
             "role",
-            postgresql.ENUM("organizer", "attendee", name="meeting_user_role"),
+            postgresql.ENUM("organizer", "attendee", name="meeting_user_role_enum"),
             nullable=False,
         ),
         sa.Column(
@@ -517,7 +517,7 @@ def upgrade() -> None:
                 "confirmed",
                 "tentative",
                 "declined",
-                name="meeting_response",
+                name="meeting_response_enum",
             ),
             nullable=False,
         ),
@@ -561,9 +561,9 @@ def downgrade() -> None:
     
     op.execute(f"DROP TYPE {schema}.tg_event_type")
     op.execute(f"DROP TYPE {schema}.tg_staff_role")
-    op.execute(f"DROP TYPE {schema}.meeting_response")
-    op.execute(f"DROP TYPE {schema}.meeting_status")
-    op.execute(f"DROP TYPE {schema}.meeting_user_role")
+    op.execute(f"DROP TYPE {schema}.meeting_response_enum")
+    op.execute(f"DROP TYPE {schema}.meeting_status_enum")
+    op.execute(f"DROP TYPE {schema}.meeting_user_role_enum")
     op.execute(f"DROP TYPE {schema}.user_interests_enum")
     op.execute(f"DROP TYPE {schema}.user_expertise_enum")
     op.execute(f"DROP TYPE {schema}.user_specialisation_enum")

@@ -23,8 +23,8 @@ class LimitsConfig:
 
     def get(self, key: str, default=None) -> Union[Any | None]:
         self._update_state_if_needed()
-        if self.config and self.config.get(key):
-            return self.config[key]
+        if self.config:
+            return self.config.get(key, default)
         return default
     
     def _update_state_if_needed(self) -> bool:

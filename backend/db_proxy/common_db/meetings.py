@@ -50,7 +50,7 @@ class ORMMeeting(ObjectTable):
     description: Mapped[str | None] = mapped_column(Text)
     location: Mapped[str | None] = mapped_column(String(200))
     scheduled_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    status: Mapped[str] = mapped_column(ENUM(EMeetingStatus, name='meeting_status'), 
+    status: Mapped[str] = mapped_column(ENUM(EMeetingStatus, name='meeting_status_enum'), 
                                         nullable=False,
                                         default=EMeetingStatus.new)
 
@@ -78,8 +78,8 @@ class ORMMeetingResponse(ObjectTable):
     meeting_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.meetings.id', ondelete="CASCADE"),
                                             primary_key=True)
 
-    role: Mapped[str] = mapped_column(ENUM(EMeetingUserRole, name='meeting_user_role'), nullable=False)
-    response: Mapped[str] = mapped_column(ENUM(EMeetingResponseStatus, name='meeting_response'), nullable=False)
+    role: Mapped[str] = mapped_column(ENUM(EMeetingUserRole, name='meeting_user_role_enum'), nullable=False)
+    response: Mapped[str] = mapped_column(ENUM(EMeetingResponseStatus, name='meeting_response_enum'), nullable=False)
 
     # Relationships for back-population
     user: Mapped["ORMUserProfile"] = relationship("ORMUserProfile", back_populates="meeting_responses")
