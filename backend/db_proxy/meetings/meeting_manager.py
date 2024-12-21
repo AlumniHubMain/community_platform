@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from alumnihub.community_platform.event_emitter import EmitterFactory, IEventEmitter
+from alumnihub.community_platform.event_emitter import EmitterFactory, IProtoEmitter
 from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile
 from common_db.config import settings
 from notification_event_builder import NotificationEventBuilder
@@ -23,10 +23,10 @@ class MeetingManager:
     Class for managing meetings and user participation in meetings.
     """
 
-    __notification_event_emitter: IEventEmitter = None
+    __notification_event_emitter: IProtoEmitter = None
 
     @classmethod
-    def notification_sender(cls) -> IEventEmitter:
+    def notification_sender(cls) -> IProtoEmitter:
         if not cls.__notification_event_emitter:
             cls.__notification_event_emitter = EmitterFactory.create_event_emitter(
                 target=settings.notification_target,
