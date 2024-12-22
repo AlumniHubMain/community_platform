@@ -1,0 +1,18 @@
+steps:
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    args:
+      - '-c'
+      - |
+        echo "Authenticating..."
+        docker build -t $_IMAGE:$COMMIT_SHA \
+          --build-arg ACCESS_TOKEN="$(gcloud auth print-access-token)" \
+          backend/db_proxy
+    entrypoint: bash
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - '$_IMAGE:$COMMIT_SHA'
+images:
+  - '$_IMAGE:$COMMIT_SHA'
+options:
+  logging: CLOUD_LOGGING_ONLY
