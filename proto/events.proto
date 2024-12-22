@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package alumni_hub.platform.events;
+
+enum MessageType {
+  eUndefined = 0;
+  eMeetingInvitation = 1;
+  eMeetingResponse = 2;
+}
+
+// MeetingInviteEvent inherits from EventData
+message MeetingInvitationEvent {
+  int32 meeting_id = 1;  // ID of the meeting
+  // the recipient is invited by the initiator
+}
+
+// MeetingResponseEvent inherits from EventData
+message MeetingResponseEvent {
+  int32 meeting_id = 1;  // ID of the meeting
+  // responding user is supposedly the initiator
+}
+
+// Event structure
+message Event {
+  MessageType event_type = 1;
+  int64 initiator_id = 2;
+  int64 recipient_id = 3;
+
+  oneof data { // message type specific payload
+    MeetingInvitationEvent meeting_invitation = 101;
+    MeetingResponseEvent meeting_response = 102;
+  }
+}

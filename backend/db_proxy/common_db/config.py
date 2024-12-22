@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     environment: str
     bot_token_file: str
     access_secret_file: str
+    google_pubsub_notification_topic: str
+    notification_target: str = "pubsub"
 
     @property
     def database_url_asyncpg(self) -> SecretStr:

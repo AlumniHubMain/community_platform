@@ -15,4 +15,4 @@ service-account-credentials.json
 build/
 *.egg-info/
 Dockerfile-matching
-
+*_pb2.py*

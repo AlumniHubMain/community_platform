@@ -2,8 +2,9 @@ asyncpg
 black
 certifi
 eval_type_backport
-gcloud-aio-storage
 fastapi
+gcloud-aio-storage
+google-cloud-pubsub
 greenlet
 pillow
 pydantic
@@ -11,3 +12,6 @@ pydantic_settings
 python-multipart
 SQLAlchemy
 uvicorn
+
+# private packages
+alumnihub_event_emitter
