@@ -1,11 +1,11 @@
-from .ievent_emitter import IEventEmitter
+from .emitter_interface import IProtoEmitter
 from .pubsub_event_emitter import PubsubEventEmitter
 from .log_event_emitter import LogEventEmitter
 
 
 class EmitterFactory:
     @staticmethod
-    def create_event_emitter(target: str, topic: str = None) -> IEventEmitter:
+    def create_event_emitter(target: str, topic: str = None) -> IProtoEmitter:
         if target == "log":
             return LogEventEmitter()
         if target == "pubsub":
