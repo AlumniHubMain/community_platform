@@ -8,8 +8,8 @@ from sqlalchemy.orm import selectinload
 from alumnihub.community_platform.event_emitter import EmitterFactory, IProtoEmitter
 from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile
 from common_db.config import settings
-from notification_event_builder import NotificationEventBuilder
-from schemas import (
+from .notification_event_builder import NotificationEventBuilder
+from .schemas import (
     MeetingFilter,
     MeetingList,
     MeetingRequestCreate,

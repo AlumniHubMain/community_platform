@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import AsyncGenerator
 
+from alumnihub.community_platform.config_library import PlatformPGSettings
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
@@ -10,7 +12,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 
-from .config import settings, PlatformPGSettings
+from .config import settings
 
 
 db_settings = settings.read_dotenv_config('db_config', PlatformPGSettings)

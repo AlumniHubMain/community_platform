@@ -15,4 +15,5 @@ SQLAlchemy
 uvicorn
 
 # private packages
+alumnihub-config-library
 alumnihub_event_emitter
