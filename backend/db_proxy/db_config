@@ -1,0 +1,6 @@
+DB_HOST="34.172.47.110"
+DB_PORT=5432
+DB_NAME="production"
+DB_USER="postgres"
+DB_PASS="Fmq-Czs-hu5-Luy"
+DB_SCHEMA="alh_community_platform"

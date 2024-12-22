@@ -4,6 +4,7 @@ certifi
 eval_type_backport
 fastapi
 gcloud-aio-storage
+grpcio-tools
 google-cloud-pubsub
 greenlet
 pillow
