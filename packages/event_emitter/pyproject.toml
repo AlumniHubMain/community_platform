@@ -19,7 +19,6 @@ classifiers = [
 dependencies = [
     "google-cloud-pubsub",
     "protobuf",
-    "pydantic"
 ]
 urls = { "Homepage" = "https://github.com/AlumniHubMain/community_platform/" }
 
