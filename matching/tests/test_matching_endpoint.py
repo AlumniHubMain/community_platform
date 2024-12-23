@@ -1,5 +1,7 @@
 import os
 import sys
+import base64
+import json
 from pathlib import Path
 from datetime import datetime
 
@@ -7,80 +9,22 @@ from datetime import datetime
 project_root = str(Path(__file__).parent.parent)
 sys.path.append(project_root)
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 from app.main import app as fastapi_app
-from app.model.model_settings import (
-    ModelType,
-    FilterType,
-    DiversificationType,
-    CatBoostModelSettings,
-    HeuristicModelSettings,
-)
-from db_common.schemas import (
-    SUserProfileRead,
-    SLinkedInProfileRead,
-    SMeetingIntentRead,
-)
-from db_common.enums.meeting_intents import (
-    EMeetingIntentMeetingType,
-    EMeetingIntentLookingForType,
-    EMeetingIntentQueryType,
-    EMeetingIntentHelpRequestType,
-)
 
-# Mock test data
-mock_users = [
-    SUserProfileRead(
-        id=1,
-        name="John",
-        surname="Doe",
-        email="john@example.com",
-        meeting_responses=[],
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-    ),
-    SUserProfileRead(
-        id=2,
-        name="Jane",
-        surname="Smith",
-        email="jane@example.com",
-        meeting_responses=[],
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-    ),
-]
 
-mock_linkedin = [
-    SLinkedInProfileRead(
-        user_id=1,
-        industry="Technology",
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        id=1,
-        profile_url="https://www.linkedin.com/in/john-doe-1234567890",
-    ),
-    SLinkedInProfileRead(
-        user_id=2,
-        industry="Technology",
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        id=2,
-        profile_url="https://www.linkedin.com/in/jane-smith-1234567890",
-    ),
-]
-
-mock_intent = SMeetingIntentRead(
-    id=1,
-    user_id=1,
-    meeting_type=EMeetingIntentMeetingType.online,
-    looking_for_type=EMeetingIntentLookingForType.part_time,
-    query_type=EMeetingIntentQueryType.looking_for,
-    help_request_type=EMeetingIntentHelpRequestType.other,
-    text_intent="Looking for part-time work",
-    created_at=datetime.now(),
-    updated_at=datetime.now(),
-)
+def create_pubsub_message(data: dict) -> dict:
+    """Helper function to create a Pub/Sub message"""
+    encoded_data = base64.b64encode(json.dumps(data).encode()).decode()
+    return {
+        "message": {
+            "data": encoded_data,
+            "messageId": "test_message_id",
+            "publishTime": "2024-01-01T00:00:00.000Z",
+        },
+        "subscription": "test-subscription",
+    }
 
 
 @pytest.fixture
@@ -89,140 +33,84 @@ def client():
 
 
 @pytest.fixture
-def mock_data_loader():
-    with patch("app.main.DataLoader") as mock:
-        mock.get_all_user_profiles = AsyncMock(return_value=mock_users)
-        mock.get_all_linkedin_profiles = AsyncMock(return_value=mock_linkedin)
-        mock.get_meeting_intent = AsyncMock(return_value=mock_intent)
-        yield mock
-
-
-@pytest.fixture
-def mock_queue_manager():
-    with patch("app.main.queue_manager") as mock:
-        mock.put_to_queue = AsyncMock()
-        yield mock
-
-
-@pytest.fixture
 def mock_ps_client():
-    with patch("app.main.psclient") as mock:
+    with patch("app.matching.PSClient") as mock:
         mock.get_file = MagicMock(return_value="mock_model_path")
         yield mock
 
 
-# @pytest.mark.asyncio
-# async def test_get_matches_catboost(client, mock_data_loader, mock_queue_manager, mock_ps_client):
-#     """Test matching endpoint with CatBoost model settings"""
-#     # Update model settings for CatBoost
-#     with patch("app.main.model_settings_presets") as mock_settings:
-#         mock_settings["catboost"] = CatBoostModelSettings(
-#             model_type=ModelType.CATBOOST,
-#             model_path="mock_model.cbm",
-#             settings_name="catboost",
-#             filters=[],
-#             diversifications=[],
-#         )
-
-#         response = client.get("/get_matches/1/1/catboost/5")
-
-#         assert response.status_code == 200
-#         mock_queue_manager.put_to_queue.assert_called_once()
-#         mock_ps_client.get_file.assert_called_once()
+@pytest.fixture
+def mock_process_matching_request():
+    with patch("app.main.process_matching_request") as mock:
+        mock.return_value = (1, [2, 3, 4])  # match_id, predictions
+        yield mock
 
 
 @pytest.mark.asyncio
-async def test_get_matches_heuristic(client, mock_data_loader, mock_queue_manager):
-    """Test matching endpoint with heuristic model settings"""
-    # Update model settings for heuristic approach
-    with patch("app.main.model_settings_presets") as mock_settings:
-        mock_settings.__contains__.return_value = True
-        mock_settings.__getitem__.return_value = HeuristicModelSettings(
-            model_type=ModelType.HEURISTIC,
-            settings_name="heuristic",
-            rules=[
-                {
-                    "column": "industry_user",
-                    "operation": "equals",
-                    "value": "Technology",
-                    "weight": 0.5,
-                }
-            ],
-            filters=[],
-            diversifications=[],
-        )
+async def test_pubsub_push_heuristic(client, mock_process_matching_request):
+    """Test Pub/Sub push endpoint with heuristic model settings"""
+    message_data = {
+        "user_id": 1,
+        "meeting_intent_id": 1,
+        "model_settings_preset": "heuristic",
+        "n": 5,
+    }
+    pubsub_message = create_pubsub_message(message_data)
 
-        response = client.get("/get_matches/1/1/heuristic/5")
+    response = client.post("/pubsub/push", json=pubsub_message)
 
-        assert response.status_code == 200
-        mock_queue_manager.put_to_queue.assert_called_once()
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "match_id": 1}
+    mock_process_matching_request.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_get_matches_with_filters(client, mock_data_loader, mock_queue_manager):
-    """Test matching endpoint with filters"""
-    with patch("app.main.model_settings_presets") as mock_settings:
-        mock_settings.__contains__.return_value = True
-        mock_settings.__getitem__.return_value = HeuristicModelSettings(
-            model_type=ModelType.HEURISTIC,
-            settings_name="filtered",
-            rules=[],
-            filters=[
-                {
-                    "filter_type": FilterType.STRICT,
-                    "filter_name": "industry_filter",
-                    "filter_column": "industry_user",
-                    "filter_rule": "Technology",
-                }
-            ],
-            diversifications=[],
-        )
+async def test_pubsub_push_with_filters(client, mock_process_matching_request):
+    """Test Pub/Sub push endpoint with filters"""
+    message_data = {
+        "user_id": 1,
+        "meeting_intent_id": 1,
+        "model_settings_preset": "filtered",
+        "n": 5,
+    }
+    pubsub_message = create_pubsub_message(message_data)
 
-        response = client.get("/get_matches/1/1/filtered/5")
+    response = client.post("/pubsub/push", json=pubsub_message)
 
-        assert response.status_code == 200
-        mock_queue_manager.put_to_queue.assert_called_once()
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "match_id": 1}
+    mock_process_matching_request.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_get_matches_with_diversification(client, mock_data_loader, mock_queue_manager):
-    """Test matching endpoint with diversification settings"""
-    with patch("app.main.model_settings_presets") as mock_settings:
-        mock_settings.__contains__.return_value = True
-        mock_settings.__getitem__.return_value = HeuristicModelSettings(
-            model_type=ModelType.HEURISTIC,
-            settings_name="diverse",
-            rules=[],
-            filters=[],
-            diversifications=[
-                {
-                    "diversification_type": DiversificationType.SCORE_BASED,
-                    "diversification_name": "industry_div",
-                    "diversification_column": "industry_user",
-                    "diversification_value": 2,
-                }
-            ],
-        )
-
-        response = client.get("/get_matches/1/1/diverse/5")
-
-        assert response.status_code == 200
-        mock_queue_manager.put_to_queue.assert_called_once()
+async def test_pubsub_push_invalid_message(client):
+    """Test Pub/Sub push endpoint with invalid message format"""
+    response = client.post("/pubsub/push", json={"invalid": "message"})
+    assert response.status_code == 400
 
 
 @pytest.mark.asyncio
-async def test_get_matches_invalid_user(client, mock_data_loader, mock_queue_manager):
-    """Test matching endpoint with invalid user ID"""
-    mock_data_loader.get_meeting_intent.side_effect = Exception("Intent not found")
-
-    response = client.get("/get_matches/1/999/heuristic/5")
-
-    assert response.status_code == 500
+async def test_pubsub_push_invalid_data(client):
+    """Test Pub/Sub push endpoint with invalid data format"""
+    pubsub_message = {
+        "message": {
+            "data": "invalid_base64",
+            "messageId": "test_message_id",
+        }
+    }
+    response = client.post("/pubsub/push", json=pubsub_message)
+    assert response.status_code == 400
 
 
 @pytest.mark.asyncio
-async def test_get_matches_invalid_preset(client, mock_data_loader, mock_queue_manager):
-    """Test matching endpoint with invalid model settings preset"""
-    response = client.get("/get_matches/1/1/invalid_preset/5")
-
-    assert response.status_code == 500
+async def test_pubsub_push_missing_required_field(client):
+    """Test Pub/Sub push endpoint with missing required field"""
+    message_data = {
+        "user_id": 1,
+        # missing meeting_intent_id
+        "model_settings_preset": "heuristic",
+        "n": 5,
+    }
+    pubsub_message = create_pubsub_message(message_data)
+    response = client.post("/pubsub/push", json=pubsub_message)
+    assert response.status_code == 400

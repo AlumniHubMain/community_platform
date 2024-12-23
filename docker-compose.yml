@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: matching/Dockerfile
     environment:
-      - ENVIRONMENT=dev
+      - ENVIRONMENT=development
       - GOOGLE_APPLICATION_CREDENTIALS=/credentials/service_account_credentials.json
     volumes:
       - ./credentials:/credentials

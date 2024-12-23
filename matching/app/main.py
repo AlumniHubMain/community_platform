@@ -13,16 +13,17 @@ from db_common.config import DatabaseSettings
 from db_common.db import DatabaseManager
 from app.transport import CloudStorageAdapter, PSClient
 from app.matching import process_matching_request
+from app.services import psclient
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global ps_client
+    global psclient
     global config
-    ps_client = PSClient()
+    psclient = PSClient()
     storage_client = CloudStorageAdapter()
     await storage_client.initialize()
-    await ps_client.initialize(storage_client)
+    await psclient.initialize(storage_client)
     yield
 
 
@@ -59,8 +60,15 @@ class MatchingRequest(BaseModel):
 
     @classmethod
     def from_pubsub_message(cls, message: dict) -> "MatchingRequest":
-        data = json.loads(message["data"])
-        return cls(**data)
+        if not message.get("data"):
+            raise HTTPException(status_code=400, detail="No data in message")
+
+        try:
+            decoded_data = base64.b64decode(message["data"]).decode("utf-8")
+            data = json.loads(decoded_data)
+            return cls(**data)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid message format: {str(e)}")
 
 
 @app.post("/pubsub/push")
@@ -68,40 +76,36 @@ async def pubsub_push(request: Request):
     """Handle Pub/Sub push messages"""
     try:
         envelope = await request.json()
-        message = envelope.get("message", {})
-
-        matching_request = MatchingRequest.from_pubsub_message(message)
+        message = envelope.get("message")
 
         if not message:
             raise HTTPException(status_code=400, detail="No message received")
 
-        user_id = matching_request.user_id
-        meeting_intent_id = matching_request.meeting_intent_id
-        model_settings_preset = matching_request.model_settings_preset
-        n = matching_request.n
-        form_id = matching_request.form_id
+        matching_request = MatchingRequest.from_pubsub_message(message)
 
         config.logger.info(
             "Received matching request via Pub/Sub: user_id: %d, meeting_intent_id: %d, model_settings_preset: %s, n: %d",
-            user_id,
-            meeting_intent_id,
-            model_settings_preset,
-            n,
+            matching_request.user_id,
+            matching_request.meeting_intent_id,
+            matching_request.model_settings_preset,
+            matching_request.n,
         )
 
         match_id, _ = await process_matching_request(
             db_session_callable=db.session,
-            psclient=ps_client,
+            psclient=psclient,
             logger=config.logger,
-            user_id=user_id,
-            meeting_intent_id=meeting_intent_id,
-            model_settings_preset=model_settings_preset,
-            n=n,
-            form_id=form_id,
+            user_id=matching_request.user_id,
+            meeting_intent_id=matching_request.meeting_intent_id,
+            model_settings_preset=matching_request.model_settings_preset,
+            n=matching_request.n,
+            form_id=matching_request.form_id,
         )
 
         return {"status": "ok", "match_id": match_id}
 
+    except HTTPException:
+        raise
     except Exception as e:
         config.logger.error("Error processing Pub/Sub message: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))

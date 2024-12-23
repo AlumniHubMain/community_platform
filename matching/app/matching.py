@@ -48,12 +48,17 @@ async def process_matching_request(
             )
             session.add(matching_result)
             await session.commit()
+            await session.refresh(matching_result)
 
-            logger.info(
-                "Matching results saved for user_id: %d, meeting_intent_id: %d",
-                user_id,
-                meeting_intent_id,
-            )
+            if logger:
+                logger.info(
+                    "Matching results saved for user_id: %d, meeting_intent_id: %d",
+                    user_id,
+                    meeting_intent_id,
+                )
+
+            return matching_result.id, predictions
+
         except Exception as e:
             error_result = ORMMatchingResult(
                 model_settings_preset=model_settings_preset,
@@ -68,5 +73,3 @@ async def process_matching_request(
             session.add(error_result)
             await session.commit()
             raise
-
-    return matching_result.id, predictions
