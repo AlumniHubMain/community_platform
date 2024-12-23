@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import AsyncGenerator
 
+from alumnihub.community_platform.config_library import PlatformPGSettings
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
@@ -13,7 +15,8 @@ from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 from .config import settings
 
 
-schema: str = settings.db_schema
+db_settings = settings.read_dotenv_config('db_config', PlatformPGSettings)
+schema: str = db_settings.db_schema
 
 
 class Base(DeclarativeBase):
@@ -43,7 +46,7 @@ class ObjectTable(Base):
 
 
 engine: AsyncEngine = create_async_engine(
-    url=settings.database_url_asyncpg.get_secret_value()
+    url=db_settings.database_url_asyncpg.get_secret_value()
 )
 session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
 

@@ -1,16 +1,13 @@
+import json
 import os
 
-from pydantic import SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from alumnihub.community_platform.config_library import PlatformSettings, PlatformPGSettings
+
+from pydantic_settings import SettingsConfigDict
 
 
-class Settings(BaseSettings):
-    db_host: SecretStr
-    db_port: int
-    db_name: SecretStr
-    db_user: SecretStr
-    db_pass: SecretStr
-    db_schema: str  # DB_SCHEMA=your_schema (default=public)
+class Settings(PlatformSettings):
+    db_config: str
     google_application_credentials: str
     google_cloud_bucket: str
     environment: str
@@ -18,17 +15,6 @@ class Settings(BaseSettings):
     access_secret_file: str
     google_pubsub_notification_topic: str
     notification_target: str = "pubsub"
-
-    @property
-    def database_url_asyncpg(self) -> SecretStr:
-        return SecretStr(
-            f"postgresql+asyncpg://"
-            f"{self.db_user.get_secret_value()}:"
-            f"{self.db_pass.get_secret_value()}@"
-            f"{self.db_host.get_secret_value()}:"
-            f"{self.db_port}/"
-            f"{self.db_name.get_secret_value()}"
-        )
 
     model_config = SettingsConfigDict(
         env_file=os.environ.get("DOTENV", ".env"), env_file_encoding="utf8"
