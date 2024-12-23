@@ -27,9 +27,7 @@ If you do not want to mess with the requirements, you can use the following comm
 
 docker compose up -d matching --build
 
-docker compose exec matching python -m db_common.setup_db
-
-docker compose exec matching alembic upgrade head
+docker compose exec matching sh -c 'export DB_HOST=db && python -m db_common.setup_db && alembic upgrade head'
 
 docker compose exec matching python -m scripts.insert_test_data
 

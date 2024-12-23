@@ -5,11 +5,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class DatabaseSettings(BaseSettings):
-    db_host: SecretStr
-    db_port: int
-    db_name: SecretStr
-    db_user: SecretStr
-    db_pass: SecretStr
+    db_host: SecretStr = SecretStr("localhost")
+    db_port: int = 5432
+    db_name: SecretStr = SecretStr("postgres")
+    db_user: SecretStr = SecretStr("postgres")
+    db_pass: SecretStr = SecretStr("postgres")
     db_schema: str = "alh_community_platform"
 
     # Google Cloud settings
