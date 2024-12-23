@@ -6,6 +6,9 @@ from google.protobuf.message import Message
 from .emitter_interface import IProtoEmitter
 
 
+logger = logging.getLogger(__name__)
+
+
 class PubsubEventEmitter(IProtoEmitter):
     def __init__(self, topic: str = None):
         self.topic = topic
@@ -19,8 +22,8 @@ class PubsubEventEmitter(IProtoEmitter):
         res = self.publisher.publish(
             self.topic, data=event.SerializeToString()
         ).result()
-        logging.info("Publish result: %s", res)
+        logger.info("Publish result: %s", res)
 
     @staticmethod
     def _log_event(event_data: str):
-        logging.info(event_data)
+        logger.info(event_data)

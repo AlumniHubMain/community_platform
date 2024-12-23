@@ -1,29 +1,26 @@
 [project]
-name = "event-emitter"
+name = "alumni-hub"
 version = "0.1.0"
 description = ""
 readme = "README.md"
 authors = [
-    { name = "Sergey Sedov", email = "sergey.sedov@gmail.com" },
     { name = "und3v3l0p3d", email = "prohibitme@ya.ru" }
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "alumni-hub",
-    "google-cloud-pubsub>=2.27.1",
-    "protobuf>=5.29.2",
-    "pydantic>=2.10.4",
+    "uv-proto-plugin",
 ]
-
-[project.scripts]
-event-emmiter = "event_emmiter:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-alumni-hub = { path = "../alumni_hub" }
+uv-proto-plugin = { path = "../uv_proto_plugin" }
+
+[tool.hatch.build.hooks.protobuf]
+dependencies = ["uv-proto-plugin"]
+proto_paths = ["proto"]
 
 [dependency-groups]
 dev = [
