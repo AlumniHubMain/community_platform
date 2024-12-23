@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alumnihub-event-emitter"
-version = "0.1.1"
+version = "0.1.2"
 description = "Notification event emitter for AlumniHub community platform"
 authors = [
     { name = "Sergey Sedov", email = "sergey.sedov@gmail.com" }
