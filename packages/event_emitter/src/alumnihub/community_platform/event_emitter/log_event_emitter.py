@@ -2,10 +2,10 @@ import logging
 
 from google.protobuf import json_format
 
-from .ievent_emitter import IEventEmitter
-from . import events_pb2
+from .emitter_interface import IProtoEmitter
+from google.protobuf.message import Message
 
 
-class LogEventEmitter(IEventEmitter):
-    def emit(self, event: events_pb2.Event):
+class LogEventEmitter(IProtoEmitter):
+    def emit(self, event: Message):
         logging.info(json_format.MessageToJson(event, indent=None))

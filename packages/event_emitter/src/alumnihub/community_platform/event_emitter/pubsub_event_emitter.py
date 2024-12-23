@@ -1,12 +1,12 @@
 import logging
 
 from google.cloud import pubsub_v1
+from google.protobuf.message import Message
 
-from . import events_pb2
-from .ievent_emitter import IEventEmitter
+from .emitter_interface import IProtoEmitter
 
 
-class PubsubEventEmitter(IEventEmitter):
+class PubsubEventEmitter(IProtoEmitter):
     def __init__(self, topic: str = None):
         self.topic = topic
 
@@ -15,7 +15,7 @@ class PubsubEventEmitter(IEventEmitter):
 
         self.publisher = pubsub_v1.PublisherClient()
 
-    def emit(self, event: events_pb2.Event):
+    def emit(self, event: Message):
         res = self.publisher.publish(
             self.topic, data=event.SerializeToString()
         ).result()
