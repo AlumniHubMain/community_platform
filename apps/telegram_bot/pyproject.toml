@@ -1,0 +1,21 @@
+[project]
+name = "telegram-bot"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+authors = [
+    { name = "und3v3l0p3d", email = "prohibitme@ya.ru" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "aiogram>=3.16.0",
+    "fastapi>=0.115.6",
+    "google-cloud-secret-manager>=2.22.0",
+]
+
+[project.scripts]
+telegram-bot = "telegram_bot:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
