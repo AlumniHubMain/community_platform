@@ -88,6 +88,9 @@ class UserProfileManager:
         # Find meetings which all users confirm
         confirmed_count = 0
         for user_meeting in user_meetings:
+            # Skip meetings with only 1 user
+            if len(user_meeting.user_responses) == 1:
+                continue
             is_all_confirm = True
             for response in user_meeting.user_responses:
                 is_all_confirm = is_all_confirm and response.response.is_confirmed_status()

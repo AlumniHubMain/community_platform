@@ -133,25 +133,14 @@ class MeetingManager:
 
         # Check user limits
         user_limits = await LimitsManager.get_user_meetings_limits(session, user_id)
-        declined_statuses = {EMeetingResponseStatus.declined}
-        pended_statuses = {None, EMeetingResponseStatus.confirmed, EMeetingResponseStatus.tentative}
-        confirmed_statuses = {EMeetingResponseStatus.confirmed, EMeetingResponseStatus.tentative}
-        
-        # Check limits if state change
-        #      From         To          Limits types
-        # 1. Declined -> Confirmed - pending confirmation
-        # 2. Declined -> Pended    - pending 
-        # 3. Pended -> Confirmed   -         confirmation
+
         is_check_pendings, is_check_confirmations = False, False
-        
-        # Change state from declined status to confirmed/pended
-        if user_meeting.response in declined_statuses:
-            if response in confirmed_statuses:
-                is_check_confirmations, is_check_pendings = True, True
-            elif response in pended_statuses:
-                is_check_pendings = True
-        # Change state from pended status to confirmed
-        elif user_meeting.response in pended_statuses and response in confirmed_statuses:
+        # Pending - Change status from declined to any
+        # Confirmation - Change status from no_answer/declined to any
+        old_response = user_meeting.response
+        if old_response == EMeetingResponseStatus.declined and response != EMeetingResponseStatus.declined:
+            is_check_pendings = True
+        if old_response in (EMeetingResponseStatus.declined, EMeetingResponseStatus.no_answer):
             is_check_confirmations = True
         
         if is_check_confirmations and user_limits.available_meeting_confirmations == 0:
