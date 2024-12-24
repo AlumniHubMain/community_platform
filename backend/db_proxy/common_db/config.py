@@ -15,6 +15,7 @@ class Settings(PlatformSettings):
     access_secret_file: str
     google_pubsub_notification_topic: str
     notification_target: str = "pubsub"
+    limits_config_file: str
 
     model_config = SettingsConfigDict(
         env_file=os.environ.get("DOTENV", ".env"), env_file_encoding="utf8"

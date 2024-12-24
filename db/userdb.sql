@@ -24,6 +24,9 @@ CREATE TABLE if not exists users
     requests_to_society                     VARCHAR(100)[],
     professional_interests                  VARCHAR(100)[]
 
+    available_meetings_pendings_count       INTEGER NOT NULL DEFAULT 0,
+    available_meetings_confirmations_count  INTEGER NOT NULL DEFAULT 0
+
     -- mentor_id                            BIGSERIAL, -- ?? айдишник с записью о менторстве. Кажется, логично вытащить это в отдельную таблицу
     -- mentee_id                            BIGSERIAL, -- ?? то же самое, только про менти
     --?? помечены айдишники в сторонних таблицах. Возможно, нам хватит использовать те же айдишники в этих таблицах, чтобы
