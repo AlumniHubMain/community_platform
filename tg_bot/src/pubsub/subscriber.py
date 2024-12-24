@@ -1,10 +1,9 @@
 import asyncio
 from google.cloud import pubsub_v1
 
-from .publisher import NotificationSender
-from ..db_manager import NotificationManager
 from ..config import settings
-from ..schemas import DTONotificationMessage, DTONotifiedUserProfile, DTOPreparedNotification
+from ..tools.safe_msg_send import send
+from .schemas import DTONotificationMessage
 
 
 class NotificationReceiver:
@@ -13,24 +12,19 @@ class NotificationReceiver:
     def __init__(self):
         self.subscriber = pubsub_v1.SubscriberClient(credentials=settings.credentials())
         self.subscription_path = self.subscriber.subscription_path(settings.ps_project_id,
-                                                                   settings.ps_notification_sub_name)
-        self.sender = NotificationSender()
+                                                                   settings.ps_notification_tg_sub_name)
 
-    async def process_message(self, message: pubsub_v1.subscriber.message.Message):
+    @staticmethod
+    async def process_message(message: pubsub_v1.subscriber.message.Message):
         """Processing an incoming message"""
 
         # Decode the message
         notification = DTONotificationMessage.model_validate_json(message.data)
 
-        # Getting notified user
-        notified_user: DTONotifiedUserProfile = \
-            await NotificationManager.get_notified_user_profile(notification.user_id)
-
-        # Preparing a notification
-        prepared_notification = DTOPreparedNotification(**notification.model_dump(), user=notified_user)
-
-        # Sending a prepared notification
-        await self.sender.send_notification(prepared_notification)
+        # TODO: обсудить типы уведомлений (общие текстовые, с картинками, ссылками, кнопками и пр.)
+        # случай обычного текстового уведомления
+        if notification.type == 'general':
+            await send(telegram_id=notification.user.telegram_id, text=notification.body)
 
         message.ack()
 

@@ -36,6 +36,12 @@ class UserProfile(BaseModel):
     available_meetings_pendings_count: int | None
     available_meetings_confirmations_count: int | None
 
+    who_to_date_with: EWithWhom | None
+    who_sees_profile: EVisibilitySettings
+    who_sees_current_job: EVisibilitySettings
+    who_sees_contacts: EVisibilitySettings
+    who_sees_calendar: EVisibilitySettings
+
 
 class SUserProfileUpdate(UserProfile):
     id: int

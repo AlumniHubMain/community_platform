@@ -120,3 +120,13 @@ PATCH http://localhost:8080/meetings/{{created_meeting_id}}/user/2/response?stat
 %}
 
 ###
+
+PATCH http://localhost:8080/meetings/{{created_meeting_id}}/user/2/response?status=confirmed
+
+> {%
+    client.test("Request executed successfully", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+###

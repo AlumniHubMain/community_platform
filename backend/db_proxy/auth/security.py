@@ -18,15 +18,13 @@ ACCESS_SECRET_KEY = None
 BOT_TOKEN = None
 
 try:
-    with open(settings.access_secret_file) as f:
-        ACCESS_SECRET_KEY = f.read()
+    ACCESS_SECRET_KEY = settings.read_file('access_secret_file')
 except Exception as e:
     logger.critical(f"Unable to read access secret file {settings.access_secret_file}")
     raise
 
 try:
-    with open(settings.bot_token_file) as f:
-        BOT_TOKEN = f.read()
+    BOT_TOKEN = settings.read_file('bot_token_file')
 except Exception as e:
     logger.critical(f"Unable to read telegram token file {settings.bot_token_file}")
     raise

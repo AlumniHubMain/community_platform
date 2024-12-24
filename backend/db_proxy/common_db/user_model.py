@@ -242,6 +242,18 @@ class ERequestsToCommunity(Enum):
     friendship = 'friendship'
 
 
+#ToDo(evseev.dmsr): Make correct list of possible values
+class EWithWhom(Enum):
+    friends = 'friends'
+    anyone = 'anyone'
+
+
+#ToDo(evseev.dmsr): Make correct list of privacy settings
+class EVisibilitySettings(Enum):
+    anyone = 'anyone'
+    nobody = 'nobody'
+
+
 InterestsPGEnum = PGEnum(EInterests, name='user_interests_enum', inherit_schema=True)
 ExpertiseAreaPGEnum = PGEnum(EExpertiseArea, name='user_expertise_enum', inherit_schema=True)
 SpecialisationPGEnum = PGEnum(ESpecialisation, name='user_specialisation_enum', inherit_schema=True)
@@ -250,7 +262,9 @@ IndustryPGEnum = PGEnum(EIndustry, name='user_industry_enum', inherit_schema=Tru
 SkillsPGEnum = PGEnum(ESkills, name='user_skills_enum', inherit_schema=True)
 CompanyServicesPGEnum = PGEnum(ECompanyServices, name='user_company_services_enum', inherit_schema=True)
 LocationPGEnum = PGEnum(ELocation, name='user_location_enum', inherit_schema=True)
-RequestsToCommunity = PGEnum(ERequestsToCommunity, name='user_requests_to_community_enum', inherit_schema=True)
+RequestsToCommunityPGEnum = PGEnum(ERequestsToCommunity, name='user_requests_to_community_enum', inherit_schema=True)
+WithWhomEnumPGEnum = PGEnum(EWithWhom, name='user_with_whom_enum', inherit_schema=True)
+VisibilitySettingsPGEnum = PGEnum(EVisibilitySettings, name='user_visibility_settings_enum', inherit_schema=True)
 
 
 class ORMUserProfile(ObjectTable):
@@ -285,10 +299,24 @@ class ORMUserProfile(ObjectTable):
 
     location: Mapped[ELocation | None] = mapped_column(LocationPGEnum)
     referral: Mapped[bool] = mapped_column(default=False)
-    requests_to_community: Mapped[List[ERequestsToCommunity] | None] = mapped_column(ARRAY(RequestsToCommunity))
+    requests_to_community: Mapped[List[ERequestsToCommunity] | None] = mapped_column(ARRAY(RequestsToCommunityPGEnum))
 
     is_tg_bot_blocked: Mapped[bool] = mapped_column(default=False)
     blocked_status_update_date: Mapped[datetime | None]
+
+    who_to_date_with: Mapped[EWithWhom | None] = mapped_column(WithWhomEnumPGEnum)
+    who_sees_profile: Mapped[EVisibilitySettings] = mapped_column(
+        VisibilitySettingsPGEnum,
+        default=EVisibilitySettings.anyone)
+    who_sees_current_job: Mapped[EVisibilitySettings] = mapped_column(
+        VisibilitySettingsPGEnum,
+        default=EVisibilitySettings.anyone)
+    who_sees_contacts: Mapped[EVisibilitySettings] = mapped_column(
+        VisibilitySettingsPGEnum,
+        default=EVisibilitySettings.anyone)
+    who_sees_calendar: Mapped[EVisibilitySettings] = mapped_column(
+        VisibilitySettingsPGEnum,
+        default=EVisibilitySettings.anyone)
 
     # Relationship for user_meetings, linking the user to their meetings with roles and responses
     meeting_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
