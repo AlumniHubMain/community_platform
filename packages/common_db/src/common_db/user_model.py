@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List
 
-from sqlalchemy import ARRAY, String, BIGINT, Index
+from sqlalchemy import ARRAY, String, BIGINT, Index, Integer
 from sqlalchemy import Enum as PGEnum
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
@@ -322,6 +322,9 @@ class ORMUserProfile(ObjectTable):
     meeting_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
         "ORMMeetingResponse", back_populates="user", cascade="all, delete-orphan"
     )
+
+    available_meetings_pendings_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
+    available_meetings_confirmations_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
 
     __table_args__ = (Index('ix_users_telegram_id', 'telegram_id'),
                       {'schema': f"{schema}"}

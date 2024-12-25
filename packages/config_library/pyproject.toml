@@ -1,34 +1,20 @@
-[build-system]
-requires = ["setuptools>=42", "wheel", "grpcio-tools"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "alumnihub-config-library"
-version = "0.1.1"
-description = "Config library for AlumniHub community platform"
-authors = [
-    { name = "Dmitriy Evseev"}
-]
+name = "config-library"
+version = "0.1.0"
+description = ""
 readme = "README.md"
-requires-python = ">=3.10"
-classifiers = [
-    "Programming Language :: Python :: 3.12",
-    # "License :: OSI Approved :: MIT License", # ToDo: decide on the license
-    "Operating System :: OS Independent"
+authors = [
+    { name = "und3v3l0p3d", email = "prohibitme@ya.ru" }
 ]
+requires-python = ">=3.12"
 dependencies = [
-    "pydantic",
-    "pydantic_settings"
+    "pydantic>=2.10.4",
+    "pydantic-settings>=2.7.0",
 ]
-urls = { "Homepage" = "https://github.com/AlumniHubMain/community_platform/" }
 
-[tool.setuptools]
-packages = ["alumnihub.community_platform.config_library"]
-package-dir = { "" = "src" }
-include-package-data = true
+[project.scripts]
+config-library = "config_library:main"
 
-[tool.setuptools.package-data]
-"alumnihub.community_platform.config_library" = [
-    "generated/*_pb2.py",
-    "generated/*_pb2.pyi"
-]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

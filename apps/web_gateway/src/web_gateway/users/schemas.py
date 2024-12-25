@@ -32,6 +32,9 @@ class UserProfile(BaseModel):
     location: ELocation | None
     referral: bool | None
     requests_to_community: List[ERequestsToCommunity]
+    
+    available_meetings_pendings_count: int | None
+    available_meetings_confirmations_count: int | None
 
     who_to_date_with: EWithWhom | None
     who_sees_profile: EVisibilitySettings
