@@ -21,3 +21,12 @@ uv-proto-plugin = { path = "../uv_proto_plugin" }
 [tool.hatch.build.hooks.protobuf]
 dependencies = ["uv-proto-plugin"]
 proto_paths = ["proto"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "ruff>=0.8.4",
+]
+
+[tool.ruff]
+extend = "../../ruff.toml"
