@@ -1,26 +1,21 @@
 [project]
-name = "event-emitter"
+name = "common-db"
 version = "0.1.0"
-description = ""
+description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "Sergey Sedov", email = "sergey.sedov@gmail.com" },
     { name = "und3v3l0p3d", email = "prohibitme@ya.ru" }
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "alumni-hub",
-    "google-cloud-pubsub>=2.27.1",
-    "protobuf>=5.29.2",
     "pydantic>=2.10.4",
+    "pydantic-settings>=2.7.0",
+    "sqlalchemy[asyncio]>=2.0.36",
 ]
 
 [project.scripts]
-event-emmiter = "event_emmiter:main"
+common-db = "common_db:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.uv.sources]
-alumni-hub = { path = "../alumni_hub" }

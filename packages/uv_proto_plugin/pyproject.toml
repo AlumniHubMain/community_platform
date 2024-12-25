@@ -1,0 +1,36 @@
+[project]
+name = "uv-proto-plugin"
+version = "0.1.0"
+description = "UV plugin to include proto files"
+readme = "README.md"
+authors = [
+    { name = "und3v3l0p3d", email = "prohibitme@ya.ru" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "grpcio-tools>=1.68.1",
+    "hatchling>=1.27.0",
+    "protobuf>=5.29.2",
+]
+
+[project.entry-points.hatch]
+protobuf = "uv_proto_plugin.hooks"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/uv_proto_plugin/_version.py"
+dependencies = [
+    "hatch-vcs",
+]
+
+[tool.hatch.envs.default]
+dependencies = [
+  "hatch",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
