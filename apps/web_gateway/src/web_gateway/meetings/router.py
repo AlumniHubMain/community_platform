@@ -9,7 +9,11 @@ from .schemas import (
     MeetingFilter,
     MeetingRequestUpdate,
     MeetingList,
+    MeetingsUserLimits,
+    EMeetingResponseStatus
 )
+from web_gateway.limits.limits_manager import LimitsManager
+
 
 router = APIRouter(tags=["Meetings"], prefix="/meetings")
 session_dependency = Depends(get_async_session)
@@ -51,6 +55,7 @@ async def update_meeting(
     Update an existing meeting's details.
     """
     # ToDo: restrict to organizers
+    # If you will change state of meeting - please add limitations check and updating here
     return await MeetingManager.update_meeting(session, meeting_id, 1, update_request)
 
 
@@ -80,7 +85,7 @@ async def add_user_to_meeting(
 async def update_user_meeting_response(
     meeting_id: int,
     user_id: int,
-    status: str,  # response status, can be 'confirmed', 'tentative', or 'declined'
+    status: EMeetingResponseStatus,
     session: AsyncSession = session_dependency,
 ) -> MeetingRequestRead:
     """
@@ -99,3 +104,8 @@ async def get_meetings(
 ):
     # ToDo: discuss visibility (default private?)
     return await MeetingManager.get_filtered_meetings(session, meeting_filter)
+
+
+@router.get("/limits/user", response_model=MeetingsUserLimits, summary="Get user limits for meetings")
+async def get_meetings_user_limits(user_id: int, session: AsyncSession = session_dependency) -> MeetingsUserLimits:
+    return await LimitsManager.get_user_meetings_limits(session, user_id)

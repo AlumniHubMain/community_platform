@@ -28,3 +28,15 @@ build-backend = "hatchling.build"
 [tool.uv.sources]
 common-db = { path = "../../packages/common_db" }
 event-emitter = { path = "../../packages/event_emitter" }
+
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest-env>=1.1.5",
+    "pytest>=8.3.4",
+    "ruff>=0.8.4",
+]
+
+[tool.ruff]
+extend = "../../ruff.toml"

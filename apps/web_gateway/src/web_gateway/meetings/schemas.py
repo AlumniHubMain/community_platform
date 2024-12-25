@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from common_db import EMeetingUserRole, EMeetingResponseStatus, EMeetingStatus
+
 
 # For creating meeting requests
 class MeetingRequestCreate(BaseModel):
@@ -19,7 +21,7 @@ class MeetingRequestRead(BaseModel):
     description: str | None = None
     location: str | None = None
     scheduled_time: datetime
-    status: str  # 'new', 'confirmed', 'archived'
+    status: EMeetingStatus
     user_responses: list[MeetingResponse]  # List of users with their statuses
 
     class Config:
@@ -35,8 +37,8 @@ class MeetingRequestUpdate(BaseModel):
 # For user status in a meeting
 class MeetingResponse(BaseModel):
     user_id: int
-    role: str  # 'organizer', 'attendee'
-    response: str | None = None  # 'confirmed', 'tentative', 'declined'
+    role: EMeetingUserRole
+    response: EMeetingResponseStatus | None = None
 
     class Config:
         from_attributes = True
@@ -51,3 +53,18 @@ class MeetingFilter(BaseModel):
 
 class MeetingList(BaseModel):
     meetings: list[MeetingRequestRead]
+
+
+class MeetingsUserLimits(BaseModel):
+    
+    # Meetings pendings limit for user
+    meetings_pendings_limit: int = 0
+    
+    # Meetings confirmations limit for user
+    meetings_confirmations_limit: int = 0
+    
+    # Count of available meeting pendings for user
+    available_meeting_pendings: int = 0
+
+    # Count of available meetings confirmations for user
+    available_meeting_confirmations: int = 0

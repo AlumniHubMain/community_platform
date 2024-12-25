@@ -1,9 +1,9 @@
 import os
 
-from limits.config import LimitsConfig, EDefaultUserLimits
-from users.schemas import SUserProfileRead
-from users.user_profile_manager import UserProfileManager
-from meetings.schemas import MeetingsUserLimits
+from web_gateway.limits.config import LimitsConfig, EDefaultUserLimits
+from web_gateway.users.schemas import SUserProfileRead
+from web_gateway.users.user_profile_manager import UserProfileManager
+from web_gateway.meetings.schemas import MeetingsUserLimits
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
