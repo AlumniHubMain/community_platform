@@ -1,7 +1,7 @@
 [project]
-name = "db_proxy"
+name = "web_gateway"
 version = "0.1.0"
-description = "Add your description here"
+description = ""
 readme = "README.md"
 authors = [
     { name = "und3v3l0p3d", email = "prohibitme@ya.ru" }

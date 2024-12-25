@@ -9,13 +9,13 @@ from fastapi.responses import HTMLResponse
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from db_proxy.auth.router import router as auth_router
-from db_proxy.auth.security import authorize
-from db_proxy.enums.router import router as enum_router
-from db_proxy.forms.router import router as forms_router
-from db_proxy.media_storage.router import router as mds_router
-from db_proxy.meetings.router import router as meetings_router
-from db_proxy.users.router import router as users_router
+from web_gateway.auth.router import router as auth_router
+from web_gateway.auth.security import authorize
+from web_gateway.enums.router import router as enum_router
+from web_gateway.forms.router import router as forms_router
+from web_gateway.media_storage.router import router as mds_router
+from web_gateway.meetings.router import router as meetings_router
+from web_gateway.users.router import router as users_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

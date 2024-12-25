@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .schemas import SUserProfileRead, SUserProfileUpdate, UserProfile
 from .user_profile_manager import UserProfileManager
-from db_proxy import auth
+from web_gateway import auth
 
 
 router = APIRouter(tags=["Client profiles"], prefix="/user")

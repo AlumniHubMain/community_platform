@@ -14,7 +14,7 @@ from fastapi import (
 )
 from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
-from db_proxy.users.user_profile_manager import UserProfileManager
+from web_gateway.users.user_profile_manager import UserProfileManager
 
 import jwt
 import secrets
