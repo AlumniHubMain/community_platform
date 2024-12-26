@@ -1,3 +1,4 @@
+from typing import Optional
 from enum import Enum
 
 from .broker import MessageBroker
@@ -8,6 +9,16 @@ from .nats import NatsBroker
 class BrokerType(Enum):
     GOOGLE_PUBSUB = "google_pubsub"
     NATS = "nats"
+
+
+def _create_google_pubsub_broker(project_id: Optional[str] = None, credentials: Optional[any] = None) -> GooglePubSubBroker:
+    if project_id is None or credentials is None:
+        raise ValueError("project_id and credentials required for Google PubSub")
+    return GooglePubSubBroker(project_id=project_id, credentials=credentials)
+
+
+def _create_nats_broker(**kwargs) -> NatsBroker:
+    return NatsBroker()
 
 
 class BrokerFactory:
@@ -23,13 +34,8 @@ class BrokerFactory:
         )
     """
     _BROKER_CREATORS = {
-        BrokerType.GOOGLE_PUBSUB: lambda kwargs: (
-            GooglePubSubBroker(project_id=kwargs.get("project_id"),
-                               credentials=kwargs.get("credentials"))
-            if "project_id" and "credentials" in kwargs
-            else ValueError("project_id and credentials required for Google PubSub")
-        ),
-        BrokerType.NATS: lambda kwargs: NatsBroker()
+        BrokerType.GOOGLE_PUBSUB: _create_google_pubsub_broker,
+        BrokerType.NATS: _create_nats_broker,
     }
 
     @classmethod

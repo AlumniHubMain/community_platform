@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 import pytest
@@ -17,6 +18,21 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default="localhost:8085",
     )
 
+@pytest.hookimpl(tryfirst=True)
+def pytest_load_initial_conftests(
+    args: list[str],  # noqa: ARG001
+    early_config: pytest.Config,
+    parser: pytest.Parser,  # noqa: ARG001
+) -> None:
+    project = early_config.getini("google_pubsub_project")
+    if not project:
+        raise pytest.UsageError("Missing Google Cloud project ID")
+    host_port = early_config.getini("google_pubsub_host_port")
+    if not host_port:
+        raise pytest.UsageError("Missing Google Cloud Pub/Sub emulator host and port")
+    os.environ['GOOGLE_CLOUD_PROJECT'] = project
+    os.environ['PUBSUB_PROJECT_ID'] = project
+    os.environ['PUBSUB_EMULATOR_HOST'] = host_port
 
 
 @pytest.fixture

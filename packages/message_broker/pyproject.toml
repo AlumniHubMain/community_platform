@@ -19,9 +19,17 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "message-broker-pytest",
+    "pytest-asyncio>=0.25.0",
     "pytest>=8.3.4",
     "ruff>=0.8.4",
 ]
 
 [tool.ruff]
 extend = "../../ruff.toml"
+
+[tool.uv.sources]
+message-broker-pytest = { path = "../message_broker_pytest" }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
