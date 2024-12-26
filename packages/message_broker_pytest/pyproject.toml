@@ -1,0 +1,33 @@
+[project]
+name = "message-broker-pytest"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+authors = [
+    { name = "und3v3l0p3d", email = "prohibitme@ya.ru" }
+]
+classifiers = [
+    "Framework :: Pytest",
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pytest-env>=1.1.5",
+    "pytest>=8.3.4",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "ruff>=0.8.4",
+]
+
+[tool.ruff]
+extend = "../../ruff.toml"
+
+[project.entry-points.pytest11]
+google_pubsub_pytest = "message_broker_pytest.google_pubsub_pytest_plugin"
