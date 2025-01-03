@@ -1,8 +1,6 @@
 from datetime import datetime
 from typing import AsyncGenerator
 
-from config_library import PlatformPGSettings
-
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
@@ -15,7 +13,7 @@ from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 from .config import settings
 
 
-db_settings = settings.read_dotenv_config('db_config', PlatformPGSettings)
+db_settings = settings.db_settings
 schema: str = db_settings.db_schema
 
 

@@ -4,9 +4,11 @@ from io import BytesIO
 
 import aiohttp
 from PIL import Image
-from common_db import settings
 from fastapi import UploadFile
 from gcloud.aio.storage import Storage
+
+
+from web_gateway.settings import settings
 
 
 def make_hash(file: UploadFile) -> str:
@@ -30,7 +32,7 @@ class GCSClient:
     def __init__(self):
         # User must have 'Storage Object Admin' Role at S3 storage
         self._credentials_file = settings.google_application_credentials
-        self._bucket_name = settings.google_cloud_bucket
+        self._bucket_name = settings.s3.bucket
         self._supported_extensions = ("jpg", "jpeg", "png")
 
     def check_file_extension(self, file: UploadFile) -> str:

@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.10.4",
-    "pydantic-settings>=2.7.0",
+    "pydantic-settings[yaml]>=2.7.0",
 ]
 
 [project.scripts]
@@ -18,3 +18,8 @@ config-library = "config_library:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+]
