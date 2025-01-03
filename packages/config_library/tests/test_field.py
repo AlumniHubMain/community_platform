@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from config_library.field import FieldType
 
+
 class ExampleValue(BaseModel):
     example_value: str
 

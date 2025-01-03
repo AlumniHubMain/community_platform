@@ -10,6 +10,16 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
 
+
+def if_raw_type(type_: Type[T]) -> bool:
+    return issubclass(type_, str) or issubclass(type_, int) or issubclass(type_, float) or issubclass(type_, bool)
+
+
+def get_raw_value(path: str, type_: Type[T]) -> T:
+    with open(path, 'r') as file:
+        return type_(file.read())
+
+
 def get_value(path: str, type_: Type[T]) -> T:
     source: PydanticBaseSettingsSource | None = None
     if path == 'env':
@@ -40,6 +50,10 @@ def get_value(path: str, type_: Type[T]) -> T:
             yaml_file=path,
             yaml_file_encoding='utf-8',
         )
+    elif if_raw_type(type_):
+        logger.debug('Assume source is raw %s', path)
+        return get_raw_value(path, type_)
+
 
     if source is None:
         raise ValueError(f'Unsupported value source: {path}')
