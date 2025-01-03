@@ -1,7 +1,11 @@
+import logging
 from collections import defaultdict
 from typing import Any, Type
 
 from config_library import value_from
+
+
+logger = logging.getLogger(__name__)
 
 
 class Storage:
@@ -13,7 +17,7 @@ class Storage:
         self._stored = defaultdict(dict)
 
     def register(self, key: str, type_: Type[Any]):
-        print(f'Registering {key} with {type_}')
+        logger.debug('Registering %s with %s', key, type_)
         self._register[key][str(type_)] = type_
 
     def get(self, key: str, type_: Type[Any]) -> Any:
