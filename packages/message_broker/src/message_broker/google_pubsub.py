@@ -33,8 +33,7 @@ class GooglePubSubBroker(MessageBroker[Message]):
         message_data = message.model_dump_json().encode('utf-8')
 
         try:
-            future = self.publisher.publish(topic_path, message_data)
-            return future.result()
+            return await asyncio.wrap_future(self.publisher.publish(topic_path, message_data))
         except Exception as e:
             raise Exception(f"Publish error: {str(e)}")
 
@@ -76,7 +75,7 @@ class GooglePubSubBroker(MessageBroker[Message]):
                 message.nack()
 
         # Launching a subscription without blocking
-        streaming_pull_future = self.subscriber.subscribe(subscription_path, callback=sync_wrapper)
+        future = asyncio.wrap_future(self.subscriber.subscribe(subscription_path, callback=sync_wrapper))
 
         def on_error(future):
             try:
@@ -84,4 +83,5 @@ class GooglePubSubBroker(MessageBroker[Message]):
             except Exception as e:
                 print(f"Subscription error: {str(e)}")
 
-        streaming_pull_future.add_done_callback(on_error)
+        future.add_done_callback(on_error)
+        await future

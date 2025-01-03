@@ -1,0 +1,35 @@
+[project]
+name = "message-broker"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+authors = [
+    { name = "und3v3l0p3d", email = "prohibitme@ya.ru" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "google-cloud-pubsub>=2.27.1",
+    "pydantic>=2.10.4",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[dependency-groups]
+dev = [
+    "message-broker-pytest",
+    "pytest-asyncio>=0.25.0",
+    "pytest>=8.3.4",
+    "ruff>=0.8.4",
+]
+
+[tool.ruff]
+extend = "../../ruff.toml"
+
+[tool.uv.sources]
+message-broker-pytest = { path = "../message_broker_pytest" }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
