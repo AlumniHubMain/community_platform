@@ -1,7 +1,6 @@
 import logging
 import os
 from contextlib import asynccontextmanager
-from common_db import settings
 
 from fastapi import FastAPI, Depends
 from fastapi.responses import HTMLResponse
@@ -16,6 +15,9 @@ from web_gateway.forms.router import router as forms_router
 from web_gateway.media_storage.router import router as mds_router
 from web_gateway.meetings.router import router as meetings_router
 from web_gateway.users.router import router as users_router
+
+from web_gateway.settings import settings
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
