@@ -78,19 +78,7 @@ class UvProtoPlugin(BuildHookInterface):
             args.append(path)
         for out in self._files.outputs:
             if not os.path.exists(out.output.parent):
-                # Get postfix of last part of path
-                # For ex: example/of/path/file.py -> "file.py" -> "file", "py" -> "py"
-                postfix = out.output.parts[-1].split('.')[-1]
-                
-                # If last part - .py/pyi file
-                if "py" in postfix:
-                    directories = [part for part in out.output.parts[:-1]]
-                    os.makedirs(Path(str(os.path.sep).join(directories)), exist_ok=True)
-                    file = open(out.output, 'w')
-                    file.close()
-                # If out.output - directory path
-                else:
-                    os.makedirs(out.output, exist_ok=True)
+                os.makedirs(out.output.parent, exist_ok=True)
 
             run_args = args.copy()
             run_args.append(f"--{out.name}_out={out.output.parent}")

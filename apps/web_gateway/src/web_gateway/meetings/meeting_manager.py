@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from event_emitter import EmitterFactory, IProtoEmitter
 from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile, EMeetingResponseStatus, EMeetingStatus, EMeetingUserRole
-from common_db.config import settings
+from web_gateway.settings import settings
 from web_gateway.limits.limits_manager import LimitsManager
 from .notification_event_builder import NotificationEventBuilder
 from .schemas import (
@@ -31,8 +31,8 @@ class MeetingManager:
     def notification_sender(cls) -> IProtoEmitter:
         if not cls.__notification_event_emitter:
             cls.__notification_event_emitter = EmitterFactory.create_event_emitter(
-                target=settings.notification_target,
-                topic=settings.google_pubsub_notification_topic,
+                target=settings.emitter_settings.meetings_notification_target,
+                topic=settings.emitter_settings.meetings_google_pubsub_notification_topic,
             )
         return cls.__notification_event_emitter
 

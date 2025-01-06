@@ -6,7 +6,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from .schemas import SUserProfileRead, SUserProfileUpdate, UserProfile, ORMMeeting, ORMMeetingResponse, EMeetingResponseStatus
-from web_gateway.limits.config import EDefaultUserLimits, LimitsConfig
+from web_gateway.settings import settings
 
 
 class UserProfileManager:
@@ -65,8 +65,7 @@ class UserProfileManager:
     @classmethod
     async def update_meetings_counters(
         cls, session: AsyncSession, 
-        user_id: int, 
-        config: LimitsConfig
+        user_id: int
     ) -> SUserProfileRead:
         
         # Select user meeting responses
@@ -100,11 +99,8 @@ class UserProfileManager:
         pended_count: int = len([1 for response in responses 
                                    if (response.response.is_pended_status() and response.user_id == user_id)])
         
-        confirmation_limit = config.get("max_user_confirmed_meetings_count", 
-                                        default=EDefaultUserLimits.MAX_CONFIRMED_MEETINGS_COUNT)
-        
-        pending_limit = config.get("max_user_pended_meetings_count", 
-                                   default=EDefaultUserLimits.MAX_PENDED_MEETINGS_COUNT)
+        confirmation_limit = settings.limits.max_user_confirmed_meetings_count
+        pending_limit = settings.limits.max_user_pended_meetings_count
 
         # Try to find user profile
         result = await session.execute(select(ORMUserProfile).where(ORMUserProfile.id == user_id))

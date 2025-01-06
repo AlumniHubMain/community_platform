@@ -1,1 +1,1 @@
-from auth.security import current_user_id, owner_or_admin
+from web_gateway.auth.security import current_user_id, owner_or_admin

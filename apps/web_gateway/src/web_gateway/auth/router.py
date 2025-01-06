@@ -19,7 +19,7 @@ from web_gateway.users.user_profile_manager import UserProfileManager
 import jwt
 import secrets
 
-from common_db.config import settings
+from web_gateway.settings import settings
 from .security import (
     create_access_token,
     validate_telegram_data,

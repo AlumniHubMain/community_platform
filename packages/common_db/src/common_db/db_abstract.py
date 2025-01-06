@@ -10,11 +10,11 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 
-from .config import settings
+from config_library import BaseConfig, FieldType
+from common_db.config import db_settings
 
 
-db_settings = settings.db_settings
-schema: str = db_settings.db_schema
+schema: str = db_settings.db.db_schema
 
 
 class Base(DeclarativeBase):
@@ -44,7 +44,7 @@ class ObjectTable(Base):
 
 
 engine: AsyncEngine = create_async_engine(
-    url=db_settings.database_url_asyncpg.get_secret_value()
+    url=db_settings.db.database_url_asyncpg.get_secret_value()
 )
 session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
 
