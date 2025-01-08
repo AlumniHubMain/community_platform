@@ -1,23 +1,19 @@
 import os
 
-from web_gateway.limits.config import LimitsConfig, EDefaultUserLimits
 from web_gateway.users.schemas import SUserProfileRead
 from web_gateway.users.user_profile_manager import UserProfileManager
 from web_gateway.meetings.schemas import MeetingsUserLimits
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from common_db.config import settings
-
-
-config = LimitsConfig(config_path=settings.limits_config_file)
+from web_gateway.settings import settings
 
 
 class LimitsManager:
 
     @classmethod
     async def update_user_limits(cls, session: AsyncSession, user_id: int) -> SUserProfileRead:
-        return await UserProfileManager.update_meetings_counters(session, user_id, config)
+        return await UserProfileManager.update_meetings_counters(session, user_id)
 
     @classmethod
     async def get_user_meetings_limits(cls, session: AsyncSession, user_id: int) -> MeetingsUserLimits:
@@ -26,10 +22,8 @@ class LimitsManager:
             raise HTTPException(status_code=404, detail="User profile not found")
         
         limits = MeetingsUserLimits()
-        limits.meetings_confirmations_limit = config.get("max_user_confirmed_meetings_count", 
-                                                         default=EDefaultUserLimits.MAX_CONFIRMED_MEETINGS_COUNT)
-        limits.meetings_pendings_limit = config.get("max_user_pended_meetings_count", 
-                                                    default=EDefaultUserLimits.MAX_PENDED_MEETINGS_COUNT)
+        limits.meetings_confirmations_limit = settings.limits.max_user_confirmed_meetings_count
+        limits.meetings_pendings_limit = settings.limits.max_user_pended_meetings_count
         limits.available_meeting_pendings = user_profile.available_meetings_pendings_count
         limits.available_meeting_confirmations = user_profile.available_meetings_confirmations_count
         return limits

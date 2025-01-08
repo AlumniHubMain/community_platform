@@ -24,9 +24,7 @@ class PgSettings(BaseModel):
 
 
 # TODO(und3v3l0p3d): поменять после того как перенести миграции в пакет common_db
-# class Settings(BaseConfig):
-#     db_config: FieldType[PgSettings] = 'db_config.env'
-#
-# # При импорте файла сразу создастся и провалидируется объект конфига,
-# # который можно далее импортировать из разных мест
-# settings = Settings()
+class DbSettings(BaseConfig):
+    db: FieldType[PgSettings] = '/config/db.json'
+
+db_settings = DbSettings()

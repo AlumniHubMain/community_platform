@@ -1,6 +1,6 @@
 import os
 from datetime import timedelta, datetime
-from common_db.config import settings
+from web_gateway.settings import settings
 from typing import Optional, Annotated
 
 from fastapi import Request, Depends, HTTPException, Cookie, Header
@@ -12,21 +12,30 @@ import hmac
 import logging
 
 
+def read_content(file_path: os.PathLike):
+    if not os.path.exists(file_path):
+        logger.critical(f"Unable to read file. Can't find file by path {file_path}")
+        raise
+    content = ""
+    with open(file_path, 'r') as file:
+        content = file.read().strip()
+    return content
+
 
 logger = logging.getLogger(__name__)
 ACCESS_SECRET_KEY = None
 BOT_TOKEN = None
 
 try:
-    ACCESS_SECRET_KEY = settings.read_file('access_secret_file')
+    ACCESS_SECRET_KEY = read_content(settings.secret_files.access_secret_file)
 except Exception as e:
-    logger.critical(f"Unable to read access secret file {settings.access_secret_file}")
+    logger.critical(f"Unable to read access secret file {settings.secret_files.access_secret_file}")
     raise
 
 try:
-    BOT_TOKEN = settings.read_file('bot_token_file')
+    BOT_TOKEN = read_content(settings.secret_files.bot_token_file)
 except Exception as e:
-    logger.critical(f"Unable to read telegram token file {settings.bot_token_file}")
+    logger.critical(f"Unable to read telegram token file {settings.secret_files.bot_token_file}")
     raise
 
 ALGORITHM = "HS256"

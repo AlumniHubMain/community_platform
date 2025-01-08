@@ -78,7 +78,7 @@ class UvProtoPlugin(BuildHookInterface):
             args.append(path)
         for out in self._files.outputs:
             if not os.path.exists(out.output.parent):
-                os.makedirs(out.output, exist_ok=True)
+                os.makedirs(out.output.parent, exist_ok=True)
 
             run_args = args.copy()
             run_args.append(f"--{out.name}_out={out.output.parent}")
