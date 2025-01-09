@@ -1,35 +1,36 @@
-[build-system]
-requires = ["setuptools>=42", "wheel", "grpcio-tools"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "alumnihub-event-emitter"
-version = "0.1.1"
-description = "Notification event emitter for AlumniHub community platform"
-authors = [
-    { name = "Sergey Sedov", email = "sergey.sedov@gmail.com" }
-]
+name = "event-emitter"
+version = "0.1.0"
+description = ""
 readme = "README.md"
-requires-python = ">=3.7"
-classifiers = [
-    "Programming Language :: Python :: 3.12",
-    # "License :: OSI Approved :: MIT License", # ToDo: decide on the license
-    "Operating System :: OS Independent"
+authors = [
+    { name = "Sergey Sedov", email = "sergey.sedov@gmail.com" },
+    { name = "und3v3l0p3d", email = "prohibitme@ya.ru" }
 ]
+requires-python = ">=3.12"
 dependencies = [
-    "google-cloud-pubsub",
-    "protobuf",
-    "pydantic"
+    "alumni-hub",
+    "google-cloud-pubsub>=2.27.1",
+    "protobuf>=5.29.2",
+    "pydantic>=2.10.4",
 ]
-urls = { "Homepage" = "https://github.com/AlumniHubMain/community_platform/" }
 
-[tool.setuptools]
-packages = ["alumnihub.community_platform.event_emitter"]
-package-dir = { "" = "src" }
-include-package-data = true
+[project.scripts]
+event-emmiter = "event_emmiter:main"
 
-[tool.setuptools.package-data]
-"alumnihub.community_platform.event_emitter" = [
-    "generated/*_pb2.py",
-    "generated/*_pb2.pyi"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+alumni-hub = { path = "../alumni_hub" }
+
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "ruff>=0.8.4",
 ]
+
+[tool.ruff]
+extend = "../../ruff.toml"

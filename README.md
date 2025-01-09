@@ -31,3 +31,14 @@ docker compose exec matching sh -c 'export DB_HOST=db && python -m db_common.set
 
 docker compose exec matching python -m scripts.insert_test_data
 
+
+## Setup
+### Local Dev
+#### MacOs & Linux Install UV
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+#### Install Python 
+```bash
+uv python install 3.12 3.13
+```

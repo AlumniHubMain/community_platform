@@ -1,0 +1,35 @@
+[project]
+name = "common-db"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "und3v3l0p3d", email = "prohibitme@ya.ru" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "config-library",
+    "pydantic>=2.10.4",
+    "pydantic-settings>=2.7.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+]
+
+[project.scripts]
+common-db = "common_db:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "ruff>=0.8.4",
+]
+
+[tool.ruff]
+extend = "../../ruff.toml"
+
+[tool.uv.sources]
+config-library = { path = "../config_library" }

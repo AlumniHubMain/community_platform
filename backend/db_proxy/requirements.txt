@@ -4,6 +4,7 @@ certifi
 eval_type_backport
 fastapi
 gcloud-aio-storage
+grpcio-tools
 google-cloud-pubsub
 greenlet
 pillow
@@ -14,4 +15,5 @@ SQLAlchemy
 uvicorn
 
 # private packages
+alumnihub-config-library
 alumnihub_event_emitter
