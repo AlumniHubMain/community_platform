@@ -1,6 +1,6 @@
 from sqlalchemy import select
 
-from backend.db_proxy.common_db.db_abstract import get_async_session
+from common_db.db_abstract import get_async_session
 from .models import ORMUserProfile
 from .schemas import DTONotifiedUserProfile
 

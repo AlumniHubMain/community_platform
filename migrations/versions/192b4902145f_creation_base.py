@@ -12,7 +12,7 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-from backend.db_proxy.common_db.db_abstract import schema
+from common_db.db_abstract import schema
 
 # revision identifiers, used by Alembic.
 revision: str = "192b4902145f"
@@ -33,7 +33,7 @@ def upgrade() -> None:
         sa.Column(
             "status",
             postgresql.ENUM(
-                "new", "archived", "confirmed", name="meeting_status_enum"
+                "new", "confirmed", "archived", name="meeting_status_enum"
             ),
             nullable=False,
         ),
@@ -426,6 +426,61 @@ def upgrade() -> None:
             sa.Integer(),
             nullable=False,
         ),
+        sa.Column(
+            "who_to_date_with",
+            sa.Enum(
+                "friends",
+                "anyone",
+                name="user_with_whom_enum",
+                schema="alh_community_platform",
+                inherit_schema=True,
+            ),
+            nullable=True,
+        ),
+        sa.Column(
+            "who_sees_profile",
+            sa.Enum(
+                "anyone",
+                "nobody",
+                name="user_visibility_settings_enum",
+                schema="alh_community_platform",
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "who_sees_current_job",
+            sa.Enum(
+                "anyone",
+                "nobody",
+                name="user_visibility_settings_enum",
+                schema="alh_community_platform",
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "who_sees_contacts",
+            sa.Enum(
+                "anyone",
+                "nobody",
+                name="user_visibility_settings_enum",
+                schema="alh_community_platform",
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "who_sees_calendar",
+            sa.Enum(
+                "anyone",
+                "nobody",
+                name="user_visibility_settings_enum",
+                schema="alh_community_platform",
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column(
             "created_at",
@@ -575,3 +630,5 @@ def downgrade() -> None:
     op.execute(f"DROP TYPE {schema}.user_requests_to_community_enum")
     op.execute(f"DROP TYPE {schema}.e_meeting_format")
     op.execute(f"DROP TYPE {schema}.e_intent_type")
+    op.execute(f"DROP TYPE {schema}.user_with_whom_enum")
+    op.execute(f"DROP TYPE {schema}.user_visibility_settings_enum")

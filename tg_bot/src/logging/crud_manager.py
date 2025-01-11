@@ -5,8 +5,8 @@ from sqlalchemy import update, select
 from .logging_report import report
 from .models import ORMTgBotLoggingEvents
 from .schemas import DTOTgBotLoggingEvents, DTOUpdateBlockedStatus, DTOCheckUserBlockedBot
-from backend.db_proxy.common_db.db_abstract import get_async_session
-from backend.db_proxy.common_db.user_model import ORMUserProfile
+from common_db.db_abstract import get_async_session
+from common_db.user_model import ORMUserProfile
 
 
 class LoggingManager:

@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from tg_bot.src.user.schemas import DTOTgBotUser
 from .models import ORMTgBotStaff
 from .schemas import DTOTgBotStaffRead, DTOTgBotStaffUpdate
-from backend.db_proxy.common_db.db_abstract import get_async_session
+from common_db.db_abstract import get_async_session
 
 
 class StaffManager:

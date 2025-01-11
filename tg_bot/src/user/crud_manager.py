@@ -2,8 +2,8 @@ from sqlalchemy import or_, update, func
 from sqlalchemy.future import select
 
 from .schemas import DTOTgBotUser, DTOTgBotUserUpdate, DTOTgBotUserRead
-from backend.db_proxy.common_db.db_abstract import get_async_session
-from backend.db_proxy.common_db.user_model import ORMUserProfile
+from common_db.db_abstract import get_async_session
+from common_db.user_model import ORMUserProfile
 
 
 class UserManager:

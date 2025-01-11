@@ -3,8 +3,8 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from backend.db_proxy.common_db.config import settings
-from backend.db_proxy.common_db.db_abstract import Base, schema
+from common_db.config import db_settings as settings
+from common_db.db_abstract import Base, schema
 from tg_bot.src.staff.models import ORMTgBotStaff
 from tg_bot.src.logging.models import ORMTgBotLoggingEvents
 
@@ -15,7 +15,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 config.set_main_option(name='sqlalchemy.url',
-                       value=settings.database_url_asyncpg.get_secret_value() + '?async_fallback=True')
+                       value=settings.db.database_url_asyncpg.get_secret_value() + '?async_fallback=True')
 
 target_metadata = Base.metadata
 

@@ -3,7 +3,7 @@ from enum import Enum as BaseEnum
 from sqlalchemy import Enum, BigInteger
 from sqlalchemy.orm import mapped_column, Mapped
 
-from backend.db_proxy.common_db.db_abstract import ObjectTable
+from common_db.db_abstract import ObjectTable
 
 
 class TgBotStaffRole(BaseEnum):
