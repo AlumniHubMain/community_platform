@@ -10,9 +10,21 @@ uv sync
 ```
 
 #### Run tests
+
+Подготовка окружения:
+1. Необходимо сформировать директории с файлами конфигурации необходимыми для сервиса. Делается это в соответствии с разделом "Подробнее про конфиги и секреты" ниже.
+2. В файле конфигурации environment устанавливаем значение development. Это необходимо для активации /auth/auth_for_developer ручки.
+3. Поднимаем локально БД с указанными в `db_config.json` настройками: 
 ```bash
-uv run pytest
+docker run -e POSTGRES_DB=testing_db -e POSTGRES_USER=testing_user -e POSTGRES_PASSWORD=testing_password -p 5432:5432 --name alumni-test-database postgres:13
 ```
+
+Запуск самих тестов происходит с помощью запуска скрипта:
+```bash
+# Run tests. More info about command line arguments - bash run_tests.sh --help
+bash run_tests.sh --configs /path/to/local/dir/with/configs --secrets /path/to/local/dir/with/secrets
+```
+
 
 ## Docker
 ### Build 
