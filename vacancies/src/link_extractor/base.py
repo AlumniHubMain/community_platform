@@ -1,0 +1,79 @@
+# Copyright 2024 Alumnihub
+
+"""Base class for link extractors."""
+
+from abc import ABC, abstractmethod
+
+from loguru import logger
+from playwright.async_api import Browser, Page, Playwright, async_playwright
+
+
+class BaseLinkExtractor(ABC):
+    """Base class for link extractors."""
+
+    def __init__(self, base_url: str) -> None:
+        """Initialize the link extractor."""
+        self.base_url = base_url
+        self.timeout = 60000  # 60 seconds
+        self.logger = logger.bind(base_url=base_url)
+        self.browser_args = [
+            "--no-sandbox",
+            "--disable-blink-features=AutomationControlled",
+            "--disable-infobars",
+            "--disable-background-timer-throttling",
+            "--disable-popup-blocking",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+            "--disable-window-activation",
+            "--disable-focus-on-load",
+            "--no-first-run",
+            "--no-default-browser-check",
+            "--no-startup-window",
+            "--window-position=0,0",
+            "--window-size=1280,1000",
+            "--disable-web-security",
+            "--disable-site-isolation-trials",
+            "--disable-features=IsolateOrigins,site-per-process",
+        ]
+        self.logger.info("Initialized link extractor for {base_url}", base_url=self.base_url)
+
+    async def _init_browser(self) -> tuple[Playwright, Browser, Page]:
+        """Initialize the browser and page.
+
+        Returns:
+            tuple[Playwright, Browser, Page]: Initialized playwright, browser and page instances
+
+        """
+        playwright = await async_playwright().start()
+        browser = await playwright.chromium.launch(headless=True, args=self.browser_args)
+        page = await browser.new_page()
+        return playwright, browser, page
+
+    @abstractmethod
+    async def _accept_cookies(self, page: Page) -> None:
+        """Accept cookies on the specific site.
+
+        Args:
+            page (Page): The page instance to accept cookies on.
+
+        Returns:
+            None
+
+        """
+
+    @abstractmethod
+    async def _load_all_content(self, page: Page) -> None:
+        """Load all content on the page."""
+
+    @abstractmethod
+    async def _extract_links(self, page: Page) -> list[str]:
+        """Extract links from the page."""
+
+    @abstractmethod
+    async def get_links(self) -> list[str]:
+        """Extract links from the target URL.
+
+        Returns:
+            list[str]: List of extracted links.
+
+        """
