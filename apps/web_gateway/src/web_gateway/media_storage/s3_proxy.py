@@ -31,8 +31,8 @@ def convert_into_webp(file: UploadFile) -> BytesIO:
 class GCSClient:
     def __init__(self):
         # User must have 'Storage Object Admin' Role at S3 storage
-        self.google_application_credentials = settings.google_application_credentials
-        self._bucket_name = settings.s3.bucket
+        self._google_application_credentials = settings.google_application_credentials
+        self._bucket_name = settings.google_cloud_bucket
         self._supported_extensions = ("jpg", "jpeg", "png")
 
     def check_file_extension(self, file: UploadFile) -> str:
@@ -49,7 +49,7 @@ class GCSClient:
 
     async def upload_avatar(self, file: UploadFile) -> dict:
         async with aiohttp.ClientSession() as session:
-            client = Storage(session=session, service_file=self._credentials_file)
+            client = Storage(session=session, service_file=self._google_application_credentials)
             extension = self.check_file_extension(file)
             dir_name = make_hash(file)
 
