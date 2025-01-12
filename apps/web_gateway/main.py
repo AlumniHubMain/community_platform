@@ -53,10 +53,11 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(forms_router)
-app.include_router(users_router, dependencies=[Depends(authorize)])
+#ToDo(WowNemir): enable auth dependencies
+app.include_router(users_router)#, dependencies=[Depends(authorize)])
 app.include_router(mds_router)#, dependencies=[Depends(authorize)])
-app.include_router(meetings_router, dependencies=[Depends(authorize)])
-app.include_router(enum_router, dependencies=[Depends(authorize)])
+app.include_router(meetings_router)#, dependencies=[Depends(authorize)])
+app.include_router(enum_router)#, dependencies=[Depends(authorize)])
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -78,7 +79,6 @@ async def main_page(user=Depends(authorize)):
 
 
 if __name__ == "__main__":
-
     port = int(os.environ.get("PORT", 8000))  # Default to 8000 if not set
     logger.info(f"Starting FastAPI application on port {port}")
     import uvicorn
