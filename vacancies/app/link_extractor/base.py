@@ -47,19 +47,11 @@ class BaseLinkExtractor(ABC):
         playwright = await async_playwright().start()
         browser = await playwright.chromium.launch(headless=True, args=self.browser_args)
         page = await browser.new_page()
+        try:
+            await page.goto(self.base_url)
+        except Exception as e:  # noqa: BLE001
+            self.logger.info("Error while navigating to {base_url}: {error}", base_url=self.base_url, error=e)
         return playwright, browser, page
-
-    @abstractmethod
-    async def _accept_cookies(self, page: Page) -> None:
-        """Accept cookies on the specific site.
-
-        Args:
-            page (Page): The page instance to accept cookies on.
-
-        Returns:
-            None
-
-        """
 
     @abstractmethod
     async def _load_all_content(self, page: Page) -> None:
@@ -69,11 +61,16 @@ class BaseLinkExtractor(ABC):
     async def _extract_links(self, page: Page) -> list[str]:
         """Extract links from the page."""
 
-    @abstractmethod
     async def get_links(self) -> list[str]:
         """Extract links from the target URL.
 
         Returns:
-            list[str]: List of extracted links.
+            List of vacancy links.
 
         """
+        playwright, browser, page = await self._init_browser()
+        await self._load_all_content(page)
+        links = await self._extract_links(page)
+        await browser.close()
+        await playwright.stop()
+        return links

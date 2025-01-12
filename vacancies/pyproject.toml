@@ -19,6 +19,7 @@ dependencies = [
 dev-dependencies = [
     "browser-use>=0.1.8",
     "debugpy>=1.8.11",
+    "jsonpatch>=1.33",
     "jupyter>=1.1.1",
     "ruff>=0.9.1",
 ]

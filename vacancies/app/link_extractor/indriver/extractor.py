@@ -5,7 +5,7 @@ import asyncio
 
 from playwright.async_api import Page
 
-from src.link_extractor.base import BaseLinkExtractor
+from app.link_extractor.base import BaseLinkExtractor
 
 
 class InDriveLinkExtractor(BaseLinkExtractor):
@@ -15,15 +15,12 @@ class InDriveLinkExtractor(BaseLinkExtractor):
         """Initialize the InDriveLinkExtractor."""
         super().__init__("https://careers.indrive.com/vacancies")
 
-    async def _accept_cookies(self, page: Page) -> None:
-        try:
-            await page.click("button#onetrust-accept-btn-handler")
-        except Exception as e:  # noqa: BLE001
-            self.logger.info("No cookie consent button found: %s", e)
-
     async def _load_all_content(self, page: Page) -> None:
         # Ждем загрузки основного контента
-        await page.wait_for_selector("a[href*='/vacancies/']", timeout=self.timeout)
+        try:
+            await page.wait_for_selector("a[href*='/vacancies/']", timeout=self.timeout)
+        except Exception as e:  # noqa: BLE001
+            self.logger.info("No vacancies found: {error}", error=e)
 
         # Нажимаем на кнопку "See more", пока она есть
         while True:
@@ -32,11 +29,12 @@ class InDriveLinkExtractor(BaseLinkExtractor):
                 await see_more_button.click()
                 await asyncio.sleep(2)
             except Exception as e:  # noqa: BLE001
-                self.logger.info("No more 'See more' button found, all vacancies loaded: %s", e)
+                self.logger.info("No more 'See more' button found, all vacancies loaded: {error}", error=e)
                 break
 
     async def _extract_links(self, page: Page) -> list[str]:  # noqa: PLR6301
         links = await page.eval_on_selector_all(
-            "a[href*='/vacancies/']", "elements => elements.map(el => el.getAttribute('href'))",
+            "a[href*='/vacancies/']",
+            "elements => elements.map(el => el.getAttribute('href'))",
         )
         return list(set(links))
