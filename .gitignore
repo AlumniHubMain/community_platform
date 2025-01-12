@@ -5,10 +5,10 @@ __pycache__
 .env
 .venv
 *.db
-*.json
 *.log
 backend/db_proxy/access_secret_file
 backend/db_proxy/token
+apps/web_gateway/config
 
 build/
 *.egg-info/
