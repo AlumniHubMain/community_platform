@@ -3,6 +3,7 @@
 
 import asyncio
 
+from loguru import logger
 from playwright.async_api import Page
 
 from app.link_extractor.base import BaseLinkExtractor
@@ -11,9 +12,19 @@ from app.link_extractor.base import BaseLinkExtractor
 class InDriveLinkExtractor(BaseLinkExtractor):
     """Extractor for InDrive vacancy links."""
 
-    def __init__(self) -> None:
+    def __init__(self, logger: logger = logger) -> None:
         """Initialize the InDriveLinkExtractor."""
-        super().__init__("https://careers.indrive.com/vacancies")
+        super().__init__("https://careers.indrive.com/vacancies", logger)
+
+    @property
+    def name(self) -> str:
+        """Return the name of the extractor.
+
+        Returns:
+            str: The name of the extractor
+
+        """
+        return "InDrive"
 
     async def _load_all_content(self, page: Page) -> None:
         # Ждем загрузки основного контента

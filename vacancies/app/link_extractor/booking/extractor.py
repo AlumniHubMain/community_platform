@@ -1,6 +1,7 @@
 # Copyright 2024 Alumnihub
 """Extractor for Booking vacancy links."""
 
+from loguru import logger
 from playwright.async_api import Page
 
 from app.link_extractor.base import BaseLinkExtractor
@@ -9,10 +10,20 @@ from app.link_extractor.base import BaseLinkExtractor
 class BookingLinkExtractor(BaseLinkExtractor):
     """Extractor for Booking vacancy links."""
 
-    def __init__(self) -> None:
+    def __init__(self, logger: logger = logger) -> None:
         """Initialize the BookingLinkExtractor."""
-        super().__init__("https://jobs.booking.com/booking/jobs")
+        super().__init__("https://jobs.booking.com/booking/jobs", logger)
         self.all_links = set()
+
+    @property
+    def name(self) -> str:
+        """Return the name of the extractor.
+
+        Returns:
+            str: The name of the extractor
+
+        """
+        return "Booking"
 
     async def _load_all_content(self, page: Page) -> None:
         try:

@@ -1,6 +1,7 @@
 # Copyright 2024 Alumnihub
 """Extractor for Wargaming vacancy links."""
 
+from loguru import logger
 from playwright.async_api import Page
 
 from app.link_extractor.base import BaseLinkExtractor
@@ -9,9 +10,19 @@ from app.link_extractor.base import BaseLinkExtractor
 class WargamingLinkExtractor(BaseLinkExtractor):
     """Extractor for Wargaming vacancy links."""
 
-    def __init__(self) -> None:
+    def __init__(self, logger: logger = logger) -> None:
         """Initialize the WargamingLinkExtractor."""
-        super().__init__("https://wargaming.com/en/careers/")
+        super().__init__("https://wargaming.com/en/careers/", logger)
+
+    @property
+    def name(self) -> str:
+        """Return the name of the extractor.
+
+        Returns:
+            str: The name of the extractor
+
+        """
+        return "Wargaming"
 
     async def _load_all_content(self, page: Page) -> None:
         """Load all vacancy content by handling pagination."""

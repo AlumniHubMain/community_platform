@@ -11,7 +11,12 @@ from playwright.async_api import Browser, Page, Playwright, async_playwright
 class BaseLinkExtractor(ABC):
     """Base class for link extractors."""
 
-    def __init__(self, base_url: str) -> None:
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Return the name of the extractor."""
+
+    def __init__(self, base_url: str, logger: logger = logger) -> None:
         """Initialize the link extractor."""
         self.base_url = base_url
         self.timeout = 60000  # 60 seconds
