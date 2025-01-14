@@ -61,3 +61,6 @@ class WargamingLinkExtractor(BaseLinkExtractor):
             ".job-list [data-reactid] a",
             "elements => elements.map(el => el.href)",
         )
+
+    async def _cleanup(self) -> None:
+        """Additional cleanup implementation."""

@@ -24,9 +24,6 @@ class VacancyRepository:
     async def add(self, vacancy_data: dict) -> Vacancy:
         """Добавление новой вакансии в БД.
 
-        Args:
-            vacancy_data (dict): Данные вакансии
-
         Returns:
             Vacancy: Созданная вакансия
 
@@ -45,17 +42,13 @@ class VacancyRepository:
     async def get_by_id(self, vacancy_id: int) -> Vacancy | None:
         """Получение вакансии по ID.
 
-        Args:
-            vacancy_id (int): ID вакансии
-
         Returns:
             Optional[Vacancy]: Найденная вакансия или None
 
         """
+        stmt = select(Vacancy).where(Vacancy.id == vacancy_id)
         try:
-            result = await self._session.execute(
-                select(Vacancy).where(Vacancy.id == vacancy_id),
-            )
+            result = await self._session.execute(stmt)
             return result.scalar_one_or_none()
         except Exception as e:
             await self._session.rollback()
@@ -150,16 +143,11 @@ class VacancyRepository:
     ) -> list[Vacancy]:
         """Поиск вакансий по ключевым словам.
 
-        Args:
-            search_term (str): Поисковый запрос
-            offset (int): Смещение
-            limit (int): Лимит записей
-
         Returns:
-            List[Vacancy]: Список найденных вакансий
+            list[Vacancy]: Список вакансий
 
         """
-        query = (
+        stmt = (
             select(Vacancy)
             .where(
                 or_(
@@ -173,35 +161,29 @@ class VacancyRepository:
             .limit(limit)
         )
 
-        result = await self._session.execute(query)
+        result = await self._session.execute(stmt)
         return result.scalars().all()
 
     async def exists(self, vacancy_id: int) -> bool:
         """Проверка существования вакансии.
 
-        Args:
-            vacancy_id (int): ID вакансии
-
         Returns:
-            bool: True если существует, False если нет
+            True если существует, False если нет
 
         """
-        query = select(1).where(Vacancy.id == vacancy_id).exists()
-        result = await self._session.execute(select(query))
+        stmt = select(1).where(Vacancy.id == vacancy_id).exists()
+        result = await self._session.execute(select(stmt))
         return result.scalar()
 
     async def get_by_url(self, url: str) -> Vacancy | None:
         """Получение вакансии по URL.
 
-        Args:
-            url (str): URL вакансии
-
         Returns:
             Optional[Vacancy]: Найденная вакансия или None
 
         """
-        query = select(Vacancy).where(Vacancy.url == url)
-        result = await self._session.execute(query)
+        stmt = select(Vacancy).where(Vacancy.url == url)
+        result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def update_by_url(self, url: str, vacancy_data: dict) -> Vacancy | None:
