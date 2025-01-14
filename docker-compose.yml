@@ -4,30 +4,15 @@ services:
   matching:
     build: 
       context: .
-      dockerfile: matching/Dockerfile
+      dockerfile: apps/matching/Dockerfile
     environment:
       - ENVIRONMENT=development
       - GOOGLE_APPLICATION_CREDENTIALS=/credentials/service_account_credentials.json
     volumes:
       - ./credentials:/credentials
+      - ./config:/config
     ports:
       - "8080:8080"
-    depends_on:
-      - db
-
-  backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=communityp
-      - DB_USER=postgres
-      - DB_PASS=postgres
-      - DB_SCHEMA=alh_community_platform
-    ports:
-      - "8000:8000"
     depends_on:
       - db
 

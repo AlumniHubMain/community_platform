@@ -1,11 +1,11 @@
 import asyncio
-from sqlalchemy import inspect, text
-from db_common.config import DatabaseSettings
-from db_common.db import DatabaseManager
+from sqlalchemy import inspector, text
+from common_db.config import db_settings, schema
+from common_db.db import DatabaseManager
 
 
 async def verify_db_structure():
-    settings = DatabaseSettings()
+    settings = db_settings.db
     db = DatabaseManager(settings)
 
     async with db.session() as session:
@@ -14,11 +14,11 @@ async def verify_db_structure():
             text(f"""
             SELECT table_name 
             FROM information_schema.tables 
-            WHERE table_schema = '{settings.db_schema}'
+            WHERE table_schema = '{schema}'
         """)
         )
         tables = result.scalars().all()
-        print("\nTables in schema:", settings.db_schema)
+        print("\nTables in schema:", schema)
         print("=" * 50)
         for table in tables:
             print(f"\nTable: {table}")
@@ -33,7 +33,7 @@ async def verify_db_structure():
                     is_nullable,
                     column_default
                 FROM information_schema.columns 
-                WHERE table_schema = '{settings.db_schema}' 
+                WHERE table_schema = '{schema}' 
                 AND table_name = '{table}'
                 ORDER BY ordinal_position
             """)
@@ -46,6 +46,11 @@ async def verify_db_structure():
                 print(f"  Nullable: {col[2]}")
                 print(f"  Default: {col[3]}")
                 print()
+
+        # Add verification for vacancy parsing table
+        if not inspector.has_table('vacancy_raw_parsing_results'):
+            print("Missing table: vacancy_raw_parsing_results")
+            missing_tables = True
 
 
 if __name__ == "__main__":

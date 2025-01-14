@@ -1,4 +1,4 @@
-/backend/db_proxy/.config
+.vscode
 .pytest_cache
 .idea
 .DS_Store
@@ -6,7 +6,6 @@ __pycache__
 .env
 .venv
 *.db
-*.json
 *.log
 backend/db_proxy/access_secret_file
 backend/db_proxy/token
@@ -14,5 +13,4 @@ service-account-credentials.json
 .ruff_cache
 build/
 *.egg-info/
-Dockerfile-matching
 *_pb2.py*

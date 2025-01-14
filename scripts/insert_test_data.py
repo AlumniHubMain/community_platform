@@ -7,10 +7,10 @@ from pathlib import Path
 # Add parent directory to Python path to enable imports
 sys.path.append(str(Path(__file__).parent.parent))
 
-from db_common.config import DatabaseSettings
-from db_common.db import DatabaseManager
-from db_common.models import ORMUserProfile, ORMLinkedInProfile, ORMMeetingIntent, ORMMeeting, ORMMeetingResponse
-from db_common.enums.users import (
+from common_db.config import DatabaseSettings
+from common_db.db import DatabaseManager
+from common_db.models import ORMUserProfile, ORMLinkedInProfile, ORMMeetingIntent, ORMMeeting, ORMMeetingResponse
+from common_db.enums.users import (
     ELocation,
     EGrade,
     EExpertiseArea,
@@ -21,13 +21,13 @@ from db_common.enums.users import (
     EInterests,
     ERequestsToCommunity,
 )
-from db_common.enums.meeting_intents import (
+from common_db.enums.meeting_intents import (
     EMeetingIntentMeetingType,
     EMeetingIntentQueryType,
     EMeetingIntentHelpRequestType,
     EMeetingIntentLookingForType,
 )
-from db_common.enums.meetings import EMeetingStatus, EMeetingUserRole, EMeetingResponse
+from common_db.enums.meetings import EMeetingStatus, EMeetingUserRole, EMeetingResponse
 
 
 async def insert_test_data():
