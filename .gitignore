@@ -7,10 +7,9 @@ __pycache__
 .venv
 *.db
 *.log
-backend/db_proxy/access_secret_file
-backend/db_proxy/token
 service-account-credentials.json
 .ruff_cache
+apps/web_gateway/config
 build/
 *.egg-info/
 *_pb2.py*
