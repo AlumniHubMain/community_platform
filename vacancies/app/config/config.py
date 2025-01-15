@@ -7,7 +7,7 @@ import os
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.link_extractor import BaseLinkExtractor, BookingLinkExtractor
+from app.link_extractor import BaseLinkExtractor, BookingLinkExtractor, InDriveLinkExtractor, WargamingLinkExtractor
 
 
 class Credentials(BaseSettings):
@@ -31,7 +31,7 @@ class Credentials(BaseSettings):
         if secret:
             creds_dict = json.loads(secret)
             for key, value in creds_dict.items():
-                os.environ[key] = value
+                os.environ[key] = str(value)
         return cls()
 
 
@@ -43,6 +43,8 @@ class Config(BaseSettings):
     # Dictionary mapping company names to their extractor classes
     EXTRACTORS: dict[str, type[BaseLinkExtractor]] = {
         "booking": BookingLinkExtractor,
+        "indriver": InDriveLinkExtractor,
+        "wargaming": WargamingLinkExtractor,
     }
 
 
