@@ -4,7 +4,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String, Text
+from sqlalchemy import ARRAY, Boolean, Column, DateTime, Enum, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -28,19 +28,14 @@ class Vacancy(Base):
     company = Column(String(255), nullable=True)
     title = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
-    skills = Column(Text, nullable=True)  # Хранится как JSON-строка
+    skills = Column(ARRAY(Text), nullable=True)  # Хранится как JSON-строка
     required_experience = Column(String(100), nullable=True)
     location = Column(String(255), nullable=True)
-
-    # Уровень и зарплата
     level = Column(String(255), nullable=True)
-    salary_min = Column(Float, nullable=True)
-    salary_max = Column(Float, nullable=True)
-    salary_currency = Column(String(3), nullable=True)  # EUR, USD, RUB и т.д.
+    salary = Column(String(255), nullable=True)
 
-    # Дополнительная информация
-    responsibilities = Column(Text, nullable=True)
-    benefits = Column(Text, nullable=True)  # Плюшки
+    responsibilities = Column(ARRAY(Text), nullable=True)
+    benefits = Column(ARRAY(Text), nullable=True)  # Плюшки
     remote_type = Column(Enum("office", "hybrid", "remote", name="work_format"), nullable=True)
 
     # Информация o компании
