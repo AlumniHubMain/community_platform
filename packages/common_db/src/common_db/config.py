@@ -1,4 +1,5 @@
 from pydantic import BaseModel, SecretStr
+from pydantic_core import ValidationError
 
 from config_library import BaseConfig, FieldType
 
@@ -22,9 +23,16 @@ class PgSettings(BaseModel):
             f"{self.db_name.get_secret_value()}"
         )
 
-
-# TODO(und3v3l0p3d): поменять после того как перенести миграции в пакет common_db
 class DbSettings(BaseConfig):
     db: FieldType[PgSettings] = './config/db_config.env'
 
-db_settings = DbSettings()
+class DbSettingsLocal(BaseConfig):
+    db: FieldType[PgSettings] = '../../config/db.json'
+
+try:
+    db_settings = DbSettings()
+except ValidationError as e:
+    print(f"Error loading DbSettings from /config/db.json: {e}")
+    db_settings = DbSettingsLocal()
+
+schema: str = db_settings.db.db_schema

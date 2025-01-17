@@ -1,5 +1,5 @@
 from .schemas import Form, SFormRead, EIntentType
-from common_db import ORMForm
+from common_db.models import ORMForm
 from fastapi import HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession

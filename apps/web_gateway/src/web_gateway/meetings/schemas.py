@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from common_db import EMeetingUserRole, EMeetingResponseStatus, EMeetingStatus
+from common_db.enums.meetings import EMeetingUserRole, EMeetingResponseStatus, EMeetingStatus
 
 
 # For creating meeting requests

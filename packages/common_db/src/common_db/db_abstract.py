@@ -1,57 +1,34 @@
-from datetime import datetime
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator
-
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     AsyncEngine,
     async_sessionmaker,
     AsyncSession,
 )
-from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
-
-from config_library import BaseConfig, FieldType
-from common_db.config import db_settings
+from common_db.config import db_settings, DbSettings
 
 
-schema: str = db_settings.db.db_schema
+class DatabaseManager:
+    def __init__(self, settings: DbSettings):
+        self.settings = settings.db
+        self.engine: AsyncEngine = create_async_engine(
+            url=self.settings.database_url_asyncpg.get_secret_value(), pool_size=5, max_overflow=10
+        )
+        self.session_maker = async_sessionmaker(bind=self.engine, expire_on_commit=False)
 
+    @asynccontextmanager
+    async def session(self) -> AsyncGenerator[AsyncSession, None]:
+        async with self.session_maker() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
 
-class Base(DeclarativeBase):
-    """
-    Базовая модель таблицы. Тут прописываем свойства, общие для всех таблиц.
-    """
+    async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
+        async with self.session_maker() as session:
+            yield session
 
-    __table_args__ = {"schema": f"{schema}"}
-
-
-class ObjectTable(Base):
-    """
-    Модель таблицы (шаблон) для объектов.
-    """
-
-    __abstract__ = True
-    __allow_unmapped__ = True
-
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    created_at: Mapped[datetime] = mapped_column(
-        server_default=text("TIMEZONE('utc', now())")
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        server_default=text("TIMEZONE('utc', now())"),
-        onupdate=text("TIMEZONE('utc', now())"),
-    )
-
-
-engine: AsyncEngine = create_async_engine(
-    url=db_settings.db.database_url_asyncpg.get_secret_value()
-)
-session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
-
-
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
-    """
-    Генератор асинхронной сессии. По-умолчанию может быть открыто 5 сессий (Pool_size=5 в engine)
-    """
-    async with session_maker() as session:
-        yield session
+db_manager = DatabaseManager(settings=db_settings)
