@@ -1,6 +1,6 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '.', '--build-context', 'root=''../../''', '-t',
+  args: ['build', '.', '-t',
     'us-east4-docker.pkg.dev/communityp-440714/cloud-run-source-deploy/community_platform/community-platform:$COMMIT_SHA']
   dir: 'apps/web_gateway'
 images:
