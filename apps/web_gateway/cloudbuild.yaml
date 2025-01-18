@@ -1,7 +1,7 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
   script: |
-    docker build \
+    build \
     -t us-east4-docker.pkg.dev/communityp-440714/cloud-run-source-deploy/community_platform/community-platform:$COMMIT_SHA \
     -f Dockerfile \
     --build-context root='../../' \
