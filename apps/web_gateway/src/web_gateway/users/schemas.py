@@ -1,4 +1,4 @@
-from common_db import *
+from common_db.enums.users import *
 
 from typing import List
 

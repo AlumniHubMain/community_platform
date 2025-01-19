@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from common_db import get_async_session
+from common_db.db_abstract import db_manager
 from .meeting_manager import MeetingManager
 from .schemas import (
     MeetingRequestRead,
@@ -16,7 +16,7 @@ from web_gateway.limits.limits_manager import LimitsManager
 
 
 router = APIRouter(tags=["Meetings"], prefix="/meetings")
-session_dependency = Depends(get_async_session)
+session_dependency = Depends(db_manager.get_session)
 
 
 @router.get(
@@ -100,7 +100,7 @@ async def update_user_meeting_response(
 @router.get("", response_model=MeetingList, summary="Get all meetings by filter")
 async def get_meetings(
     meeting_filter: MeetingFilter = Depends(),
-    session: AsyncSession = Depends(get_async_session),
+    session: AsyncSession = session_dependency,
 ):
     # ToDo: discuss visibility (default private?)
     return await MeetingManager.get_filtered_meetings(session, meeting_filter)

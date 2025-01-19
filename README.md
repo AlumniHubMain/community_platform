@@ -1,6 +1,3 @@
-# community_platform
-python version = 3.13
-
 ## Setup
 ### Local Dev
 #### MacOs & Linux Install UV

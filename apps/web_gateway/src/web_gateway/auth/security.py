@@ -12,31 +12,9 @@ import hmac
 import logging
 
 
-def read_content(file_path: os.PathLike):
-    if not os.path.exists(file_path):
-        logger.critical(f"Unable to read file. Can't find file by path {file_path}")
-        raise
-    content = ""
-    with open(file_path, 'r') as file:
-        content = file.read().strip()
-    return content
-
-
 logger = logging.getLogger(__name__)
-ACCESS_SECRET_KEY = None
-BOT_TOKEN = None
-
-try:
-    ACCESS_SECRET_KEY = read_content(settings.secret_files.access_secret_file)
-except Exception as e:
-    logger.critical(f"Unable to read access secret file {settings.secret_files.access_secret_file}")
-    raise
-
-try:
-    BOT_TOKEN = read_content(settings.secret_files.bot_token_file)
-except Exception as e:
-    logger.critical(f"Unable to read telegram token file {settings.secret_files.bot_token_file}")
-    raise
+ACCESS_SECRET_KEY = settings.access_secret_file
+BOT_TOKEN = settings.bot_token_file
 
 ALGORITHM = "HS256"
 TOKEN_EXPIRY_SECONDS = 3600  # 1 hour
