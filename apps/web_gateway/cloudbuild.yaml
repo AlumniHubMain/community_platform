@@ -1,6 +1,7 @@
 steps:
 - name: 'docker'
-  args: ['build', '--build-context', 'root=''../../''', '-f', 'apps/web_gateway/Dockerfile', '-t',
+  #'--build-context', 'root=''../../''', 
+  args: ['build', '-f', 'apps/web_gateway/Dockerfile', '-t',
     'us-east4-docker.pkg.dev/communityp-440714/cloud-run-source-deploy/community_platform/community-platform:$COMMIT_SHA', '.']
 images:
 - 'us-east4-docker.pkg.dev/communityp-440714/cloud-run-source-deploy/community_platform/community-platform:$COMMIT_SHA'
