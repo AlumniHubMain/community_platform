@@ -6,7 +6,7 @@ steps:
   dir: 'apps/web_gateway'
   volumes:
     - name: 'vol1'
-      path: '/workspace'
+      path: '/workspace1'
 images:
 - 'us-east4-docker.pkg.dev/communityp-440714/cloud-run-source-deploy/community_platform/community-platform:$COMMIT_SHA'
 options:
