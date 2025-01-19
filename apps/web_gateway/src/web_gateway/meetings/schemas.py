@@ -4,22 +4,25 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from common_db import EMeetingUserRole, EMeetingResponseStatus, EMeetingStatus
+from common_db.meetings import EMeetingUserRole, EMeetingResponseStatus, EMeetingStatus
 
 
 # For creating meeting requests
 class MeetingRequestCreate(BaseModel):
-    description: str | None = None
-    location: str | None = None
-    scheduled_time: datetime | None = None
     organizer_id: int
+    match_id: int
+    attendees_id: list[int]
+    scheduled_time: datetime | None = None
+    location: str # TODO: @ilyabiro change to enum 
+    description: str | None = None
 
 
 # For reading meeting info
 class MeetingRequestRead(BaseModel):
     id: int
+    match_id: int
     description: str | None = None
-    location: str | None = None
+    location: str # TODO: @ilyabiro change to enum
     scheduled_time: datetime
     status: EMeetingStatus
     user_responses: list[MeetingResponse]  # List of users with their statuses

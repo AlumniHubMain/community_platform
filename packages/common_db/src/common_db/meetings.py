@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import String, Index, Integer, Text, DateTime, ForeignKey, PrimaryKeyConstraint
+from sqlalchemy import ARRAY, String, Index, Integer, Text, DateTime, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
@@ -9,7 +9,7 @@ from .db_abstract import ObjectTable, schema
 
 
 class EMeetingStatus(Enum):
-    new = 'new'
+    no_answer = 'no_answer'
     archived = 'archived'
     confirmed = 'confirmed'
 
@@ -17,12 +17,11 @@ class EMeetingStatus(Enum):
 class EMeetingResponseStatus(Enum):
     no_answer = 'no_answer'
     confirmed = 'confirmed' 
-    tentative = 'tentative' 
     declined = 'declined'
     
     def is_confirmed_status(self) -> bool:
         # Check if meeting confirmed
-        return EMeetingResponseStatus(self.value) in (EMeetingResponseStatus.confirmed, EMeetingResponseStatus.tentative)
+        return EMeetingResponseStatus(self.value) in EMeetingResponseStatus.confirmed
 
     def is_pended_status(self) -> bool:
         # Check if meeting pended
@@ -47,12 +46,15 @@ class ORMMeeting(ObjectTable):
     )
 
     # Meeting-specific fields
-    description: Mapped[str | None] = mapped_column(Text)
-    location: Mapped[str | None] = mapped_column(String(200))
+    organizer_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.users.id', ondelete="CASCADE"), 
+                                              primary_key=True)
+    match_id: Mapped[int] = mapped_column(Integer) # TODO: Change to ForeignKey(f'{schema}.matches.id', ondelete="CASCADE"), primary_key=True
     scheduled_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    location: Mapped[str | None] = mapped_column(String(200))
+    description: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(ENUM(EMeetingStatus, name='meeting_status_enum'), 
                                         nullable=False,
-                                        default=EMeetingStatus.new)
+                                        default=EMeetingStatus.no_answer)
 
     # Relationship to user_meetings table via ORMUserMeeting
     user_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
