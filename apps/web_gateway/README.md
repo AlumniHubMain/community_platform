@@ -17,7 +17,8 @@ uv run pytest
 ## Docker
 ### Build 
 ```bash
-docker build . --build-context root='../../' -t community_platform_web_gateway:latest
+cd ../../
+docker build -f apps/web_gateway/Dockerfile -t community_platform_web_gateway:latest .
 ```
 ### Run service
 ```bash
