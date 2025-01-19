@@ -4,7 +4,7 @@ RUN echo "$PWD"
 
 # Install uv.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-COPY --from=root ./ /build/
+COPY --from=root_dir ./ /build/
 
 WORKDIR /build/apps/web_gateway/
 RUN uv sync --frozen --no-cache
