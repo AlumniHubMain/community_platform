@@ -4,14 +4,10 @@ import base64
 import json
 from pathlib import Path
 from datetime import datetime
-
-# Add the microservice root directory to Python path
-project_root = str(Path(__file__).parent.parent)
-sys.path.append(project_root)
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
-from app.main import app as fastapi_app
+from matching.main import app as fastapi_app
 
 
 def create_pubsub_message(data: dict) -> dict:
@@ -28,21 +24,49 @@ def create_pubsub_message(data: dict) -> dict:
 
 
 @pytest.fixture
-def client():
+def mock_db_manager():
+    with patch("matching.main.db_manager") as mock:
+        # Create a mock session context manager
+        async def async_session():
+            class AsyncSessionContext:
+                async def __aenter__(self):
+                    return AsyncMock()
+
+                async def __aexit__(self, exc_type, exc_val, exc_tb):
+                    pass
+
+            return AsyncSessionContext()
+
+        mock.session = async_session
+        yield mock
+
+
+@pytest.fixture
+def mock_storage():
+    with patch("matching.main.CloudStorageAdapter") as mock:
+        instance = mock.return_value
+        instance.initialize = AsyncMock()
+        yield instance
+
+
+@pytest.fixture
+def client(mock_db_manager, mock_storage):
     return TestClient(fastapi_app)
 
 
 @pytest.fixture
 def mock_ps_client():
-    with patch("app.matching.PSClient") as mock:
+    with patch("matching.transport.PSClient") as mock:
         mock.get_file = MagicMock(return_value="mock_model_path")
         yield mock
 
 
 @pytest.fixture
 def mock_process_matching_request():
-    with patch("app.main.process_matching_request") as mock:
-        mock.return_value = (1, [2, 3, 4])  # match_id, predictions
+    async def mock_process(*args, **kwargs):
+        return 1, [2, 3, 4]
+
+    with patch("matching.main.process_matching_request", side_effect=mock_process) as mock:
         yield mock
 
 

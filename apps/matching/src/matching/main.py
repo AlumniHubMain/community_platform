@@ -4,28 +4,31 @@ import os
 import base64
 import json
 import logging
-from pydantic import BaseModel
 from contextlib import asynccontextmanager
+from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+
+from common_db.db_abstract import db_manager
 
 from matching.transport import CloudStorageAdapter, PSClient
 from matching.matching import process_matching_request
 from matching.services import psclient
-from common_db.db_abstract import db_manager
 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    global psclient
+async def lifespan(app: FastAPI):  # pylint: disable=unused-argument, redefined-outer-name
+    global psclient  # pylint: disable=global-statement
     psclient = PSClient()
     storage_client = CloudStorageAdapter()
     await storage_client.initialize()
     await psclient.initialize(storage_client)
     yield
+
 
 app = FastAPI(title="Community platform matching service", lifespan=lifespan)
 
@@ -64,7 +67,7 @@ class MatchingRequest(BaseModel):
             data = json.loads(decoded_data)
             return cls(**data)
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid message format: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Invalid message format: {str(e)}") from e
 
 
 @app.post("/pubsub/push")
@@ -80,7 +83,7 @@ async def pubsub_push(request: Request):
         matching_request = MatchingRequest.from_pubsub_message(message)
 
         logger.info(
-            "Received matching request via Pub/Sub: user_id: %d, meeting_intent_id: %d, model_settings_preset: %s, n: %d",
+            "Received matching request: user_id: %d, meeting_intent_id: %d, model_settings_preset: %s, n: %d",
             matching_request.user_id,
             matching_request.meeting_intent_id,
             matching_request.model_settings_preset,
@@ -103,5 +106,5 @@ async def pubsub_push(request: Request):
     except HTTPException:
         raise
     except Exception as e:
-        config.logger.error("Error processing Pub/Sub message: %s", str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Error processing Pub/Sub message: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

@@ -25,7 +25,7 @@ class FilterSettings(BaseModel):
     filter_type: FilterType
     filter_name: str
     filter_column: str
-    filter_rule: str
+    filter_rule: str | list[str]
 
 
 class DiversificationSettings(BaseModel):

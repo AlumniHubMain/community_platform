@@ -1,14 +1,14 @@
 import logging
 from typing import Callable
 from sqlalchemy.ext.asyncio import AsyncSession
+from common_db.models import ORMMatchingResult
 from matching.data_loader import DataLoader
 from matching.model import Model
 from matching.model.model_settings import model_settings_presets, ModelType
 from matching.transport import PSClient
-from common_db.models import ORMMatchingResult
 
 
-async def process_matching_request(
+async def process_matching_request(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     db_session_callable: Callable[[], AsyncSession],
     psclient: PSClient,
     user_id: int,
@@ -27,7 +27,6 @@ async def process_matching_request(
             model_settings = model_settings_presets[model_settings_preset]
 
             all_users = await DataLoader.get_all_user_profiles(session)
-            all_linkedin = await DataLoader.get_all_linkedin_profiles(session)
             intent = await DataLoader.get_meeting_intent(session, meeting_intent_id)
 
             model = None
@@ -36,7 +35,7 @@ async def process_matching_request(
 
             matcher = Model(model_settings)
             matcher.load_model(model)
-            predictions = matcher.predict(all_users, all_linkedin, intent, user_id, n)
+            predictions = matcher.predict(all_users, intent, user_id, n)
 
             matching_result = ORMMatchingResult(
                 model_settings_preset=model_settings_preset,
