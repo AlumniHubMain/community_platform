@@ -29,14 +29,11 @@ exclude = [
     "*pb"
 ]
 
-# Same as Black.
+# Global settings
 line-length = 120
 indent-width = 4
-
-# Assume Python 3.11
-target-version = "py311"
+target-version = "py312"
 extend-exclude = ["*_pb2.py", "*.pyi"]
-
 
 [lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
@@ -52,53 +49,20 @@ unfixable = []
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-[format]
-# Like Black, use double quotes for strings.
-quote-style = "double"
-
-# Like Black, indent with spaces, rather than tabs.
-indent-style = "space"
-
-# Like Black, respect magic trailing commas.
-skip-magic-trailing-comma = false
-
-# Like Black, automatically detect the appropriate line ending.
-line-ending = "auto"
-
-# Enable auto-formatting of code examples in docstrings. Markdown,
-# reStructuredText code/literal blocks and doctests are all supported.
-#
-# This is currently disabled by default, but it is planned for this
-# to be opt-out in the future.
-docstring-code-format = false
-
-# Set the line length limit used when formatting code snippets in
-# docstrings.
-#
-# This only has an effect when the `docstring-code-format` setting is
-# enabled.
-docstring-code-line-length = "dynamic"
-line-length = 120
-indent-width = 4
-target-version = "py312"
-
-[lint]
-select = [
-    "ALL"
-]
 
 [lint.per-file-ignores]
-"__init__.py" = [
-    "D104"
-]
+# Ignore missing docstring in __init__ files
+"__init__.py" = ["D104"]
+# Ignore specific rules in test files
 "**/tests/*" = [
-    "ANN",
-    "D100",
-    "D103",
-    "INP001",
-    "S101",
+    "ANN",  # Missing type annotations
+    "D100",  # Missing module docstring
+    "D103",  # Missing function docstring
+    "INP001",  # Implicit namespace package
+    "S101",   # Use of assert detected
 ]
 
 [format]
 quote-style = "double"
 indent-style = "space"
+line-ending = "auto"

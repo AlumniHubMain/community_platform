@@ -119,36 +119,6 @@ class PostgresDB:
             finally:
                 await session.close()
 
-    async def close(self) -> None:
-        """Close the database connection."""
-        if self.engine:
-            try:
-                # Dispose of the engine which will close all connections in the pool
-                await self.engine.dispose()
-            except Exception as e:
-                self.logger.exception("Error disposing engine: {error}", error=e)
-
-        if self.connector:
-            try:
-                # Set a shorter timeout for connector closure
-                await asyncio.wait_for(self.connector.close(), timeout=5.0)
-            except TimeoutError:
-                self.logger.warning("Cloud SQL connector closure timed out, forcing cleanup")
-                try:
-                    if hasattr(self.connector, "_close_expired_connections"):
-                        await self.connector._close_expired_connections()  # noqa: SLF001
-                    if hasattr(self.connector, "_connections"):
-                        await asyncio.gather(
-                            *[conn.close() for conn in self.connector._connections],  # noqa: SLF001
-                            return_exceptions=True,
-                        )
-                except Exception as e:
-                    self.logger.exception("Error during forced connector cleanup: {error}", error=e)
-            except Exception as e:
-                self.logger.exception("Error closing Cloud SQL connector: {error}", error=e)
-            finally:
-                self.connector = None
-
     async def __aenter__(self) -> "PostgresDB":
         """Async context manager entry.
 
