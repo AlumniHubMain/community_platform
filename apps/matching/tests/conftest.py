@@ -15,10 +15,3 @@ def mock_environment():
         },
     ):
         yield
-
-
-@pytest.fixture(autouse=True)
-def mock_db():
-    """Mock database session"""
-    with patch("app.main.db") as mock:
-        yield mock

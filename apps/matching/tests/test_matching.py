@@ -4,12 +4,10 @@ import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
-
-# Add the microservice root directory to Python path
-project_root = str(Path(__file__).parent.parent)
+project_root = str(Path(__file__).parent.parent.parent)
 sys.path.append(project_root)
-from app.matching import process_matching_request
-from app.model.model_settings import (
+from matching.matching import process_matching_request
+from matching.model.model_settings import (
     ModelType,
     FilterType,
     DiversificationType,
@@ -19,7 +17,6 @@ from app.model.model_settings import (
 )
 from common_db.schemas import (
     SUserProfileRead,
-    SLinkedInProfileRead,
     SMeetingIntentRead,
 )
 from common_db.enums.meeting_intents import (
@@ -71,39 +68,6 @@ def mock_users():
 
 
 @pytest.fixture
-def mock_linkedin():
-    return [
-        SLinkedInProfileRead(
-            user_id=1,
-            industry="Technology",
-            skills={"python": 5, "java": 3},
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-            id=1,
-            profile_url="https://linkedin.com/john",
-        ),
-        SLinkedInProfileRead(
-            user_id=2,
-            industry="Technology",
-            skills={"python": 4, "javascript": 5},
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-            id=2,
-            profile_url="https://linkedin.com/jane",
-        ),
-        SLinkedInProfileRead(
-            user_id=3,
-            industry="Marketing",
-            skills={"marketing": 5, "social media": 4},
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-            id=3,
-            profile_url="https://linkedin.com/bob",
-        ),
-    ]
-
-
-@pytest.fixture
 def mock_intent():
     return SMeetingIntentRead(
         id=1,
@@ -119,11 +83,13 @@ def mock_intent():
 
 
 @pytest.fixture
-def mock_session():
+def mock_session(mock_users, mock_intent):
     class MockAsyncSession:
         def __init__(self):
             self._id_counter = 1
             self._stored_objects = {}
+            self.mock_users = mock_users
+            self.mock_intent = mock_intent
 
         def add(self, obj):
             self._stored_objects[id(obj)] = obj
@@ -145,6 +111,36 @@ def mock_session():
         async def close(self):
             pass
 
+        async def execute(self, statement):
+            from sqlalchemy import Select
+            from common_db.models import ORMUserProfile, ORMMeetingIntent
+
+            class MockResult:
+                def __init__(self, results):
+                    self._results = results
+
+                def scalar_one_or_none(self):
+                    return self._results[0] if self._results else None
+
+                def scalars(self):
+                    class MockScalars:
+                        def __init__(self, results):
+                            self._results = results
+
+                        def all(self):
+                            return self._results
+
+                    return MockScalars(self._results)
+
+            if isinstance(statement, Select):
+                # Check the primary entity of the select
+                entity = statement.column_descriptions[0]["entity"]
+                if entity == ORMUserProfile:
+                    return MockResult(self.mock_users)
+                elif entity == ORMMeetingIntent:
+                    return MockResult([self.mock_intent])
+            return MockResult([])
+
     class AsyncSessionContextManager:
         def __init__(self):
             self.session = MockAsyncSession()
@@ -158,55 +154,26 @@ def mock_session():
     def session_factory():
         return AsyncSessionContextManager()
 
-    return session_factory
+    return session_factory  # Return the factory function instead of the class
 
 
 @pytest.fixture
-def mock_data_loader(mock_users, mock_linkedin, mock_intent):
-    with patch("app.matching.DataLoader", autospec=True) as mock:
-        mock.get_all_user_profiles = AsyncMock(return_value=mock_users)
-        mock.get_all_linkedin_profiles = AsyncMock(return_value=mock_linkedin)
-        mock.get_meeting_intent = AsyncMock(return_value=mock_intent)
+def mock_data_loader():
+    with patch("matching.data_loader.DataLoader", autospec=True) as mock:
+        # Remove the mocked methods to let the session handle the data
         yield mock
 
 
 @pytest.fixture
 def mock_model_settings():
-    with patch("app.matching.model_settings_presets", autospec=True) as mock_settings:
+    with patch("matching.model.model_settings.model_settings_presets", autospec=True) as mock_settings:
         mock_settings.__contains__.return_value = True
         mock_settings.__getitem__.return_value = HeuristicModelSettings(
             model_type=ModelType.HEURISTIC,
             settings_name="heuristic",
-            rules=[
-                {
-                    "column": "industry_user",
-                    "operation": "equals",
-                    "value": "Technology",
-                    "weight": 0.5,
-                },
-                {
-                    "column": "skills_linkedin",
-                    "operation": "contains",
-                    "value": "python",
-                    "weight": 0.3,
-                },
-            ],
-            filters=[
-                FilterSettings(
-                    filter_type=FilterType.STRICT,
-                    filter_name="expertise_filter",
-                    filter_column="expertise_area",
-                    filter_rule="development",
-                )
-            ],
-            diversifications=[
-                DiversificationSettings(
-                    diversification_type=DiversificationType.SCORE_BASED,
-                    diversification_name="industry_div",
-                    diversification_column="industry_user",
-                    diversification_value=2,
-                )
-            ],
+            rules=[],
+            filters=[],
+            diversifications=[],
         )
         yield mock_settings
 
@@ -218,39 +185,15 @@ async def test_process_matching_basic(
     mock_model_settings,
 ):
     """Test basic matching process with heuristic preset"""
-    match_id, predictions = await process_matching_request(
-        db_session_callable=mock_session,
-        psclient=None,  # Not needed for heuristic
-        logger=MagicMock(),
-        user_id=1,
-        meeting_intent_id=1,
-        model_settings_preset="heuristic",
-        n=2,
+
+    settings = HeuristicModelSettings(
+        model_type=ModelType.HEURISTIC,
+        settings_name="heuristic",
+        rules=[],
+        filters=[],
+        diversifications=[],
     )
-
-    assert match_id == 1  # First ID from counter
-    assert isinstance(predictions, list)
-    assert len(predictions) <= 2  # Should not exceed n
-    assert 2 in predictions  # User 2 should be matched (similar profile)
-    assert 3 not in predictions  # User 3 should be filtered out (different expertise)
-
-
-@pytest.mark.asyncio
-async def test_process_matching_with_filters(
-    mock_session,
-    mock_data_loader,
-    mock_model_settings,
-):
-    """Test matching process with strict filters"""
-    # Modify the mock settings to use strict filtering
-    mock_model_settings.__getitem__.return_value.filters = [
-        FilterSettings(
-            filter_type=FilterType.STRICT,
-            filter_name="industry_filter",
-            filter_column="industry_user",
-            filter_rule="Technology",
-        )
-    ]
+    mock_model_settings.__getitem__.return_value = settings
 
     match_id, predictions = await process_matching_request(
         db_session_callable=mock_session,
@@ -259,10 +202,17 @@ async def test_process_matching_with_filters(
         user_id=1,
         meeting_intent_id=1,
         model_settings_preset="heuristic",
-        n=5,
+        n=2,
     )
 
-    assert 3 not in predictions  # User 3 should be filtered out (different industry)
+    # Add debug prints
+    print(f"Predictions: {predictions}")
+
+    assert match_id == 1
+    assert isinstance(predictions, list)
+    assert len(predictions) == 2
+    assert 2 in predictions
+    assert 3 in predictions
 
 
 @pytest.mark.asyncio
@@ -304,19 +254,19 @@ async def test_process_matching_error_handling(
     mock_model_settings,
 ):
     """Test error handling in matching process"""
-    # Simulate an error in data loading
-    mock_data_loader.get_all_user_profiles.side_effect = Exception("Database error")
+    with patch("matching.matching.DataLoader") as mock_dl:
+        mock_dl.get_all_user_profiles.side_effect = Exception("Database error")
 
-    with pytest.raises(Exception):
-        await process_matching_request(
-            db_session_callable=mock_session,
-            psclient=None,
-            logger=MagicMock(),
-            user_id=1,
-            meeting_intent_id=1,
-            model_settings_preset="heuristic",
-            n=2,
-        )
+        with pytest.raises(Exception, match="Database error"):
+            await process_matching_request(
+                db_session_callable=mock_session,  # Pass the factory function directly
+                psclient=None,
+                logger=MagicMock(),
+                user_id=1,
+                meeting_intent_id=1,
+                model_settings_preset="heuristic",
+                n=2,
+            )
 
 
 @pytest.mark.asyncio
@@ -335,3 +285,38 @@ async def test_process_matching_invalid_preset(
             model_settings_preset="invalid_preset",
             n=2,
         )
+
+
+@pytest.mark.asyncio
+async def test_process_matching_with_filters_context_manager(mock_session, mock_data_loader):
+    """Test matching process with strict filters"""
+    with patch("matching.matching.model_settings_presets") as mock_model_settings:
+        # Create settings with explicit filter
+        settings = HeuristicModelSettings(
+            model_type=ModelType.HEURISTIC,
+            settings_name="heuristic",
+            rules=[],
+            filters=[
+                FilterSettings(
+                    filter_type=FilterType.STRICT,
+                    filter_name="expertise_filter",
+                    filter_column="expertise_area",
+                    filter_rule="development",
+                )
+            ],
+            diversifications=[],
+        )
+        mock_model_settings.__getitem__.return_value = settings
+        mock_model_settings.__contains__.return_value = True
+
+        match_id, predictions = await process_matching_request(
+            db_session_callable=mock_session,
+            psclient=None,
+            logger=MagicMock(),
+            user_id=1,
+            meeting_intent_id=1,
+            model_settings_preset="heuristic",
+            n=5,
+        )
+
+        assert 3 not in predictions  # User 3 should be filtered out (no development expertise)

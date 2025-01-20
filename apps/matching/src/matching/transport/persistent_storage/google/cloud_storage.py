@@ -45,4 +45,4 @@ class CloudStorageAdapter(PersistentAdapter):
         return True
 
     async def initialize(self):
-        self.storage_client = storage.Client(project=matching_settings.matching.project_id)
+        self.storage_client = storage.Client(project=matching_settings.matching.project_id)  # pylint: disable=no-member
