@@ -202,8 +202,9 @@ class ESpecialisation(Enum):
 
 #ToDo(evseev.dmsr): Make correct list of grades
 class EGrade(Enum):
-    grade1 = 'grade1'
-    grade2 = 'grade2'
+    senior = 'senior'
+    middle = 'middle'
+    junior = 'junior'
 
 
 #ToDo(evseev.dmsr): Make correct list of industries

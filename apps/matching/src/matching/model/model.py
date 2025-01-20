@@ -14,6 +14,8 @@ class Model:
         """Initialize model with settings"""
         self.model_settings = model_settings
         self.predictor = None
+        self.current_intent = None
+        self.current_user = None
 
     def load_model(self, model_path: str | None = None):
         """Load model predictor based on settings"""
@@ -43,7 +45,7 @@ class Model:
             mask = df[filter_setting.filter_column].apply(lambda x: self.check_match(x, filter_setting))
             filtered_df = df[mask]
             return filtered_df
-        if filter_setting.filter_type == FilterType.SOFT:
+        elif filter_setting.filter_type == FilterType.SOFT:
             mask = df[filter_setting.filter_column].apply(lambda x: self.check_match(x, filter_setting))
             df.loc[~mask, "score"] *= 0.5
             return df
@@ -57,6 +59,10 @@ class Model:
         n: int,
     ) -> list[int]:
         """Make predictions and apply filters and diversification"""
+        # Store current intent and user for custom filters
+        self.current_intent = intent
+        self.current_user = next((user for user in all_users if user.id == user_id), None)
+        
         if self.predictor is None:
             raise ValueError("Model not loaded")
         users_data = [user.model_dump() for user in all_users]
