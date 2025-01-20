@@ -4,7 +4,7 @@ import alembic
 from alembic import context
 
 from common_db.config import db_settings
-from common_db.models import *
+from common_db.models import *  # noqa: F403
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use

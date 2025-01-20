@@ -33,8 +33,8 @@ exclude = [
 line-length = 120
 indent-width = 4
 
-# Assume Python 3.11
-target-version = "py311"
+# Assume Python 3.13
+target-version = "py313"
 extend-exclude = ["*_pb2.py", "*.pyi"]
 
 
@@ -78,18 +78,10 @@ docstring-code-format = false
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
-line-length = 120
-indent-width = 4
-target-version = "py312"
-
-[lint]
-select = [
-    "ALL"
-]
 
 [lint.per-file-ignores]
 "__init__.py" = [
-    "D104"
+    "D104",
 ]
 "**/tests/*" = [
     "ANN",
@@ -98,7 +90,3 @@ select = [
     "INP001",
     "S101",
 ]
-
-[format]
-quote-style = "double"
-indent-style = "space"
