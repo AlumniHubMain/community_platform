@@ -183,45 +183,86 @@ class MeetingManager:
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
         
-    # @classmethod
-    # async def update_meeting(
-    #     cls,
-    #     session: AsyncSession,
-    #     meeting_id: int,
-    #     user_id: int,
-    #     request: MeetingRequestUpdate,
-    # ) -> MeetingRequestRead:
-    #     stmt = (
-    #         select(ORMMeeting)
-    #         .where(ORMMeeting.id == meeting_id)
-    #         .options(
-    #             selectinload(ORMMeeting.user_responses).selectinload(
-    #                 ORMMeetingResponse.user
-    #             )
-    #         )
-    #         .with_for_update()  # Lock the row for update
-    #     )
-    #     result = await session.execute(stmt)
-    #     meeting = result.scalar_one_or_none()
-    #     if not meeting:
-    #         raise HTTPException(status_code=404, detail="Meeting not found")
-    #     organizer_response = [
-    #         r 
-    #         for r in meeting.user_responses 
-    #         if r.role == EMeetingUserRole.organizer and r.user_id == user_id
-    #     ]
-    #     if not organizer_response:
-    #         raise HTTPException(status_code=403, detail="Wrong organizer")
+    @classmethod
+    async def update_meeting(
+        cls,
+        session: AsyncSession,
+        meeting_id: int,
+        user_id: int,
+        request: MeetingRequestUpdate,
+    ) -> MeetingRequestRead:
+        stmt = (
+            select(ORMMeeting)
+            .where(ORMMeeting.id == meeting_id)
+            .options(
+                selectinload(ORMMeeting.user_responses).selectinload(
+                    ORMMeetingResponse.user
+                )
+            )
+            .with_for_update()  # Lock the row for update
+        )
+        
+        # Check meeting exists
+        result = await session.execute(stmt)
+        meeting = result.scalar_one_or_none()
+        if not meeting:
+            raise HTTPException(status_code=404, detail="Meeting not found")
 
-    #     # Apply updates from the request
-    #     for key, value in request.model_dump(
-    #         exclude_unset=True, exclude_none=True
-    #     ).items():
-    #         setattr(meeting, key, value)
+        # Meeting can be updated only by attendee of this meeting
+        user_response = [r for r in meeting.user_responses if r.user_id == user_id]
+        if len(user_response) == 0:
+            raise HTTPException(status_code=403, detail="User must be attendee of this meeting")
+        user_response = user_response[0]
+        
+        # Write update context for all available fields
+        fields_to_update = list(MeetingRequestUpdate.__fields__.keys())
+        update_contexts = {
+            field: {
+                "is_updated": (not request.__getattribute__(field) is None) and \
+                             (request.__getattribute__(field) != meeting.__getattribute__(field)),
+                "old_value": (not meeting.__getattribute__(field)),
+                "new_value": (not request.__getattribute__(field))
+            }
+            for field in fields_to_update
+        }
+        
+        # Check update rules for all fields
+        update_rules = MeetingRequestUpdate.get_update_rules()
+        for field_name, update_context in update_contexts:
+            
+            # If field not updated, then pass it
+            if not update_context["is_updated"]:
+                continue
+            
+            # Get update rule if it exists
+            update_rule = update_rules[field_name] if field_name in update_rules else None
+            
+            # Check update permission
+            update_permission = (user_response.role == EMeetingUserRole.organizer)
+            if update_rule:
+                update_permission = (user_response.role in update_rule["permission_roles"])
+            if not update_permission:
+                raise HTTPException(status_code=403, detail=f"User don't permitted to update \"{field_name}\" field")
+            
+            # Check condition
+            update_condition = True
+            if update_rule:
+                update_condition = exec(update_rule["condition"].format(**update_context))
+            if not update_condition:
+                raise HTTPException(status_code=400, detail=f"Wrong value of \"{field_name}\" field")
+        
 
-    #     await session.commit()
+        # Apply updates
+        for key, value in request.model_dump(
+            exclude_unset=True, exclude_none=True
+        ).items():
+            setattr(meeting, key, value)
+        
+        await session.commit()
+        
+        # TODO: @ilyabiro - Send notification about changes
 
-    #     return MeetingRequestRead.model_validate(meeting, from_attributes=True)
+        return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
     # @classmethod
     # async def update_user_meeting_response(

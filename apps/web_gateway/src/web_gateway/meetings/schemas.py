@@ -35,6 +35,18 @@ class MeetingRequestUpdate(BaseModel):
     description: str | None = None
     location: str | None = None
     scheduled_time: datetime | None = None
+    
+    @staticmethod
+    def get_update_rules():
+        # Default:
+        #   permission: [organizer]
+        #   condition: True
+        return {
+            "scheduled_time": {
+                "permission_roles": [EMeetingUserRole.organizer, EMeetingUserRole.attendee],
+                "condition": "{old_value} > {new_value}"
+            }
+        }
 
 
 # For user status in a meeting
