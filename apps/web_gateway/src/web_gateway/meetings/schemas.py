@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from common_db.meetings import EMeetingUserRole, EMeetingResponseStatus, EMeetingStatus
+from common_db.meetings import EMeetingUserRole, EMeetingResponseStatus, EMeetingStatus, EMeetingLocation
 
 
 # For creating meeting requests
@@ -13,7 +13,7 @@ class MeetingRequestCreate(BaseModel):
     match_id: int
     attendees_id: list[int]
     scheduled_time: datetime | None = None
-    location: str # TODO: @ilyabiro change to enum 
+    location: EMeetingLocation
     description: str | None = None
 
 
@@ -22,7 +22,7 @@ class MeetingRequestRead(BaseModel):
     id: int
     match_id: int
     description: str | None = None
-    location: str # TODO: @ilyabiro change to enum
+    location: EMeetingLocation
     scheduled_time: datetime
     status: EMeetingStatus
     user_responses: list[MeetingResponse]  # List of users with their statuses
@@ -33,7 +33,7 @@ class MeetingRequestRead(BaseModel):
 
 class MeetingRequestUpdate(BaseModel):
     description: str | None = None
-    location: str | None = None
+    location: EMeetingLocation | None = None
     scheduled_time: datetime | None = None
     
     @staticmethod
@@ -57,13 +57,6 @@ class MeetingResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
-
-# filter for user's meeting searches
-class MeetingFilter(BaseModel):
-    user_id: int | None = None
-    date_from: datetime | None = None
-    date_to: datetime | None = None
 
 
 class MeetingList(BaseModel):

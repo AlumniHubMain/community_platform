@@ -33,6 +33,12 @@ class EMeetingUserRole(Enum):
     attendee = 'attendee'
 
 
+class EMeetingLocation(Enum):
+    anywhere = 'anywhere'
+    offline = 'offline'
+    online = 'online'
+
+
 class ORMMeeting(ObjectTable):
     """
     Meetings table.
@@ -50,7 +56,7 @@ class ORMMeeting(ObjectTable):
                                               primary_key=True)
     match_id: Mapped[int] = mapped_column(Integer) # TODO: Change to ForeignKey(f'{schema}.matches.id', ondelete="CASCADE"), primary_key=True
     scheduled_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    location: Mapped[str | None] = mapped_column(String(200))
+    location: Mapped[str] = mapped_column(ENUM(EMeetingLocation, name='meeting_location_enum'), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(ENUM(EMeetingStatus, name='meeting_status_enum'), 
                                         nullable=False,

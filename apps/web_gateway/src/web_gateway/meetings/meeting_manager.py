@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 
 from event_emitter import EmitterFactory, IProtoEmitter
-from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile, EMeetingResponseStatus, EMeetingStatus, EMeetingUserRole
+from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile, EMeetingResponseStatus, EMeetingStatus, EMeetingUserRole, EMeetingLocation
 from web_gateway.settings import settings
 from web_gateway.limits.limits_manager import LimitsManager, MeetingsUserLimits
 from .notification_event_builder import NotificationEventBuilder
