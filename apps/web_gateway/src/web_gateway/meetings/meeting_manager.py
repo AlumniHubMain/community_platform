@@ -101,9 +101,21 @@ class MeetingManager:
             await LimitsManager.update_user_limits(session, user_orm.id)
 
         await session.commit()
-
+        
+        created_meeting = MeetingRequestRead.model_validate(meeting, from_attributes=True)
+        
+        # Send notification to invited users
+        for attendee_id in request.attendees_id:
+            cls.notification_sender().emit(
+                NotificationEventBuilder.build_meeting_invitation_event(
+                    inviter_id=request.organizer_id,
+                    invited_id=attendee_id,
+                    meeting_id=created_meeting.id
+                )
+            )
+        
         # Return the meeting with the user information and responses
-        return MeetingRequestRead.model_validate(meeting, from_attributes=True)
+        return created_meeting
 
 
     @classmethod
@@ -274,21 +286,15 @@ class MeetingManager:
         
         await session.commit()
         
-        # TODO: @ilyabiro - Send notification about changes
+        # Send notification to other users
+        recipients = [r for r in meeting.user_responses if r.user_id != user_id]
+        for recipient_id in recipients:
+            cls.notification_sender().emit(
+                NotificationEventBuilder.build_meeting_invitation_event(
+                    updater_id=user_id,
+                    recipient_id=recipient_id,
+                    meeting_id=meeting_id
+                )
+            )
 
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
-
-    # @classmethod
-    # async def update_user_meeting_response(
-    #     cls, session: AsyncSession, meeting_id: int, user_id: int, response: EMeetingResponseStatus
-    # ) -> MeetingRequestRead:
-
-    #     cls.notification_sender().emit(
-    #         NotificationEventBuilder.build_meeting_response_event(
-    #             user_id=user_id, meeting_id=meeting_id
-    #         )
-    #     )
-
-    #     # Return the updated meeting response
-    #     return MeetingRequestRead.model_validate(meeting, from_attributes=True)
-
