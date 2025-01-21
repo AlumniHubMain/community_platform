@@ -165,8 +165,22 @@ class MeetingManager:
         # Update the user's response status
         user_response.response = response
         
-        # TODO: @ilyabiro - Add update meeting status
-        
+        # Update meeting status
+        # When new status is declined, then meeting always move to archived
+        if new_status == EMeetingResponseStatus.declined:
+            meeting.status = EMeetingStatus.archived
+        # When new status not is confirmed and meeting was confirmed by all attendees, then status is unknown
+        elif meeting.status == EMeetingStatus.confirmed and new_status != EMeetingResponseStatus.confirmed:
+            meeting.status = EMeetingStatus.no_answer
+        # Other situations
+        else:
+            # Change to confirmed if all users confirm this meeting
+            is_all_confirmed = True
+            for response in meeting.user_responses:
+                is_all_confirmed = is_all_confirmed and (response.response == EMeetingResponseStatus.confirmed)
+            if is_all_confirmed:
+                meeting.status = EMeetingStatus.confirmed
+
         # Update the user's limits
         await LimitsManager.update_user_limits(session, user_id)
 
@@ -278,38 +292,3 @@ class MeetingManager:
     #     # Return the updated meeting response
     #     return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
-    # @classmethod
-    # async def get_filtered_meetings(
-    #     cls, session: AsyncSession, meeting_filter: MeetingFilter
-    # ) -> MeetingList:
-    #     query = select(ORMMeeting).options(selectinload(ORMMeeting.user_responses))
-
-    #     # Apply filters to the query
-    #     if meeting_filter.user_id:
-    #         # Filter by user_id: Meetings where the user is either the organizer or an attendee
-    #         query = query.join(ORMMeetingResponse).where(
-    #             (ORMMeetingResponse.user_id == meeting_filter.user_id)
-    #         )
-
-    #     if meeting_filter.date_from:
-    #         # Filter by date_from: Meetings scheduled after this date
-    #         query = query.where(ORMMeeting.scheduled_time >= meeting_filter.date_from)
-
-    #     if meeting_filter.date_to:
-    #         # Filter by date_to: Meetings scheduled before this date
-    #         query = query.where(ORMMeeting.scheduled_time <= meeting_filter.date_to)
-
-    #     result = await session.execute(query)
-    #     meetings = result.scalars().all()
-
-    #     if not meetings:
-    #         return MeetingList(meetings=[])
-
-    #     response = MeetingList(
-    #         meetings=[
-    #             MeetingRequestRead.model_validate(meeting, from_attributes=True)
-    #             for meeting in meetings
-    #         ]
-    #     )
-
-    #     return MeetingList.model_validate(response)
