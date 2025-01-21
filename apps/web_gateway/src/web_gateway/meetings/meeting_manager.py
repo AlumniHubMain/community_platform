@@ -1,5 +1,3 @@
-import logging
-
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -7,13 +5,11 @@ from sqlalchemy.orm import selectinload
 
 
 from event_emitter import EmitterFactory, IProtoEmitter
-from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile, EMeetingResponseStatus, EMeetingStatus, EMeetingUserRole, EMeetingLocation
+from common_db import ORMMeeting, ORMMeetingResponse, ORMUserProfile, EMeetingResponseStatus, EMeetingStatus, EMeetingUserRole
 from web_gateway.settings import settings
 from web_gateway.limits.limits_manager import LimitsManager, MeetingsUserLimits
 from .notification_event_builder import NotificationEventBuilder
 from .schemas import (
-    MeetingFilter,
-    MeetingList,
     MeetingRequestCreate,
     MeetingRequestRead,
     MeetingRequestUpdate,
