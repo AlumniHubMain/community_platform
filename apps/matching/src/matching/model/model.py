@@ -55,7 +55,7 @@ class Model:
         self,
         all_users: list[UserProfile],
         intent: MeetingIntent,
-        # linkedin_profiles: list[LinkedInProfileRead],
+        linkedin_profiles: list[LinkedInProfileRead], # pylint: disable=unused-argument
         user_id: int,
         n: int,
     ) -> list[int]:
