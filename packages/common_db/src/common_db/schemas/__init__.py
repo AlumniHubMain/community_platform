@@ -2,6 +2,8 @@ from .base import BaseSchema, TimestampedSchema, convert_enum_value
 from .users import UserProfile, SUserProfileRead, SUserProfileUpdate
 from .meeting_intents import MeetingIntent, SMeetingIntentRead
 from .meetings import MeetingResponse, MeetingRead
+from .linkedin import LinkedInProfileTask, LinkedInProfileBase, LinkedInProfileResponse, LinkedInProfileRead
+from .linkedin_helpers import Education, Experience
 
 __all__ = [
     "BaseSchema",
@@ -13,4 +15,10 @@ __all__ = [
     "SUserProfileRead",
     "SUserProfileUpdate",
     "SMeetingIntentRead",
+    "LinkedInProfileTask",
+    "LinkedInProfileBase",
+    "LinkedInProfileResponse",
+    "LinkedInProfileRead",
+    "Education",
+    "Experience",
 ]

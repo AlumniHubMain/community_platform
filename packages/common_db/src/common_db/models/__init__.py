@@ -4,6 +4,7 @@ from .meetings import ORMMeeting, ORMMeetingResponse
 from .meeting_intents import ORMMeetingIntent
 from .matching import ORMMatchingResult
 from .forms import ORMForm
+from .linkedin import ORMLinkedInProfile
 
 __all__ = [
     "Base",
@@ -14,4 +15,5 @@ __all__ = [
     "ORMMeetingIntent",
     "ORMMatchingResult",
     "ORMForm",
+    "ORMLinkedInProfile",
 ]

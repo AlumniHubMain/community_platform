@@ -1,7 +1,7 @@
 """Model class for loading and applying catboost model with filters and diversification"""
 
 import pandas as pd
-from common_db.schemas import UserProfile, MeetingIntent, convert_enum_value
+from common_db.schemas import UserProfile, MeetingIntent, convert_enum_value, LinkedInProfileRead
 
 from .model_settings import ModelSettings, FilterType, DiversificationType, ModelType
 from .predictors import CatBoostPredictor, HeuristicPredictor
@@ -55,6 +55,7 @@ class Model:
         self,
         all_users: list[UserProfile],
         intent: MeetingIntent,
+        # linkedin_profiles: list[LinkedInProfileRead],
         user_id: int,
         n: int,
     ) -> list[int]:
@@ -75,10 +76,12 @@ class Model:
         users_df = pd.DataFrame(users_data).rename(columns={"id": "user_id"})
         intents_df = pd.DataFrame([intent_data])
         main_user_df = users_df[users_df["user_id"] == user_id].copy()
-        main_user_df = intents_df.merge(main_user_df, on="user_id", how="left", suffixes=("_intent", ""))
+        # main_user_df = main_user_df.merge(linkedin_profiles, on="user_id", how="left",)
+        main_user_df = intents_df.merge(main_user_df, on="user_id", how="left",)
         main_user_df = main_user_df.add_prefix("main_")
         main_user_df = main_user_df.iloc[0:1]
         other_users_df = users_df[users_df["user_id"] != user_id].copy()
+        # other_users_df = other_users_df.merge(linkedin_profiles, on="user_id", how="left",)
         main_user_repeated = pd.concat([main_user_df] * len(other_users_df), ignore_index=True)
         features_df = pd.concat([main_user_repeated, other_users_df.reset_index(drop=True)], axis=1)
         predictions = self.predictor.predict(features_df)
