@@ -1,14 +1,12 @@
 # Copyright 2024 Alumnihub
 """PostgreSQL connection module."""
 
-import asyncio
 import os
-from collections.abc import AsyncGenerator
 
-import asyncpg
 from google.cloud.sql.connector import Connector, IPTypes
 from loguru import logger
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from .settings import PostgresSettings
 from .vacancy_schema import Base
@@ -32,7 +30,7 @@ class PostgresDB:
         self.logger = logger
 
     @classmethod
-    async def create(cls, settings: PostgresSettings, logger: logger = logger) -> "PostgresDB":
+    def create(cls, settings: PostgresSettings, logger: logger = logger) -> "PostgresDB":
         """Create and initialize a new PostgresDB instance.
 
         Args:
@@ -45,42 +43,36 @@ class PostgresDB:
         """
         db = cls(settings, logger)
         if db.settings.use_cloud_sql:
-            db.engine = await db._create_cloud_sql_engine()  # noqa: SLF001
+            db.engine = db._create_cloud_sql_engine()
         else:
-            db.engine = db._create_standard_engine()  # noqa: SLF001
+            db.engine = db._create_standard_engine()
 
-        db.session_factory = async_sessionmaker(db.engine, class_=AsyncSession, expire_on_commit=False)
+        db.session_factory = sessionmaker(bind=db.engine, class_=Session, expire_on_commit=False)
         return db
 
     def _create_standard_engine(self) -> None:
         """Create a standard engine."""
-        database_url = f"postgresql+asyncpg://{self.settings.user}:{self.settings.password}@{self.settings.host}:{self.settings.port}/{self.settings.database}"
-        return create_async_engine(
+        database_url = f"postgresql://{self.settings.user}:{self.settings.password}@{self.settings.host}:{self.settings.port}/{self.settings.database}"
+        return create_engine(
             database_url,
-            pool_size=5,
-            max_overflow=2,
+            pool_size=10,
+            max_overflow=5,
             pool_timeout=30,
             pool_recycle=1800,
             echo=True,
         )
 
-    async def _create_cloud_sql_engine(self) -> None:
+    def _create_cloud_sql_engine(self) -> None:
         """Create a Cloud SQL engine."""
         ip_type = IPTypes.PRIVATE if os.environ.get("PRIVATE_IP") else IPTypes.PUBLIC
 
-        loop = asyncio.get_running_loop()
-        self.connector = Connector(loop=loop)
+        self.connector = Connector()
 
-        async def getconn() -> asyncpg.Connection:
-            """Get a connection to the database.
-
-            Returns:
-                asyncpg.Connection: A connection to the database
-
-            """
-            conn: asyncpg.Connection = await self.connector.connect_async(
+        def getconn():
+            """Get a connection to the database."""
+            conn = self.connector.connect(
                 self.settings.instance_connection_name,
-                "asyncpg",
+                "pg8000",
                 user=self.settings.user,
                 password=self.settings.password,
                 db=self.settings.database,
@@ -88,53 +80,45 @@ class PostgresDB:
             )
             return conn
 
-        return create_async_engine(
-            "postgresql+asyncpg://",
-            async_creator=getconn,
-            pool_size=5,
-            max_overflow=2,
+        return create_engine(
+            "postgresql+pg8000://",
+            creator=getconn,
+            pool_size=10,
+            max_overflow=5,
             pool_timeout=30,
             pool_recycle=1800,
         )
 
-    def get_session(self) -> async_sessionmaker[AsyncSession]:
-        """Get a session factory.
-
-        Returns:
-            async_sessionmaker[AsyncSession]: A session factory
-
-        """
+    def get_session(self) -> Session:
+        """Get a database session."""
         return self.session_factory()
 
-    async def get_session_ctx(self) -> AsyncGenerator[AsyncSession]:
-        """Get a session context manager.
-
-        Yields:
-            AsyncGenerator[AsyncSession]: A session context manager.
-
-        """
-        async with self.session_factory() as session:
+    def close(self) -> None:
+        """Close the database connection."""
+        if self.engine:
             try:
-                yield session
+                self.engine.dispose()
+            except Exception as e:
+                self.logger.exception("Error disposing engine: {error}", error=e)
+
+        if self.connector:
+            try:
+                self.connector.close()
+            except Exception as e:
+                self.logger.exception("Error closing Cloud SQL connector: {error}", error=e)
             finally:
-                await session.close()
+                self.connector = None
 
-    async def __aenter__(self) -> "PostgresDB":
-        """Async context manager entry.
-
-        Returns:
-            PostgresDB: The database connection instance
-
-        """
+    def __enter__(self) -> "PostgresDB":
+        """Context manager entry."""
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:  # noqa: ANN001
-        """Async context manager exit."""
-        await self.close()
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # noqa: ANN001
+        """Context manager exit."""
+        self.close()
 
-    async def drop_and_create_db_and_tables(self) -> None:
+    def drop_and_create_db_and_tables(self) -> None:
         """Drop and create all tables in the database."""
         engine = self.engine
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
-            await conn.run_sync(Base.metadata.create_all)
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine)

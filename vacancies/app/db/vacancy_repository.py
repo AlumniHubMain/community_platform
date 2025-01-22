@@ -3,210 +3,115 @@
 
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import or_, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
+from app.data_extractor.extractor import VacancyStructure
+from app.db import PostgresDB
 from app.db.vacancy_schema import Vacancy
 
 
 class VacancyRepository:
     """Репозиторий для работы c вакансиями в базе данных."""
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, db: PostgresDB) -> None:
         """Инициализация репозитория.
 
         Args:
-            session (AsyncSession): Сессия SQLAlchemy
+            db (PostgresDB): Объект подключения к базе данных
 
         """
-        self._session = session
+        self._db = db
 
-    async def add(self, vacancy_data: dict) -> Vacancy:
-        """Добавление новой вакансии в БД.
-
-        Returns:
-            Vacancy: Созданная вакансия
-
-        """
-        try:
-            vacancy = Vacancy(**vacancy_data)
-            self._session.add(vacancy)
-            await self._session.commit()
-        except Exception as e:
-            await self._session.rollback()
-            raise e from e
-        else:
-            await self._session.refresh(vacancy)
-            return vacancy
-
-    async def get_by_id(self, vacancy_id: int) -> Vacancy | None:
-        """Получение вакансии по ID.
-
-        Returns:
-            Optional[Vacancy]: Найденная вакансия или None
-
-        """
-        stmt = select(Vacancy).where(Vacancy.id == vacancy_id)
-        try:
-            result = await self._session.execute(stmt)
-            return result.scalar_one_or_none()
-        except Exception as e:
-            await self._session.rollback()
-            raise e from e
-
-    async def get_all(
-        self,
-        offset: int = 0,
-        limit: int = 100,
-        filters: dict | None = None,
-    ) -> list[Vacancy]:
-        """Получение списка вакансий c применением фильтров.
+    def add_or_update(self, url: str, company_name: str, vacancy_data: VacancyStructure) -> Vacancy:
+        """Добавление новой вакансии в БД или обновление существующей.
 
         Args:
-            offset (int): Смещение
-            limit (int): Лимит записей
-            filters (Optional[dict]): Словарь c фильтрами
+            url (str): URL вакансии
+            company_name (str): Название компании
+            vacancy_data (VacancyStructure): Данные вакансии
 
         Returns:
-            List[Vacancy]: Список вакансий
+            Vacancy: Созданная или обновленная вакансия
 
         """
-        try:
-            query = select(Vacancy)
+        with self._db.get_session() as session:
+            try:
+                # Проверяем существование вакансии
+                stmt = select(Vacancy).where(Vacancy.url == url)
+                existing_vacancy = session.execute(stmt).scalar_one_or_none()
 
-            if filters:
-                if filters.get("level"):
-                    query = query.where(Vacancy.level == filters["level"])
-                if filters.get("location"):
-                    query = query.where(Vacancy.location.ilike(f"%{filters['location']}%"))
-                if filters.get("remote_type"):
-                    query = query.where(Vacancy.remote_type == filters["remote_type"])
-                if filters.get("salary_min"):
-                    query = query.where(
-                        or_(
-                            Vacancy.salary_min >= filters["salary_min"],
-                            Vacancy.salary_max >= filters["salary_min"],
-                        ),
-                    )
-                if filters.get("company_name"):
-                    query = query.where(Vacancy.company_name.ilike(f"%{filters['company_name']}%"))
+                if existing_vacancy:
+                    # Обновляем существующую вакансию
+                    update_data = vacancy_data.model_dump(exclude_unset=True)
+                    for key, value in update_data.items():
+                        if value is not None:
+                            setattr(existing_vacancy, key, value)
+                    existing_vacancy.company = company_name
+                    existing_vacancy.last_timestamp = datetime.now(UTC)
+                    vacancy = existing_vacancy
+                else:
+                    # Создаем новую вакансию
+                    vacancy = Vacancy(**vacancy_data.model_dump())
+                    vacancy.url = url
+                    vacancy.company = company_name
 
-            query = query.offset(offset).limit(limit)
-            result = await self._session.execute(query)
-            return result.scalars().all()
-        except Exception as e:
-            await self._session.rollback()
-            raise e from e
+                session.add(vacancy)
+                session.commit()
+                session.refresh(vacancy)
+                return vacancy
+            except Exception as e:
+                session.rollback()
+                raise e
 
-    async def update(self, vacancy_id: int, vacancy_data: dict) -> Vacancy | None:
-        """Обновление вакансии.
-
-        Args:
-            vacancy_id (int): ID вакансии
-            vacancy_data (dict): Данные для обновления
-
-        Returns:
-            Optional[Vacancy]: Обновленная вакансия или None
-
-        """
-        vacancy = await self.get_by_id(vacancy_id)
-        if vacancy:
-            for key, value in vacancy_data.items():
-                setattr(vacancy, key, value)
-            vacancy.last_timestamp = datetime.now(UTC)
-            await self._session.commit()
-            await self._session.refresh(vacancy)
-        return vacancy
-
-    async def delete(self, vacancy_id: int) -> bool:
-        """Удаление вакансии.
-
-        Args:
-            vacancy_id (int): ID вакансии
-
-        Returns:
-            bool: True если удалено, False если не найдено
-
-        """
-        vacancy = await self.get_by_id(vacancy_id)
-        if vacancy:
-            await self._session.delete(vacancy)
-            await self._session.commit()
-            return True
-        return False
-
-    async def search(
-        self,
-        search_term: str,
-        offset: int = 0,
-        limit: int = 100,
-    ) -> list[Vacancy]:
-        """Поиск вакансий по ключевым словам.
-
-        Returns:
-            list[Vacancy]: Список вакансий
-
-        """
-        stmt = (
-            select(Vacancy)
-            .where(
-                or_(
-                    Vacancy.title.ilike(f"%{search_term}%"),
-                    Vacancy.description.ilike(f"%{search_term}%"),
-                    Vacancy.skills.ilike(f"%{search_term}%"),
-                    Vacancy.company_name.ilike(f"%{search_term}%"),
-                ),
-            )
-            .offset(offset)
-            .limit(limit)
-        )
-
-        result = await self._session.execute(stmt)
-        return result.scalars().all()
-
-    async def exists(self, vacancy_id: int) -> bool:
-        """Проверка существования вакансии.
-
-        Returns:
-            True если существует, False если нет
-
-        """
-        stmt = select(1).where(Vacancy.id == vacancy_id).exists()
-        result = await self._session.execute(select(stmt))
-        return result.scalar()
-
-    async def get_by_url(self, url: str) -> Vacancy | None:
+    def get_by_url(self, url: str) -> Vacancy | None:
         """Получение вакансии по URL.
 
         Returns:
             Optional[Vacancy]: Найденная вакансия или None
 
         """
-        stmt = select(Vacancy).where(Vacancy.url == url)
-        result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
+        with self._db.get_session() as session:
+            try:
+                stmt = select(Vacancy).where(Vacancy.url == url)
+                result = session.execute(stmt)
+                return result.scalar_one_or_none()
+            except Exception as e:
+                session.rollback()
+                raise e
 
-    async def update_by_url(self, url: str, vacancy_data: dict) -> Vacancy | None:
+    def update_by_url(self, url: str, vacancy: Vacancy, vacancy_data: VacancyStructure) -> Vacancy | None:
         """Обновление вакансии по URL.
 
         Args:
-            url (str): URL вакансии
-            vacancy_data (dict): Данные для обновления
+            url (str): URL вакансии для обновления
+            vacancy_data (VacancyStructure): Новые данные вакансии в виде Pydantic модели
 
         Returns:
-            Optional[Vacancy]: Обновленная вакансия или None
+            Optional[Vacancy]: Обновленная вакансия или None если вакансия не найдена
 
+        Raises:
+            ValueError: Если url или vacancy_data равны None
+            SQLAlchemyError: При ошибке работы с базой данных
         """
-        vacancy = await self.get_by_url(url)
-        if vacancy:
-            for key, value in vacancy_data.items():
-                setattr(vacancy, key, value)
-            vacancy.last_timestamp = datetime.now(UTC)
-            await self._session.commit()
-            await self._session.refresh(vacancy)
-        return vacancy
+        if not url or not vacancy_data:
+            raise ValueError("URL and vacancy data must not be None")
 
-    async def exists_by_url(self, url: str) -> bool:
+        with self._db.get_session() as session:
+            try:
+                update_data = vacancy_data.model_dump(exclude_unset=True)
+                for key, value in update_data.items():
+                    if value:
+                        setattr(vacancy, key, value)
+                vacancy.last_timestamp = datetime.now(UTC)
+                session.add(vacancy)
+                session.commit()
+                session.refresh(vacancy)
+                return vacancy
+            except Exception as e:
+                session.rollback()
+                raise e
+
+    def exists_by_url(self, url: str) -> bool:
         """Проверка существования вакансии по URL.
 
         Args:
@@ -216,11 +121,18 @@ class VacancyRepository:
             bool: True если существует, False если нет
 
         """
-        query = select(1).where(Vacancy.url == url).exists()
-        result = await self._session.execute(select(query))
-        return result.scalar()
+        with self._db.get_session() as session:
+            try:
+                one_month_ago = datetime.now(UTC) - timedelta(days=30)
+                stmt = select(1).where(Vacancy.url == url).where(Vacancy.last_timestamp > one_month_ago)
+                result = session.execute(stmt)
+                exists = result.scalar() is not None
+                return exists
+            except Exception as e:
+                session.rollback()
+                raise e
 
-    async def update_time_reachable_by_url(self, url: str, vacancy_data: dict) -> Vacancy | None:
+    def update_time_reachable_by_url(self, url: str) -> Vacancy | None:
         """Обновление time_reachable вакансии по URL.
 
         Если c момента последней проверки прошло больше месяца,
@@ -228,27 +140,24 @@ class VacancyRepository:
 
         Args:
             url (str): URL вакансии
-            vacancy_data (dict): Данные для обновления
 
         Returns:
             Optional[Vacancy]: Обновленная вакансия или None
 
         """
-        vacancy = await self.get_by_url(url)
-        if vacancy:
-            # Обновляем time_reachable из входных данных
-            for key, value in vacancy_data.items():
-                setattr(vacancy, key, value)
+        with self._db.get_session() as session:
+            try:
+                stmt = select(Vacancy).where(Vacancy.url == url)
+                result = session.execute(stmt)
+                vacancy = result.scalar_one_or_none()
 
-            # Проверяем, прошел ли месяц c момента последней проверки
-            one_month_ago = datetime.now(UTC) - timedelta(days=30)
-            if vacancy.time_reachable <= one_month_ago:
-                vacancy.needs_update = True
-
-            # Обновляем last_seen на текущее время
-            vacancy.last_seen = datetime.now(UTC)
-
-            await self._session.commit()
-            await self._session.refresh(vacancy)
-            return vacancy
-        return None
+                if vacancy:
+                    vacancy.time_reachable = datetime.now(UTC)
+                    session.add(vacancy)
+                    session.commit()
+                    session.refresh(vacancy)
+                    return vacancy
+                return None
+            except Exception as e:
+                session.rollback()
+                raise e
