@@ -56,7 +56,7 @@ async def main(logger: logger) -> None:
         repository = VacancyRepository(db)
         processor = VacancyProcessor(vacancy_repository=repository, logger=logger)
         # Process results
-        for extractor, links in zip(extractors, results[:4], strict=False):
+        for extractor, links in zip(extractors, results, strict=False):
             if isinstance(links, Exception):
                 logger.error(f"Error extracting links from {extractor.__class__.__name__}: {links}")
                 continue
