@@ -26,6 +26,11 @@ docker run -v /path/to/local/config/directory:/config:rw -v /path/to/local/secre
 ```
 
 ---
+## Development
+### Add new package
+```bash
+uv add package-name
+```
 
 ## Подробнее про конфиги и секреты. Список
 
