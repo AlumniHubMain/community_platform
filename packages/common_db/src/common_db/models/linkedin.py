@@ -90,12 +90,15 @@ class Education(Base):
     __tablename__ = "linkedin_education"
 
     __table_args__ = (
-        Index("profile_id", unique=True),
         {'schema': schema}
     )
 
     # Main fields
-    profile_id: Mapped[int] = mapped_column(ForeignKey(f"{schema}.linkedin_profiles.id"), doc="Profile reference")
+    profile_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{schema}.linkedin_profiles.id"),
+        index=True,  # Add regular index instead
+        doc="Profile reference"
+    )
 
     school: Mapped[str] = mapped_column(doc="School name")
     degree: Mapped[str | None] = mapped_column(doc="Degree")
@@ -113,12 +116,15 @@ class Experience(Base):
     __tablename__ = "linkedin_experience"
 
     __table_args__ = (
-        Index("profile_id", unique=True),
         {'schema': schema}
     )
 
     # Main fields
-    profile_id: Mapped[int] = mapped_column(ForeignKey(f"{schema}.linkedin_profiles.id"), doc="Profile reference")
+    profile_id: Mapped[int] = mapped_column(
+        ForeignKey(f"{schema}.linkedin_profiles.id"),
+        index=True,  # Add regular index instead
+        doc="Profile reference"
+    )
 
     company: Mapped[str] = mapped_column(doc="Company name")
     title: Mapped[str] = mapped_column(doc="Job title")
