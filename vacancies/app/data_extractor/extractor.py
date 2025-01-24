@@ -1,6 +1,8 @@
 # Copyright 2024 Alumnihub
 """Extractor of vacancy data."""
 
+import traceback
+
 from langchain_google_vertexai import ChatVertexAI
 from langchain_google_vertexai.callbacks import VertexAICallbackHandler
 from loguru import logger
@@ -51,8 +53,8 @@ class VacancyExtractor:
                     await page.wait_for_load_state("domcontentloaded")
                     await page.wait_for_load_state("networkidle")
                     await page.wait_for_selector(".loading-spinner", state="hidden", timeout=10000)
-                except Exception as e:
-                    self.logger.warning("Error loading page {url}: {error}", url=url, error=e)
+                except Exception:
+                    self.logger.warning("Error loading page", url=url, error=traceback.format_exc())
 
                 html = await page.evaluate("""
                     () => {
@@ -84,8 +86,8 @@ class VacancyExtractor:
                 await browser.close()
                 return vacancy
 
-        except Exception as e:
-            self.logger.exception("Error processing vacancy {url}: {error}", url=url, error=e)
+        except Exception:
+            self.logger.exception("Error processing vacancy", url=url, error=traceback.format_exc())
             return None
 
     def get_current_tokens(self) -> tuple[int, int]:

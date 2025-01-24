@@ -4,12 +4,13 @@
 
 import asyncio
 import os
+import sys
 import traceback
 from urllib.parse import urljoin
 
 from loguru import logger
 
-from app.config import config, credentials
+from app.config import GCP_LOG_FORMAT, config, credentials
 from app.data_extractor.processor import VacancyProcessor
 from app.db import PostgresDB, PostgresSettings, VacancyRepository
 from app.link_extractor import BaseLinkExtractor
@@ -19,7 +20,6 @@ async def main(logger: logger) -> None:
     """Execute the vacancy links extraction process for different companies with concurrency limit."""
     semaphore = asyncio.Semaphore(config.CONCURRENT_EXTRACTIONS)
     db = None
-    extractors = []
     try:
         # Initialize extractors from config
         extractors = [extractor_class(logger=logger) for extractor_class in config.EXTRACTORS.values()]
@@ -52,31 +52,40 @@ async def main(logger: logger) -> None:
             logger=logger,
         )
 
-        repository = VacancyRepository(db)
-        processor = VacancyProcessor(vacancy_repository=repository, logger=logger)
+        repository = VacancyRepository(db, logger=logger)
+        processor = VacancyProcessor(
+            vacancy_repository=repository,
+            max_input_tokens=config.MAX_INPUT_TOKENS,
+            max_output_tokens=config.MAX_OUTPUT_TOKENS,
+            num_workers=config.NUM_WORKERS,
+            logger=logger,
+        )
         # Process results
         for extractor, links in zip(extractors, results, strict=False):
             if isinstance(links, Exception):
-                logger.error(f"Error extracting links from {extractor.__class__.__name__}: {links}")
+                logger.error("Error extracting links", extractor_name=extractor.name, error=traceback.format_exc())
                 continue
 
-            company_name = extractor.name
-            base_url = extractor.base_url
-            logger.info(f"Found {len(links)} unique vacancy links in {company_name} ({base_url})")
-            for link in links:
-                full_link = urljoin(base_url, link)
+            logger.info(
+                "Found {num_links} unique vacancy links in {extractor_name} ({extractor_base_url})",
+                num_links=len(links),
+                extractor_name=extractor.name,
+                extractor_base_url=extractor.base_url,
+            )
+            for link in links[:3]:
+                full_link = urljoin(extractor.base_url, link)
                 if not repository.exists_by_url(full_link):
-                    await processor.add_url(full_link, company_name)
-                    logger.info(f"put to queue new vacancy: {full_link}")
+                    await processor.add_url(full_link, extractor.name)
+                    logger.info("Added new vacancy to queue", url=full_link, extractor_name=extractor.name)
                 else:
                     vacancy = repository.update_time_reachable_by_url(full_link)
-                    logger.info(f"Updated vacancy {vacancy.id} in database")
+                    logger.info("Updated vacancy in database", vacancy_id=vacancy.id, url=full_link)
 
         await processor.start()
         await processor.shutdown()
 
     except Exception:
-        logger.error("Error in main: {error}", error=traceback.format_exc())
+        logger.error("Error in main", error=traceback.format_exc())
 
     finally:
         if db:
@@ -86,8 +95,12 @@ async def main(logger: logger) -> None:
 
 
 if __name__ == "__main__":
-    try:
-        logger.info("Starting the vacancy links extraction process")
-        asyncio.run(main(logger))
-    except KeyboardInterrupt:
-        logger.info("Process interrupted by user")
+    logger.remove()
+    logger.add(
+        sys.stdout,
+        format=GCP_LOG_FORMAT,
+        level=config.LOG_LEVEL,
+        colorize=True,
+    )
+    logger.info("Starting vacancy links extraction process")
+    asyncio.run(main(logger))

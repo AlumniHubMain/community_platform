@@ -1,5 +1,7 @@
 import asyncio
 import multiprocessing
+import sys
+import traceback
 from multiprocessing import Process
 from multiprocessing import Queue as MPQueue
 from threading import Thread
@@ -7,6 +9,7 @@ from time import sleep
 
 from loguru import logger
 
+from app.config import GCP_LOG_FORMAT, config
 from app.data_extractor.extractor import VacancyExtractor
 from app.db import VacancyRepository
 
@@ -39,7 +42,7 @@ class VacancyProcessor:
         self.max_output_tokens = max_output_tokens
 
         # Start parser workers
-        self.logger.info(f"Starting {self.num_workers} vacancy parser processes")
+        self.logger.info("Starting vacancy parser processes", num_workers=self.num_workers)
         for i in range(self.num_workers):
             process = Process(
                 target=self._process_urls,
@@ -70,16 +73,16 @@ class VacancyProcessor:
                     self.logger.info("Data processor thread received shutdown signal")
                     break
 
-                self.logger.debug(f"Saving data for URL: {url}")
+                self.logger.debug("Saving data for URL", url=url)
                 try:
                     self.repository.add_or_update(url, company_name, data)
-                    self.logger.info(f"Successfully saved data for URL: {url}")
+                    self.logger.info("Successfully saved data for URL", url=url)
 
-                except Exception as db_error:
-                    self.logger.error(f"Database error while saving data for URL {url}: {str(db_error)}")
+                except Exception:
+                    self.logger.error("Database error while saving data for URL", url=url, error=traceback.format_exc())
 
-            except Exception as e:
-                self.logger.exception(f"Error processing data queue: {str(e)}")
+            except Exception:
+                self.logger.exception("Error processing data queue", error=traceback.format_exc())
                 sleep(0.1)
 
         loop.close()
@@ -123,6 +126,13 @@ class VacancyProcessor:
     def _process_urls(url_queue: MPQueue, data_queue: MPQueue, max_input_tokens: int, max_output_tokens: int) -> None:
         """Process URLs in a separate process using async extractor."""
         worker_name = multiprocessing.current_process().name
+        logger.remove()
+        logger.add(
+            sys.stdout,
+            format=GCP_LOG_FORMAT,
+            level=config.LOG_LEVEL,
+            colorize=True,
+        )
         logger.info(f"Starting process: {worker_name}")
 
         async def process_urls_async():
@@ -132,32 +142,43 @@ class VacancyProcessor:
                 try:
                     url, company_name = url_queue.get()
                     if url is None:  # Poison pill
-                        logger.info(f"Process {worker_name} received shutdown signal")
+                        logger.info("Process received shutdown signal", worker_name=worker_name)
                         break
 
-                    logger.debug(f"Process {worker_name} processing URL: {url}")
+                    logger.debug("Process processing URL", url=url, worker_name=worker_name)
                     vacancy_data = await extractor.process_vacancy(url)
                     worker_input_tokens, worker_output_tokens = extractor.get_current_tokens()
 
                     if vacancy_data:
-                        logger.debug(f"Process {worker_name} saving vacancy data for URL: {url}")
+                        logger.debug("Process saving vacancy data for URL", url=url, worker_name=worker_name)
                         data_queue.put((url, company_name, vacancy_data))
-                        logger.info(f"Process {worker_name} successfully processed vacancy: {url}")
+                        logger.info("Process successfully processed vacancy", url=url, worker_name=worker_name)
                     else:
-                        logger.warning(f"Process {worker_name} could not extract data from URL: {url}")
+                        logger.warning(
+                            "Process could not extract data from URL",
+                            url=url,
+                            worker_name=worker_name,
+                            worker_input_tokens=worker_input_tokens,
+                            worker_output_tokens=worker_output_tokens,
+                        )
 
                     if worker_input_tokens <= 0 or worker_output_tokens <= 0:
-                        logger.warning(f"Process {worker_name} has no tokens left, shutting down")
+                        logger.warning(
+                            "Process has no tokens left, shutting down",
+                            worker_name=worker_name,
+                            worker_input_tokens=worker_input_tokens,
+                            worker_output_tokens=worker_output_tokens,
+                        )
                         break
 
-                except Exception as e:
-                    logger.exception(f"Process {worker_name} encountered error processing URL: {str(e)}")
+                except Exception:
+                    logger.exception("Process encountered error processing URL", error=traceback.format_exc())
 
-            logger.info(f"Process {worker_name} shutdown complete")
+            logger.info("Process shutdown complete", worker_name=worker_name)
 
         asyncio.run(process_urls_async())
 
     async def add_url(self, url: str, company_name: str) -> None:
         """Add single URL to the processing queue."""
-        self.logger.debug(f"Adding URL to queue: {url}")
+        self.logger.debug("Adding URL to queue", url=url)
         self.url_queue.put((url, company_name))

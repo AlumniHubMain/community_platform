@@ -1,6 +1,8 @@
 # Copyright 2024 Alumnihub
 """Extractor for Booking vacancy links."""
 
+import traceback
+
 from loguru import logger
 from playwright.async_api import Page
 
@@ -29,7 +31,7 @@ class BookingLinkExtractor(BaseLinkExtractor):
         try:
             await page.wait_for_selector('a[href*="/booking/jobs/"]', timeout=self.timeout)
         except TimeoutError as e:
-            self.logger.info("Timeout while loading content: {error}", error=e)
+            self.logger.info("Timeout while loading content", error=e)
 
         while True:
             current_links = await page.eval_on_selector_all(
@@ -38,7 +40,7 @@ class BookingLinkExtractor(BaseLinkExtractor):
             )
             self.all_links.update(current_links)
             self.logger.info(
-                "Found {current_links} vacancies on current page. Total unique links: {total_links}",
+                "Found vacancies on current page",
                 current_links=len(current_links),
                 total_links=len(self.all_links),
             )
@@ -51,14 +53,14 @@ class BookingLinkExtractor(BaseLinkExtractor):
                 )
 
                 if not next_button or await next_button.is_disabled():
-                    self.logger.info("No more pages available")
+                    self.logger.info("No more links on the pages available")
                     break
 
                 await next_button.click()
                 await page.wait_for_load_state("networkidle")
                 await page.wait_for_timeout(2000)
-            except Exception as e:  # noqa: BLE001
-                self.logger.info("Error during pagination: {error}", error=e)
+            except Exception:  # noqa: BLE001
+                self.logger.info("Error during pagination", error=traceback.format_exc())
                 break
 
     async def _extract_links(self, page: Page) -> list[str]:  # noqa: ARG002

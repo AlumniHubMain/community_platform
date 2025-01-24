@@ -2,6 +2,6 @@
 
 """Configuration for the application."""
 
-from .config import config, credentials
+from .config import GCP_LOG_FORMAT, config, credentials
 
-__all__ = ["config", "credentials"]
+__all__ = ["config", "credentials", "GCP_LOG_FORMAT"]

@@ -49,7 +49,10 @@ class Config(BaseSettings):
 
     MAX_INPUT_TOKENS: int = 1_000_000_000
     MAX_OUTPUT_TOKENS: int = 1_000_000_000
+    NUM_WORKERS: int = 5
+    LOG_LEVEL: str = "INFO"
 
 
 config = Config()
 credentials = Credentials.load()
+GCP_LOG_FORMAT = "{level:<.1}{time:MMDD HH:mm:ss.SSSSSS} {process} {name}:{line}] {message} | {extra}"

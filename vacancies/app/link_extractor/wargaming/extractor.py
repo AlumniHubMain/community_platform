@@ -1,6 +1,8 @@
 # Copyright 2024 Alumnihub
 """Extractor for Wargaming vacancy links."""
 
+import traceback
+
 from loguru import logger
 from playwright.async_api import Page
 
@@ -42,12 +44,12 @@ class WargamingLinkExtractor(BaseLinkExtractor):
                 await page.locator(".show-more").click(timeout=5000)
                 try:
                     await page.wait_for_load_state("networkidle")
-                except Exception as e:  # noqa: BLE001
-                    self.logger.info("Network idle not found: {error}", error=e)
+                except Exception:  # noqa: BLE001
+                    self.logger.info("Network idle not found", error=traceback.format_exc())
                 await page.wait_for_timeout(2000)  # Add delay to ensure content loads
 
-            except Exception as e:  # noqa: BLE001
-                self.logger.info("Pagination completed or error occurred: %s", e)
+            except Exception:  # noqa: BLE001
+                self.logger.info("Pagination completed or error occurred", error=traceback.format_exc())
                 break
 
     async def _extract_links(self, page: Page) -> list[str]:  # noqa: PLR6301
