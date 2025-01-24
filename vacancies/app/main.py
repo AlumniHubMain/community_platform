@@ -72,7 +72,7 @@ async def main(logger: logger) -> None:
                 extractor_name=extractor.name,
                 extractor_base_url=extractor.base_url,
             )
-            for link in links[:3]:
+            for link in links:
                 full_link = urljoin(extractor.base_url, link)
                 if not repository.exists_by_url(full_link):
                     await processor.add_url(full_link, extractor.name)
