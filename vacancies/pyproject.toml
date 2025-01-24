@@ -14,12 +14,14 @@ dependencies = [
     "pydantic-settings>=2.7.1",
     "sqlalchemy>=2.0.37",
     "google-cloud-logging>=3.11.3",
-    "httpx>=0.28.1",
     "pg8000>=1.31.2",
 ]
 
 [tool.uv]
 dev-dependencies = [
+    "browser-use>=0.1.8",
     "debugpy>=1.8.11",
+    "ipykernel>=6.29.5",
+    "pip>=24.3.1",
     "ruff>=0.9.1",
 ]

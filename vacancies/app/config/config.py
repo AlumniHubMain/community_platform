@@ -7,7 +7,7 @@ import os
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.link_extractor import BaseLinkExtractor, InDriveLinkExtractor
+from app.link_extractor import BaseLinkExtractor, BookingLinkExtractor, InDriveLinkExtractor, WargamingLinkExtractor
 
 
 class Credentials(BaseSettings):
@@ -42,10 +42,13 @@ class Config(BaseSettings):
 
     # Dictionary mapping company names to their extractor classes
     EXTRACTORS: dict[str, type[BaseLinkExtractor]] = {
-        # "booking": BookingLinkExtractor,
+        "booking": BookingLinkExtractor,
         "indriver": InDriveLinkExtractor,
-        # "wargaming": WargamingLinkExtractor,
+        "wargaming": WargamingLinkExtractor,
     }
+
+    MAX_INPUT_TOKENS: int = 1_000_000_000
+    MAX_OUTPUT_TOKENS: int = 1_000_000_000
 
 
 config = Config()

@@ -51,7 +51,6 @@ async def main(logger: logger) -> None:
             ),
             logger=logger,
         )
-        # db.drop_and_create_db_and_tables()
 
         repository = VacancyRepository(db)
         processor = VacancyProcessor(vacancy_repository=repository, logger=logger)

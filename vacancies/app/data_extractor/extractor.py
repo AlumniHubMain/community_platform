@@ -1,10 +1,10 @@
 # Copyright 2024 Alumnihub
 """Extractor of vacancy data."""
 
-import httpx
 from langchain_google_vertexai import ChatVertexAI
 from langchain_google_vertexai.callbacks import VertexAICallbackHandler
 from loguru import logger
+from playwright.async_api import async_playwright
 
 from app.data_extractor.structure_vacancy import VacancyStructure
 
@@ -12,17 +12,20 @@ from app.data_extractor.structure_vacancy import VacancyStructure
 class VacancyExtractor:
     """Handles extraction of vacancy data using browser instance and LLM."""
 
-    def __init__(self, logger: logger = logger) -> None:
+    def __init__(
+        self, max_input_tokens: int = 100_000_000, max_output_tokens: int = 100_000_000, logger: logger = logger
+    ) -> None:
         """Initialize the VacancyExtractor with LLM model.
 
         Args:
             logger: Logger instance
         """
+        self.max_input_tokens = max_input_tokens
+        self.max_output_tokens = max_output_tokens
+
         self.logger = logger
         self.llm = ChatVertexAI(
-            model="gemini-1.5-flash-002",
-            temperature=0,
-            max_retries=6,
+            model="gemini-1.5-flash", temperature=0, max_retries=6, convert_system_message_to_human=True
         )
         self.structured_llm = self.llm.with_structured_output(VacancyStructure)
         self.vertex_callback = VertexAICallbackHandler()
@@ -37,19 +40,54 @@ class VacancyExtractor:
             VacancyStructure | None: Structured vacancy data or None if extraction failed
         """
         try:
-            response = httpx.get(url)
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                context = await browser.new_context(
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36"
+                )
+                page = await context.new_page()
+                try:
+                    await page.goto(url, timeout=30000)
+                    await page.wait_for_load_state("domcontentloaded")
+                    await page.wait_for_load_state("networkidle")
+                    await page.wait_for_selector(".loading-spinner", state="hidden", timeout=10000)
+                except Exception as e:
+                    self.logger.warning("Error loading page {url}: {error}", url=url, error=e)
 
-            if response.status_code == 200:
-                html = response.text
-            else:
-                self.logger.error(f"Failed to fetch URL {url}: {response.status_code}")
-                return None
+                html = await page.evaluate("""
+                    () => {
+                        // Try different selectors for the main content
+                        const selectors = [
+                            '.vacancy-description',  // Common class for vacancy content
+                            'main',                 // Main content area
+                            'article',              // Article content
+                            '#content'              // Content div
+                        ];
+                        
+                        for (const selector of selectors) {
+                            const element = document.querySelector(selector);
+                            if (element) {
+                                return element.innerText;
+                            }
+                        }
+                        
+                        // Fallback: return body text if no specific container found
+                        return document.body.innerText;
+                    }
+                """)
 
-            # Process with LLM
-            vacancy = self.structured_llm.invoke(html, config={"callbacks": [self.vertex_callback]})
-            if vacancy:
+                # Process with LLM
+                prompt = f"Extract job vacancy information from the following text:\n\n{html}"
+                vacancy = self.structured_llm.invoke(prompt, config={"callbacks": [self.vertex_callback]})
+                self.max_input_tokens -= self.vertex_callback.prompt_tokens
+                self.max_output_tokens -= self.vertex_callback.completion_tokens
+                await browser.close()
                 return vacancy
 
         except Exception as e:
             self.logger.exception("Error processing vacancy {url}: {error}", url=url, error=e)
             return None
+
+    def get_current_tokens(self) -> tuple[int, int]:
+        """Get the current number of tokens for the input text."""
+        return self.max_input_tokens, self.max_output_tokens
