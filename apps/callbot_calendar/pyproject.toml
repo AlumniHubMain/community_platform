@@ -1,0 +1,38 @@
+[project]
+name = "callbot-calendar"
+version = "0.0.1"
+description = "Callbot Google calendar integration"
+readme = "README.md"
+authors = [
+    { name = "sianur", email = "sergey.sedov@gmail.com" }
+]
+requires-python = "==3.12.7"
+dependencies = [
+    "common-db",
+    "config-library",
+    "google-api-python-client>=2.159.0",
+    "google-auth>=2.38.0",
+    "pydantic[email]>=2.10.6",
+    "pydantic-settings>=2.7.1",
+    "asyncpg>=0.30.0",
+]
+
+[tool.uv.sources]
+config-library = { path = "../../packages/config_library" }
+common-db = { path = "../../packages/common_db" }
+
+[tool.uv]
+dev-dependencies = [
+    "pylint>=3.3.1",
+    "ruff>=0.7.0",
+    "pytest-env>=1.1.5",
+    "pytest>=8.3.4",
+]
+
+[tool.ruff]
+extend = "../../ruff.toml"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["callbot_calendar"]
+
