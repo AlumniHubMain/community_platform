@@ -52,6 +52,7 @@ dev-dependencies = [
     "httpx>=0.28.1",
     "pytest-env>=1.1.5",
     "pytest>=8.3.4",
+    "pytest-asyncio>=0.23.0",
 ]
 
 [tool.ruff]
@@ -65,4 +66,14 @@ packages = ["matching"]
 matching = [
     "config/config_proto/*.proto",
     "config/config_proto/*.textproto"
+]
+
+[tool.pylint]
+max-line-length = 120
+disable = [
+    "C0111",  # missing-docstring
+    "C0103",  # invalid-name
+    "W0511",  # fixme
+    "R0914",  # too-many-locals
+    "R0903",  # too-few-public-methods
 ]

@@ -3,6 +3,7 @@ from .users import ORMUserProfile
 from .meetings import ORMMeeting, ORMMeetingResponse
 from .meeting_intents import ORMMeetingIntent
 from .matching import ORMMatchingResult
+from .forms import ORMForm
 from .callbot import ORMCallbotScheduledMeeting
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     "ORMMeetingResponse",
     "ORMMeetingIntent",
     "ORMMatchingResult",
+    "ORMForm",
     "ORMCallbotScheduledMeeting",
 ]

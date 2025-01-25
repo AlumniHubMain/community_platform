@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from common_db.models import ORMUserProfile, ORMMeetingIntent, ORMMeetingResponse
 from common_db.schemas import SUserProfileRead, SMeetingIntentRead
 
+
 class DataLoader:
     @classmethod
     async def get_user_profile(cls, session, user_id: int) -> SUserProfileRead:

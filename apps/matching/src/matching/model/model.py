@@ -1,12 +1,10 @@
 """Model class for loading and applying catboost model with filters and diversification"""
 
 import pandas as pd
-
-from common_db.schemas import convert_enum_value
+from common_db.schemas import UserProfile, MeetingIntent, convert_enum_value
 
 from .model_settings import ModelSettings, FilterType, DiversificationType, ModelType
 from .predictors import CatBoostPredictor, HeuristicPredictor
-from common_db.schemas import UserProfile, MeetingIntent
 
 
 class Model:
@@ -25,14 +23,35 @@ class Model:
             self.predictor = CatBoostPredictor()
             self.predictor.load_model(model_path)
 
-    def create_features(self, features_df: pd.DataFrame, user_id: int) -> pd.DataFrame:
+    def create_features(self, features_df: pd.DataFrame, user_id: int) -> pd.DataFrame:  # pylint: disable=unused-argument
         """Create features for the model"""
         return features_df
+
+    @staticmethod
+    def check_match(x, filter_setting) -> bool:
+        """Check if value matches filter rule"""
+        values = x if isinstance(x, list) else [x]
+        filter_rules = (
+            filter_setting.filter_rule if isinstance(filter_setting.filter_rule, list) else [filter_setting.filter_rule]
+        )
+        result = bool(set(values) & set(filter_rules))
+        return result
+
+    def _apply_filter(self, df: pd.DataFrame, filter_setting) -> pd.DataFrame:
+        """Apply filter based on settings"""
+        if filter_setting.filter_type == FilterType.STRICT:
+            mask = df[filter_setting.filter_column].apply(lambda x: self.check_match(x, filter_setting))
+            filtered_df = df[mask]
+            return filtered_df
+        if filter_setting.filter_type == FilterType.SOFT:
+            mask = df[filter_setting.filter_column].apply(lambda x: self.check_match(x, filter_setting))
+            df.loc[~mask, "score"] *= 0.5
+            return df
+        return df
 
     def predict(
         self,
         all_users: list[UserProfile],
-        # all_linkedin: list[LinkedInProfile],
         intent: MeetingIntent,
         user_id: int,
         n: int,
@@ -41,31 +60,23 @@ class Model:
         if self.predictor is None:
             raise ValueError("Model not loaded")
         users_data = [user.model_dump() for user in all_users]
-        # linkedin_data = [profile.model_dump() for profile in all_linkedin]
         intent_data = intent.model_dump()
         for i, user in enumerate(users_data):
             for field, value in user.items():
                 users_data[i][field] = convert_enum_value(value)
-        # for i, profile in enumerate(linkedin_data):
-        #     for field, value in profile.items():
-        #         linkedin_data[i][field] = convert_enum_value(value)
         for field, value in intent_data.items():
             intent_data[field] = convert_enum_value(value)
         users_df = pd.DataFrame(users_data).rename(columns={"id": "user_id"})
-        # linkedin_df = pd.DataFrame(linkedin_data)
         intents_df = pd.DataFrame([intent_data])
         main_user_df = users_df[users_df["user_id"] == user_id].copy()
-        # main_user_df = main_user_df.merge(linkedin_df, on="user_id", how="left", suffixes=("_user", "_linkedin"))
         main_user_df = intents_df.merge(main_user_df, on="user_id", how="left", suffixes=("_intent", ""))
         main_user_df = main_user_df.add_prefix("main_")
         main_user_df = main_user_df.iloc[0:1]
         other_users_df = users_df[users_df["user_id"] != user_id].copy()
-        # other_users_df = other_users_df.merge(linkedin_df, on="user_id", how="left", suffixes=("_user", "_linkedin"))
         main_user_repeated = pd.concat([main_user_df] * len(other_users_df), ignore_index=True)
         features_df = pd.concat([main_user_repeated, other_users_df.reset_index(drop=True)], axis=1)
-        created_features = self.create_features(features_df, user_id)
-        predictions = self.predictor.predict(created_features)
-        results_df = features_df.copy()
+        predictions = self.predictor.predict(features_df)
+        results_df = other_users_df.copy()
         results_df["score"] = predictions
         for filter_setting in self.model_settings.filters:
             results_df = self._apply_filter(results_df, filter_setting)
@@ -73,31 +84,8 @@ class Model:
             results_df = self._apply_diversification(results_df, div_setting)
         results_df = self._apply_exclusions(results_df)
         results_df = results_df.sort_values("score", ascending=False)
-        return results_df.user_id.tolist()[:n]
-
-    @staticmethod
-    def check_match(x, filter_setting):
-        values = x if isinstance(x, list) else [x]
-        if isinstance(filter_setting.filter_rule, list):
-            return any(val in filter_setting.filter_rule for val in values)
-        return filter_setting.filter_rule in values
-
-    def _apply_filter(self, df: pd.DataFrame, filter_setting, row_callable=None) -> pd.DataFrame:
-        """Apply filter based on settings"""
-        if filter_setting.filter_type == FilterType.STRICT:
-            return df[df[filter_setting.filter_column].apply(lambda x: self.check_match(x, filter_setting))]
-
-        elif filter_setting.filter_type == FilterType.SOFT:
-            mask = df[filter_setting.filter_column].apply(lambda x: self.check_match(x, filter_setting))
-            df.loc[~mask, "score"] *= 0.5
-            return df
-
-        elif filter_setting.filter_type == FilterType.CUSTOM:
-            if row_callable is None:
-                raise ValueError("Row callable is required for custom filter")
-            df["filter_result"] = df.apply(row_callable, axis=1)
-            return df[df["filter_result"]]
-        return df
+        predictions = results_df.head(n)["user_id"].tolist()
+        return predictions
 
     def _apply_diversification(self, df: pd.DataFrame, div_setting) -> pd.DataFrame:
         """Apply diversification based on settings"""
@@ -136,7 +124,7 @@ class Model:
             final_indices = [idx for _, idx in result_indices]
             return df.loc[final_indices]
 
-        elif div_setting.diversification_type == DiversificationType.PROPORTIONAL:
+        if div_setting.diversification_type == DiversificationType.PROPORTIONAL:
             df_exploded = df.copy()
             df_exploded[div_setting.diversification_column] = df_exploded[div_setting.diversification_column].apply(
                 get_values
