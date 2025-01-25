@@ -78,6 +78,11 @@ class VacancyExtractor:
                     }
                 """)
 
+                if not html:
+                    self.logger.warning("No vacancy content found", url=url)
+                    await browser.close()
+                    return None
+
                 # Process with LLM
                 prompt = f"Extract job vacancy information from the following text:\n\n{html}"
                 vacancy = self.structured_llm.invoke(prompt, config={"callbacks": [self.vertex_callback]})
