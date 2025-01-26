@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from common_db.meetings import EMeetingUserRole, EMeetingResponseStatus, EMeetingStatus, EMeetingLocation
+from common_db.enums.meetings import EMeetingUserRole, EMeetingResponseStatus, EMeetingStatus, EMeetingLocation
 
 
 # For getting meetings with filtering

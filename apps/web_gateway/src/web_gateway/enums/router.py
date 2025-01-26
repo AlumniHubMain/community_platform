@@ -1,20 +1,22 @@
 from .schemas import EnumValues
 from .enum_manager import EnumManger
 from fastapi import APIRouter, HTTPException
-from common_db import (
-EIntentType,
-EMeetingFormat,
-EInterests,
-EExpertiseArea,
-ESpecialisation,
-EGrade,
-EIndustry,
-ESkills,
-ECompanyServices,
-ELocation,
-ERequestsToCommunity,
-EWithWhom,
-EVisibilitySettings
+from common_db.enums.forms import (
+    EIntentType,
+    EMeetingFormat,
+)
+from common_db.enums.users import (
+    EInterests,
+    EExpertiseArea,
+    ESpecialisation,
+    EGrade,
+    EIndustry,
+    ESkills,
+    ECompanyServices,
+    ELocation,
+    ERequestsToCommunity,
+    EWithWhom,
+    EVisibilitySettings
 )
 
 

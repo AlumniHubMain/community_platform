@@ -1,6 +1,6 @@
 [project]
 name = "common-db"
-version = "0.1.0"
+version = "0.1.1"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -12,20 +12,29 @@ dependencies = [
     "pydantic>=2.10.4",
     "pydantic-settings>=2.7.0",
     "sqlalchemy[asyncio]>=2.0.36",
+    "alembic>=1.13.1",
+    "psycopg2-binary>=2.9.9",  # For running migrations
 ]
 
 [project.scripts]
 common-db = "common_db:main"
 
+# Add package data configuration
+[tool.setuptools.package-data]
+common_db = [
+    "alembic.ini",
+    "migrations/script.py.mako"
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
 
 [dependency-groups]
 dev = [
     "pytest>=8.3.4",
     "ruff>=0.8.4",
+    "black>=24.2.0",
 ]
 
 [tool.ruff]

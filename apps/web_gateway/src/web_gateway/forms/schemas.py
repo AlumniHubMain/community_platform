@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pydantic import BaseModel
-from common_db import EIntentType, EMeetingFormat
+from common_db.enums.forms import EIntentType, EMeetingFormat
 
 
 class Form(BaseModel):

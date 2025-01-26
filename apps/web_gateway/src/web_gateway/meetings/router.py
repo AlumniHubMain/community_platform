@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from common_db import get_async_session
+from common_db.db_abstract import db_manager
 from .meeting_manager import MeetingManager
 from .schemas import (
     MeetingRequestRead,
@@ -16,7 +16,7 @@ from web_gateway.limits.limits_manager import LimitsManager
 
 
 router = APIRouter(tags=["Meetings"], prefix="/meetings")
-session_dependency = Depends(get_async_session)
+session_dependency = Depends(db_manager.get_session)
 
 
 @router.get(

@@ -1,11 +1,11 @@
 from datetime import datetime
-from common_db import ORMUserProfile
+from common_db.models import ORMUserProfile, ORMMeeting, ORMMeetingResponse
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from .schemas import SUserProfileRead, SUserProfileUpdate, UserProfile, ORMMeeting, ORMMeetingResponse, EMeetingResponseStatus
+from .schemas import SUserProfileRead, SUserProfileUpdate, UserProfile
 from web_gateway.settings import settings
 
 

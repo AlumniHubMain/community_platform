@@ -29,7 +29,8 @@ bash run_tests.sh --configs /path/to/local/dir/with/configs --secrets /path/to/l
 ## Docker
 ### Build 
 ```bash
-docker build . --build-context root='../../' -t community_platform_web_gateway:latest
+cd ../../
+docker build -f apps/web_gateway/Dockerfile -t community_platform_web_gateway:latest .
 ```
 ### Run service
 ```bash
@@ -37,6 +38,11 @@ docker run -v /path/to/local/config/directory:/config:rw -v /path/to/local/secre
 ```
 
 ---
+## Development
+### Add new package
+```bash
+uv add package-name
+```
 
 ## Подробнее про конфиги и секреты. Список
 

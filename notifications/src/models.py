@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import String, BIGINT, ARRAY, Index
 from sqlalchemy.orm import mapped_column, Mapped
 
-from common_db.db_abstract import ObjectTable, schema
+from backend.db_proxy.common_db.db_abstract import ObjectTable, schema # TODO: Here use common lib
 
 
 class ORMUserProfile(ObjectTable):
