@@ -2,17 +2,16 @@ import argparse
 import asyncio
 import logging
 
-from google.oauth2.service_account import Credentials
-
-from googleapiclient.discovery import build
-
 from datetime import UTC, datetime, timedelta
+
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from common_db.db_abstract import db_manager
-
 from common_db.models.callbot import ORMCallbotScheduledMeeting
+from callbot_api import create_callbot
 from schema import Event
 from settings import callbot_calendar_settings as settings
 
@@ -21,7 +20,7 @@ def is_robot_invited(event: Event) -> bool:
     return settings.robot_email in event.attendees
 
 
-def is_event_valid(event: Event) -> bool:
+def is_event_valid(stored_event: Event) -> bool:
     """
     Validates if the event is valid.
 
@@ -31,18 +30,25 @@ def is_event_valid(event: Event) -> bool:
     Returns:
         bool: True if the event is valid, False otherwise.
     """
+    google_id = stored_event.google_id
+    logging.info(f"Validating event: {google_id}")
+
+    # Fetch the event from Google Calendar to check if it's still valid
     service = build_calendar_service()
-    if event := service.events().get(calendarId=settings.calendar_id, eventId=event.google_id).execute():
+    if event := service.events().get(calendarId=settings.calendar_id, eventId=google_id).execute():
+        if event.get("status") == "cancelled":
+            logging.info(f"Event {google_id} has been cancelled")
+            return False
         try:
             event = validate_event(event)
         except Exception as e:
             logging.error(e, event)
             return False
         if not is_robot_invited(event):
-            logging.info(f"Robot not invited to event {event.google_id}")
+            logging.info(f"Robot not invited to event {google_id}")
             return False
         if event.end_time < datetime.now(UTC):
-            logging.info(f"Event {event.google_id} has already ended")
+            logging.info(f"Event {google_id} has already ended")
             return False
         return True
     return False
@@ -133,7 +139,6 @@ async def get_event_by_google_id(session: AsyncSession, google_id: str) -> ORMCa
     return result.scalar_one_or_none()
 
 
-
 async def process_event(event: Event, session: AsyncSession):
     stored_event = await get_event_by_google_id(session, event.google_id)
 
@@ -163,7 +168,7 @@ async def read_calendar(start_time: datetime):
                 raise
 
 
-async def get_upcoming_meetings(start_time: datetime, end_time: datetime):
+async def get_upcoming_events(start_time: datetime, end_time: datetime):
     async with db_manager.session() as session:
         stmt = (
             select(ORMCallbotScheduledMeeting)
@@ -176,8 +181,11 @@ async def get_upcoming_meetings(start_time: datetime, end_time: datetime):
             event = Event.model_validate(e)
             if is_event_valid(event):
                 logging.info(f"Upcoming meeting: {event}")
-                pass
-            # TODO: invite the bot
+                logging.info(f"Creating callbot for event {event.google_id}")
+                callbot_id = create_callbot(event)
+                logging.info(f"Callbot created: {callbot_id}")
+                e.callbot_id = callbot_id
+                await session.commit()
 
 
 async def main():
@@ -185,17 +193,19 @@ async def main():
     parser.add_argument(
         "task",
         type=str,
-        choices=["read_calendar", "upcoming_meetings"],
-        help="Specify the task to run: read_calendar, upcoming_meetings",
+        choices=["read_calendar", "upcoming_events"],
+        help="Specify the task to run: read_calendar, upcoming_events",
     )
     args = parser.parse_args()
 
     if args.task == "read_calendar":
         logging.info(f"Reading Google calendar: {settings.calendar_id}")
         future = read_calendar(start_time=datetime.now(UTC) - timedelta(days=2))
-    elif args.task == "upcoming_meetings":
-        logging.info("Getting upcoming meetings")
-        future = get_upcoming_meetings(start_time=datetime.now(UTC) - timedelta(days=5), end_time=datetime.now(UTC) + timedelta(minutes=10))
+    elif args.task == "upcoming_events":
+        logging.info("Getting upcoming events")
+        future = get_upcoming_events(
+            start_time=datetime.now(UTC) - timedelta(days=5), end_time=datetime.now(UTC) + timedelta(minutes=10)
+        )
     else:
         return
 
