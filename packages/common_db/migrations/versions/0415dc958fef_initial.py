@@ -11,6 +11,11 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from common_db.config import db_settings
+
+
+schema: str = db_settings.db.db_schema
+
 
 # revision identifiers, used by Alembic.
 revision: str = "0415dc958fef"
@@ -35,7 +40,7 @@ def upgrade() -> None:
                 "archived",
                 "confirmed",
                 name="meeting_status",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=False,
@@ -54,21 +59,21 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("id"),
-        schema="alh_community_platform",
+        schema=f'{schema}',
     )
     op.create_index(
         "ix_meeting_status",
         "meetings",
         ["status"],
         unique=False,
-        schema="alh_community_platform",
+        schema=f'{schema}',
     )
     op.create_index(
         "ix_meeting_time",
         "meetings",
         ["scheduled_time"],
         unique=False,
-        schema="alh_community_platform",
+        schema=f'{schema}',
     )
     op.create_table(
         "users",
@@ -84,7 +89,7 @@ def upgrade() -> None:
                     "interest1",
                     "interest2",
                     name="user_interests_enum",
-                    schema="alh_community_platform",
+                    schema=f'{schema}',
                     inherit_schema=True,
                 )
             ),
@@ -115,7 +120,7 @@ def upgrade() -> None:
                     "sales",
                     "business_development",
                     name="user_expertise_enum",
-                    schema="alh_community_platform",
+                    schema=f'{schema}',
                     inherit_schema=True,
                 )
             ),
@@ -262,7 +267,7 @@ def upgrade() -> None:
                     "development_of_corporate_culture",
                     "financial_analysis_and_planning",
                     name="user_specialisation_enum",
-                    schema="alh_community_platform",
+                    schema=f'{schema}',
                     inherit_schema=True,
                 )
             ),
@@ -274,7 +279,7 @@ def upgrade() -> None:
                 "grade1",
                 "grade2",
                 name="user_grade_enum",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=True,
@@ -286,7 +291,7 @@ def upgrade() -> None:
                     "industry1",
                     "industry2",
                     name="user_industry_enum",
-                    schema="alh_community_platform",
+                    schema=f'{schema}',
                     inherit_schema=True,
                 )
             ),
@@ -299,7 +304,7 @@ def upgrade() -> None:
                     "skill1",
                     "skill2",
                     name="user_skills_enum",
-                    schema="alh_community_platform",
+                    schema=f'{schema}',
                     inherit_schema=True,
                 )
             ),
@@ -313,7 +318,7 @@ def upgrade() -> None:
                     "vkservice1",
                     "yandexservice1",
                     name="user_company_services_enum",
-                    schema="alh_community_platform",
+                    schema=f'{schema}',
                     inherit_schema=True,
                 )
             ),
@@ -325,7 +330,7 @@ def upgrade() -> None:
                 "moscow_russia",
                 "london_uk",
                 name="user_location_enum",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=True,
@@ -337,7 +342,7 @@ def upgrade() -> None:
                 sa.Enum(
                     "friendship",
                     name="user_requests_to_community_enum",
-                    schema="alh_community_platform",
+                    schema=f'{schema}',
                     inherit_schema=True,
                 )
             ),
@@ -351,7 +356,7 @@ def upgrade() -> None:
                 "friends",
                 "anyone",
                 name="user_with_whom_enum",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=True,
@@ -362,7 +367,7 @@ def upgrade() -> None:
                 "anyone",
                 "nobody",
                 name="user_visibility_settings_enum",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=False,
@@ -373,7 +378,7 @@ def upgrade() -> None:
                 "anyone",
                 "nobody",
                 name="user_visibility_settings_enum",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=False,
@@ -384,7 +389,7 @@ def upgrade() -> None:
                 "anyone",
                 "nobody",
                 name="user_visibility_settings_enum",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=False,
@@ -395,7 +400,7 @@ def upgrade() -> None:
                 "anyone",
                 "nobody",
                 name="user_visibility_settings_enum",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=False,
@@ -422,14 +427,14 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("id"),
-        schema="alh_community_platform",
+        schema=f'{schema}',
     )
     op.create_index(
         "ix_users_telegram_id",
         "users",
         ["telegram_id"],
         unique=False,
-        schema="alh_community_platform",
+        schema=f'{schema}',
     )
     op.create_table(
         "meeting_intents",
@@ -441,7 +446,7 @@ def upgrade() -> None:
                 "offline",
                 "both",
                 name="meeting_intent_meeting_type",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=False,
@@ -463,7 +468,7 @@ def upgrade() -> None:
                 "mentoring",
                 "other",
                 name="meeting_intent_query_type",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=False,
@@ -484,7 +489,7 @@ def upgrade() -> None:
                 "law",
                 "other",
                 name="meeting_intent_help_request_type",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=False,
@@ -502,7 +507,7 @@ def upgrade() -> None:
                 "cofounder",
                 "contributor",
                 name="meeting_intent_looking_for_type",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=False,
@@ -526,7 +531,7 @@ def upgrade() -> None:
             ["alh_community_platform.users.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
-        schema="alh_community_platform",
+        schema=f'{schema}',
     )
     op.create_table(
         "meeting_responses",
@@ -538,7 +543,7 @@ def upgrade() -> None:
                 "organizer",
                 "attendee",
                 name="meeting_user_role",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=False,
@@ -551,7 +556,7 @@ def upgrade() -> None:
                 "tentative",
                 "declined",
                 name="meeting_response_status",
-                schema="alh_community_platform",
+                schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=False,
@@ -579,7 +584,7 @@ def upgrade() -> None:
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("user_id", "meeting_id"),
-        schema="alh_community_platform",
+        schema=f'{schema}',
     )
     op.create_table(
         "matching_results",
@@ -615,31 +620,51 @@ def upgrade() -> None:
             ["alh_community_platform.users.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
-        schema="alh_community_platform",
+        schema=f'{schema}',
     )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table("matching_results", schema="alh_community_platform")
-    op.drop_table("meeting_responses", schema="alh_community_platform")
-    op.drop_table("meeting_intents", schema="alh_community_platform")
+    op.drop_table("matching_results", schema=f'{schema}')
+    op.drop_table("meeting_responses", schema=f'{schema}')
+    op.drop_table("meeting_intents", schema=f'{schema}')
     op.drop_index(
         "ix_users_telegram_id",
         table_name="users",
-        schema="alh_community_platform",
+        schema=f'{schema}',
     )
-    op.drop_table("users", schema="alh_community_platform")
+    op.drop_table("users", schema=f'{schema}')
     op.drop_index(
         "ix_meeting_time",
         table_name="meetings",
-        schema="alh_community_platform",
+        schema=f'{schema}',
     )
     op.drop_index(
         "ix_meeting_status",
         table_name="meetings",
-        schema="alh_community_platform",
+        schema=f'{schema}',
     )
-    op.drop_table("meetings", schema="alh_community_platform")
+    op.drop_table("meetings", schema=f'{schema}')
+    
+    op.execute(f"DROP TYPE {schema}.meeting_status")
+    op.execute(f"DROP TYPE {schema}.user_interests_enum")
+    op.execute(f"DROP TYPE {schema}.user_expertise_enum")
+    op.execute(f"DROP TYPE {schema}.user_specialisation_enum")
+    op.execute(f"DROP TYPE {schema}.user_grade_enum")
+    op.execute(f"DROP TYPE {schema}.user_industry_enum")
+    op.execute(f"DROP TYPE {schema}.user_skills_enum")
+    op.execute(f"DROP TYPE {schema}.user_company_services_enum")
+    op.execute(f"DROP TYPE {schema}.user_location_enum")
+    op.execute(f"DROP TYPE {schema}.user_requests_to_community_enum")
+    op.execute(f"DROP TYPE {schema}.user_with_whom_enum")
+    op.execute(f"DROP TYPE {schema}.user_visibility_settings_enum")
+    op.execute(f"DROP TYPE {schema}.meeting_intent_meeting_type")
+    op.execute(f"DROP TYPE {schema}.meeting_format")
+    op.execute(f"DROP TYPE {schema}.meeting_intent_query_type")
+    op.execute(f"DROP TYPE {schema}.meeting_intent_help_request_type")
+    op.execute(f"DROP TYPE {schema}.meeting_intent_looking_for_type")
+    op.execute(f"DROP TYPE {schema}.meeting_user_role")
+    op.execute(f"DROP TYPE {schema}.meeting_response_status")
     # ### end Alembic commands ###
