@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -13,7 +15,12 @@ from .schemas import (
     MeetingRequestCreate,
     MeetingRequestRead,
     MeetingRequestUpdate,
+    MeetingsFilter,
+    MeetingList
 )
+
+def to_iterable(object):
+    return object if isinstance(object, Iterable) else [object]
 
 
 class MeetingManager:
@@ -79,7 +86,7 @@ class MeetingManager:
             scheduled_time=request.scheduled_time,
             location=request.location,
             description=request.description, 
-            status=EMeetingStatus.new,
+            status=EMeetingStatus.no_answer,
         )
         session.add(meeting)
         
@@ -135,6 +142,56 @@ class MeetingManager:
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
     @classmethod
+    async def get_meetings_with_filtering(cls, session: AsyncSession, filter: MeetingsFilter):
+        query = select(ORMMeeting).options(selectinload(ORMMeeting.user_responses))
+        query = query.join(ORMMeetingResponse).where(
+            (ORMMeetingResponse.user_id == filter.user_id)
+        )
+
+        # Filter by date_from: Meetings scheduled after this date
+        if filter.date_from:
+            query = query.where(ORMMeeting.scheduled_time >= filter.date_from)
+
+        # Filter by date_to: Meetings scheduled before this date
+        if filter.date_to:
+            query = query.where(ORMMeeting.scheduled_time <= filter.date_to)
+        
+        # Filter by location: Possible meetings locations
+        if filter.location:
+            locations = to_iterable(filter.location)
+            query = query.filter(ORMMeeting.location.in_(locations))
+        
+        # Filter by meeting status
+        if filter.meeting_status:
+            statuses = to_iterable(filter.meeting_status)
+            query = query.filter(ORMMeeting.status.in_(statuses))
+        
+        # Filter by user response for this meeting
+        if filter.user_response:
+            responses = to_iterable(filter.user_response)
+            query = query.filter(ORMMeetingResponse.response.in_(responses))
+        
+        # Filter by user role
+        if filter.user_role:
+            roles = to_iterable(filter.user_role)
+            query = query.filter(ORMMeetingResponse.role.in_(roles))
+        
+        result = await session.execute(query)
+        meetings = result.scalars().all()
+        
+        if not meetings:
+            return MeetingList(meetings=[])
+
+        response = MeetingList(
+            meetings=[
+                MeetingRequestRead.model_validate(meeting, from_attributes=True)
+                for meeting in meetings
+            ]
+        )
+
+        return MeetingList.model_validate(response)
+    
+    @classmethod
     async def update_user_meeting_response(
         cls, session: AsyncSession, meeting_id: int, user_id: int, new_status: EMeetingResponseStatus
     ) -> MeetingRequestRead:
@@ -171,7 +228,7 @@ class MeetingManager:
             cls.check_confirmations_limit(user_id, user_limits)
 
         # Update the user's response status
-        user_response.response = response
+        user_response.response = new_status
         
         # Update meeting status
         # When new status is declined, then meeting always move to archived
@@ -235,25 +292,14 @@ class MeetingManager:
         if len(user_response) == 0:
             raise HTTPException(status_code=403, detail="User must be attendee of this meeting")
         user_response = user_response[0]
-        
-        # Write update context for all available fields
-        fields_to_update = list(MeetingRequestUpdate.__fields__.keys())
-        update_contexts = {
-            field: {
-                "is_updated": (not request.__getattribute__(field) is None) and \
-                             (request.__getattribute__(field) != meeting.__getattribute__(field)),
-                "old_value": (not meeting.__getattribute__(field)),
-                "new_value": (not request.__getattribute__(field))
-            }
-            for field in fields_to_update
-        }
-        
+
+
         # Check update rules for all fields
         update_rules = MeetingRequestUpdate.get_update_rules()
-        for field_name, update_context in update_contexts:
+        for field_name in MeetingRequestUpdate.__fields__.keys():
             
-            # If field not updated, then pass it
-            if not update_context["is_updated"]:
+            # Pass none values in update request
+            if request.__getattribute__(field_name) is None:
                 continue
             
             # Get update rule if it exists
@@ -269,24 +315,40 @@ class MeetingManager:
             # Check condition
             update_condition = True
             if update_rule:
-                update_condition = exec(update_rule["condition"].format(**update_context))
+                old_value = meeting.__getattribute__(field_name)
+                new_value = request.__getattribute__(field_name)
+                update_condition = update_rule["condition"](old_value, new_value)
             if not update_condition:
                 raise HTTPException(status_code=400, detail=f"Wrong value of \"{field_name}\" field")
         
+        # Change second user response when time changed
+        if not request.scheduled_time is None and request.scheduled_time != meeting.scheduled_time:
+            
+            # Update user response
+            for user_response in meeting.user_responses:
+                # Pass current user
+                if user_response.user_id == user_id:
+                    continue
+                if user_response.response == EMeetingResponseStatus.confirmed:
+                    user_response.response = EMeetingResponseStatus.no_answer
 
+            # Update meeting status
+            if meeting.status == EMeetingStatus.confirmed:
+                meeting.status = EMeetingStatus.no_answer
+        
         # Apply updates
         for key, value in request.model_dump(
             exclude_unset=True, exclude_none=True
         ).items():
             setattr(meeting, key, value)
-        
+
         await session.commit()
         
         # Send notification to other users
-        recipients = [r for r in meeting.user_responses if r.user_id != user_id]
+        recipients = [r.user_id for r in meeting.user_responses if r.user_id != user_id]
         for recipient_id in recipients:
             cls.notification_sender().emit(
-                NotificationEventBuilder.build_meeting_invitation_event(
+                NotificationEventBuilder.build_meeting_update_event(
                     updater_id=user_id,
                     recipient_id=recipient_id,
                     meeting_id=meeting_id

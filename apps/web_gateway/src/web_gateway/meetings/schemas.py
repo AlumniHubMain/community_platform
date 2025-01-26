@@ -7,6 +7,17 @@ from pydantic import BaseModel
 from common_db.meetings import EMeetingUserRole, EMeetingResponseStatus, EMeetingStatus, EMeetingLocation
 
 
+# For getting meetings with filtering
+class MeetingsFilter(BaseModel):
+    user_id: int
+    user_role: EMeetingUserRole | list[EMeetingUserRole] | None = None
+    date_from: datetime | None = None
+    date_to: datetime | None = None
+    meeting_status: EMeetingStatus | list[EMeetingStatus] | None = None
+    user_response: EMeetingResponseStatus | list[EMeetingResponseStatus] | None = None
+    location: EMeetingLocation | list[EMeetingLocation] | None = None
+
+
 # For creating meeting requests
 class MeetingRequestCreate(BaseModel):
     organizer_id: int
@@ -44,7 +55,7 @@ class MeetingRequestUpdate(BaseModel):
         return {
             "scheduled_time": {
                 "permission_roles": [EMeetingUserRole.organizer, EMeetingUserRole.attendee],
-                "condition": "{old_value} > {new_value}"
+                "condition": lambda old_time, new_time: new_time >= old_time
             }
         }
 

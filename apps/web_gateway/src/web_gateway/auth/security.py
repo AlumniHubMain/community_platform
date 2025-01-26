@@ -79,11 +79,11 @@ def decode_token(token):
         token_data = jwt.decode(token, ACCESS_SECRET_KEY, algorithms=["HS256"])
     except Exception as e:
         match e:
-            case jwt.ExpiredSignatureError:
+            case jwt.exceptions.ExpiredSignatureError:
                 logger.warning("Token expired")
-            case jwt.InvalidTokenError:
+            case jwt.exceptions.InvalidTokenError:
                 logger.warning("Invalid token")
-            case jwt.DecodeError:
+            case jwt.exceptions.DecodeError:
                 logger.warning("Token decoding error")
             case _:
                 logger.warning(f"Undexpected token decoding error: {str(e)}")

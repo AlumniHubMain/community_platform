@@ -28,5 +28,5 @@ class NotificationEventBuilder:
             event_type=events_pb2.eMeetingUpdate,
             initiator_id=updater_id,
             recipient_id=recipient_id,
-            meeting_response=events_pb2.MeetingUpdateEvent(meeting_id=meeting_id),
+            meeting_update=events_pb2.MeetingUpdateEvent(meeting_id=meeting_id),
         )

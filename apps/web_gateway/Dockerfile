@@ -6,7 +6,8 @@ COPY --from=root ./ /build/
 
 WORKDIR /build/apps/web_gateway/
 RUN uv sync --frozen --no-cache --reinstall
-RUN uv pip install python-multipart alembic
+RUN uv pip uninstall jwt pyjwt
+RUN uv pip install python-multipart alembic PyJWT
 COPY main.py /main.py
 
 ENV PYTHONPATH=${PYTHONPATH}:/build

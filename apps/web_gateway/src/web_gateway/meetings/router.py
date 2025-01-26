@@ -6,11 +6,11 @@ from .meeting_manager import MeetingManager
 from .schemas import (
     MeetingRequestRead,
     MeetingRequestCreate,
-    MeetingFilter,
     MeetingRequestUpdate,
     MeetingList,
     MeetingsUserLimits,
-    EMeetingResponseStatus
+    EMeetingResponseStatus,
+    MeetingsFilter
 )
 from web_gateway.limits.limits_manager import LimitsManager
 
@@ -31,6 +31,18 @@ async def get_meeting(
     return await MeetingManager.get_meeting(session, meeting_id)
 
 
+@router.get(
+    "", response_model=MeetingList, summary="Get all user meetings"
+)
+async def get_meeting_with_filtering(
+    filter: MeetingsFilter, session: AsyncSession = session_dependency
+) -> MeetingRequestRead:
+    """
+    Fetch all user meetings with filtering.
+    """
+    return await MeetingManager.get_meetings_with_filtering(session, filter)
+
+
 @router.post(
     "/create", response_model=MeetingRequestRead, summary="Create a new meeting"
 )
@@ -44,10 +56,11 @@ async def create_meeting(
 
 
 @router.patch(
-    "/{meeting_id}", response_model=MeetingRequestRead, summary="Update meeting details"
+    "/{meeting_id}/user/{user_id}", response_model=MeetingRequestRead, summary="Update meeting details by user"
 )
 async def update_meeting(
     meeting_id: int,
+    user_id: int,
     update_request: MeetingRequestUpdate,
     session: AsyncSession = session_dependency,
 ) -> MeetingRequestRead:
@@ -56,26 +69,7 @@ async def update_meeting(
     """
     # ToDo: restrict to organizers
     # If you will change state of meeting - please add limitations check and updating here
-    return await MeetingManager.update_meeting(session, meeting_id, 1, update_request)
-
-
-@router.post(
-    "/{meeting_id}/add_user",
-    response_model=MeetingRequestRead,
-    summary="Add user to a meeting",
-)
-async def add_user_to_meeting(
-    meeting_id: int,
-    user_id: int,
-    role: str = "attendee",
-    session: AsyncSession = session_dependency,
-) -> MeetingRequestRead:
-    """
-    Add a user to a meeting with a specified role.
-    """
-    # ToDo: restrict to organizers
-    return await MeetingManager.add_user_to_meeting(session, user_id, meeting_id, role)
-
+    return await MeetingManager.update_meeting(session, meeting_id, user_id, update_request)
 
 @router.patch(
     "/{meeting_id}/user/{user_id}/response",
@@ -95,16 +89,6 @@ async def update_user_meeting_response(
     return await MeetingManager.update_user_meeting_response(
         session, meeting_id, user_id, status
     )
-
-
-@router.get("", response_model=MeetingList, summary="Get all meetings by filter")
-async def get_meetings(
-    meeting_filter: MeetingFilter = Depends(),
-    session: AsyncSession = Depends(get_async_session),
-):
-    # ToDo: discuss visibility (default private?)
-    return await MeetingManager.get_filtered_meetings(session, meeting_filter)
-
 
 @router.get("/limits/user", response_model=MeetingsUserLimits, summary="Get user limits for meetings")
 async def get_meetings_user_limits(user_id: int, session: AsyncSession = session_dependency) -> MeetingsUserLimits:

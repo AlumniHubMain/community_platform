@@ -13,3 +13,4 @@ backend/db_proxy/token
 build/
 *.egg-info/
 *_pb2.py*
+*locdev*

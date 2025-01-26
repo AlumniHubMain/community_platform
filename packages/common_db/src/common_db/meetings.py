@@ -18,14 +18,6 @@ class EMeetingResponseStatus(Enum):
     no_answer = 'no_answer'
     confirmed = 'confirmed' 
     declined = 'declined'
-    
-    def is_confirmed_status(self) -> bool:
-        # Check if meeting confirmed
-        return EMeetingResponseStatus(self.value) in EMeetingResponseStatus.confirmed
-
-    def is_pended_status(self) -> bool:
-        # Check if meeting pended
-        return EMeetingResponseStatus(self.value) != EMeetingResponseStatus.declined
 
 
 class EMeetingUserRole(Enum):
