@@ -23,11 +23,14 @@ class PgSettings(BaseModel):
             f"{self.db_name.get_secret_value()}"
         )
 
+
 class DbSettings(BaseConfig):
     db: FieldType[PgSettings] = './config/db_config.env'
 
+
 class DbSettingsLocal(BaseConfig):
     db: FieldType[PgSettings] = '../../config/db.json'
+
 
 try:
     db_settings = DbSettings()
