@@ -3,9 +3,9 @@ FROM python:3.12-slim
 # Install uv.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY --from=root ./packages /build/packages
-
 WORKDIR /build/apps/callbot_calendar/
+
+COPY --from=root ./packages /build/packages
 
 COPY pyproject.toml uv.lock ./
 
