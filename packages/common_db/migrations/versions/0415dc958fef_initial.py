@@ -683,5 +683,5 @@ def downgrade() -> None:
     op.execute(f"DROP TYPE {schema}.meeting_intent_looking_for_type")
     op.execute(f"DROP TYPE {schema}.meeting_user_role_enum")
     op.execute(f"DROP TYPE {schema}.meeting_response_status_enum") 
-    op.execute(f"DROP TYPE {schema}.meeting_location_enum")   
+    op.execute(f"DROP TYPE {schema}.meeting_location_enum")
     # ### end Alembic commands ###
