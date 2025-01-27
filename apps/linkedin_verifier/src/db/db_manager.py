@@ -1,0 +1,163 @@
+from datetime import datetime
+from typing import Dict, Any
+from loguru import logger
+from sqlalchemy import select, and_, update, text
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+from sqlalchemy.dialects.postgresql import insert
+
+from common_db.db_abstract import db_manager
+from common_db.models.linkedin import ORMLinkedInProfile
+from common_db.models.users import ORMUserProfile
+
+from common_db.schemas.linkedin import (
+    LinkedInProfileAPI,
+    LinkedInProfileRead,
+    LinkedInProfileTask
+)
+
+from .models.limits import LinkedInApiLimits
+from ..schemas.pubsub import LinkedInLimitsAlert
+
+
+class LinkedInDBManager:
+    """Менеджер для работы с БД"""
+
+    @staticmethod
+    async def save_profile(session: AsyncSession, profile_data: LinkedInProfileAPI) -> ORMLinkedInProfile:
+        """Сохраняет профиль LinkedIn в БД.
+        
+        Args:
+            session: Сессия SQLAlchemy
+            profile_data: Данные профиля из API
+            
+        Returns:
+            Сохраненный профиль
+        """
+        # Определяем текущее место работы
+        current_job = next(
+            (job for job in profile_data.work_experience if job.end_date is None),
+            None
+        ) if profile_data.work_experience else None
+
+        # Добавляем информацию о текущей работе в profile_data
+        profile_data.is_currently_employed = current_job is not None
+        profile_data.current_company_label = current_job.company_label if current_job else None
+        profile_data.current_company_linkedin_id = current_job.linkedin_id if current_job else None
+        profile_data.current_position_title = current_job.title if current_job else None
+        profile_data.current_company_linkedin_url = current_job.company_linkedin_url if current_job else None
+
+        # Получаем данные профиля без education и work_experience
+        profile_dict = profile_data.model_dump(
+            exclude={
+                'education',
+                'work_experience',
+                'credits_left',
+                'rate_limit_left',
+                'rate_limit',
+            }
+        )
+
+        # Ищем существующий профиль
+        db_profile = await session.scalar(
+            select(ORMLinkedInProfile)
+            .where(ORMLinkedInProfile.linkedin_identifier == profile_data.linkedin_identifier)
+        )
+
+        if not db_profile:
+            # Создаем новый профиль через insert()
+            result = await session.execute(
+                insert(ORMLinkedInProfile)
+                .values(**profile_dict)
+                .returning(ORMLinkedInProfile)
+            )
+            db_profile = result.scalar_one()
+            await session.flush()
+        else:
+            # Обновляем существующий профиль
+            await session.execute(
+                update(ORMLinkedInProfile)
+                .where(ORMLinkedInProfile.linkedin_identifier == profile_data.linkedin_identifier)
+                .values(**profile_dict)
+            )
+            db_profile = await session.scalar(
+                select(ORMLinkedInProfile)
+                .where(ORMLinkedInProfile.linkedin_identifier == profile_data.linkedin_identifier)
+            )
+
+        # Добавляем образование и опыт работы через bulk insert
+        if profile_data.education:
+            education_data = [
+                {**edu.model_dump(), 'profile_id': db_profile.id}
+                for edu in profile_data.education
+            ]
+            await session.execute(
+                insert(ORMLinkedInProfile.education.property.mapper.class_)
+                .values(education_data)
+                .on_conflict_do_nothing()
+            )
+
+        if profile_data.work_experience:
+            work_data = [
+                {**work.model_dump(), 'profile_id': db_profile.id}
+                for work in profile_data.work_experience
+            ]
+            await session.execute(
+                insert(ORMLinkedInProfile.work_experience.property.mapper.class_)
+                .values(work_data)
+                .on_conflict_do_nothing()
+            )
+
+        await session.flush()
+        logger.info(f"{'Обновлен' if db_profile else 'Создан'} профиль для {profile_data.linkedin_identifier}")
+        
+        return db_profile
+
+    @classmethod
+    async def update_verification_status(
+            cls,
+            session: AsyncSession,
+            username: str,
+            is_verified: bool
+    ) -> None:
+        """Обновляет статус верификации в основном профиле"""
+        if not session:
+            raise ValueError("Session cannot be None")
+        if not username:
+            raise ValueError("Username cannot be None or empty")
+        if is_verified is None:
+            raise ValueError("is_verified cannot be None")
+
+        stmt = select(ORMUserProfile).where(ORMUserProfile.username == username)
+        result = await session.execute(stmt)
+        main_profile = result.scalar_one_or_none()
+
+        if not main_profile:
+            main_profile = ORMUserProfile(username=username)
+            session.add(main_profile)
+
+        main_profile.is_verified = is_verified
+
+    @classmethod
+    async def update_api_limits(cls, limits: LinkedInLimitsAlert) -> None:
+        """Обновляет лимиты API в отдельной транзакции"""
+        async for session in db_manager.get_async_session():
+            stmt = select(LinkedInApiLimits).where(
+                and_(
+                    LinkedInApiLimits.provider_type == limits.provider_type,
+                    LinkedInApiLimits.provider_id == limits.provider_id
+                )
+            )
+            result = await session.execute(stmt)
+            limit = result.scalar_one_or_none()
+
+            if not limit:
+                limit = LinkedInApiLimits(
+                    provider_type=limits.provider_type,
+                    provider_id=limits.provider_id
+                )
+                session.add(limit)
+
+            limit.credits_left = limits.credits_left
+            limit.rate_limit_left = limits.rate_limit_left
+            limit.updated_at = limits.updated_at

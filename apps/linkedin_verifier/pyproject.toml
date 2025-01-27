@@ -1,0 +1,43 @@
+[project]
+name = "web_gateway"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+authors = [
+    { name = "und3v3l0p3d", email = "prohibitme@ya.ru" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "asyncpg>=0.30.0",
+    "common-db",
+    "event-emitter",
+    "fastapi>=0.115.6",
+    "gcloud-aio-storage>=9.3.0",
+    "python-multipart>=0.0.20",
+    "pyjwt>=2.10.1",
+    "pillow>=11.0.0",
+    "uvicorn>=0.34.0",
+]
+
+[project.scripts]
+backend = "backend:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+common-db = { path = "../../packages/common_db" }
+message-broker = { path = "../../packages/message_broker" }
+
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest-env>=1.1.5",
+    "pytest>=8.3.4",
+    "ruff>=0.8.4",
+]
+
+[tool.ruff]
+extend = "../../ruff.toml"
