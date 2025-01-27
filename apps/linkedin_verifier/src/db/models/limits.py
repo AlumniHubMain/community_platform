@@ -35,20 +35,20 @@ class LinkedInApiLimits(ObjectTable):
         index=True,
         doc="Provider type"
     )
-    
+
     # Идентификатор провайдера (последние 4 символа API ключа или email до @)
     provider_id: Mapped[str] = mapped_column(
         String(50),
         doc="Provider identifier (last 4 chars of API key or email prefix)"
     )
-    
+
     credits_left: Mapped[int] = mapped_column(doc="Remaining API credits")
     rate_limit_left: Mapped[int] = mapped_column(doc="Remaining rate limit")
     updated_at: Mapped[datetime] = mapped_column(doc="Last update timestamp")
-    
 
     @staticmethod
-    def get_provider_id(provider_type: LinkedInProviderType, api_key: str | None = None, email: str | None = None) -> str:
+    def get_provider_id(provider_type: LinkedInProviderType, api_key: str | None = None,
+                        email: str | None = None) -> str:
         """Получает идентификатор провайдера на основе его типа и креденшелов"""
         if provider_type == LinkedInProviderType.SCRAPIN and api_key:
             return api_key[-4:]  # Последние 4 символа API ключа
