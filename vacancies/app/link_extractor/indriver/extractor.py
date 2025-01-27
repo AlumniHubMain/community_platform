@@ -10,7 +10,7 @@ from playwright.async_api import Page
 from app.link_extractor.base import BaseLinkExtractor
 
 
-class InDriveLinkExtractor(BaseLinkExtractor):
+class IndriverLinkExtractor(BaseLinkExtractor):
     """Extractor for InDrive vacancy links."""
 
     def __init__(self, logger: logger = logger) -> None:
