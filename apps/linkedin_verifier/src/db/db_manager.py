@@ -25,6 +25,7 @@ class LinkedInDBManager:
 
     @staticmethod
     async def save_profile(session: AsyncSession, profile_data: LinkedInProfileAPI) -> ORMLinkedInProfile:
+        # TODO: возвращать в DTO, и затем model.dump
         """Сохраняет профиль LinkedIn в БД.
         
         Args:
