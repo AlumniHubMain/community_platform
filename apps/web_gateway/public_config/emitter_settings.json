@@ -1,4 +1,4 @@
 {
-    "meetings_notification_target": "log",
+    "meetings_notification_target": "pubsub",
     "meetings_google_pubsub_notification_topic": "meetings_notifications"
 }

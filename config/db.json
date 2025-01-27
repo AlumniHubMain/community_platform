@@ -4,5 +4,5 @@
     "db_name": "communityp",
     "db_user": "postgres", 
     "db_pass": "postgres",
-    "db_schema": "public"
+    "db_schema": "alh_community_platform"
 }
