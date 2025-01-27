@@ -14,7 +14,6 @@ uv sync
 uv run pytest
 ```
 
-
 ## Docker
 ### Build 
 ```bash
