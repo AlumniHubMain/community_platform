@@ -16,6 +16,20 @@ services:
     depends_on:
       - db
 
+  web-gateway:
+    build: 
+      context: .
+      dockerfile: apps/web_gateway/Dockerfile
+    environment:
+      - ENVIRONMENT=development
+    volumes:
+      - ./public_config:/public_config
+      - ./config:/config
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+
   db:
     image: postgres:13
     environment:
@@ -28,4 +42,4 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data: 
+  postgres_data:
