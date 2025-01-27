@@ -1,8 +1,7 @@
 import os
 
-from web_gateway.users.schemas import SUserProfileRead
+from common_db.schemas import SUserProfileRead, MeetingsUserLimits
 from web_gateway.users.user_profile_manager import UserProfileManager
-from web_gateway.meetings.schemas import MeetingsUserLimits
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException

@@ -1,5 +1,6 @@
 from datetime import datetime
 from common_db.models import ORMUserProfile, ORMMeeting, ORMMeetingResponse
+from common_db.enums import EMeetingResponseStatus
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -92,12 +93,12 @@ class UserProfileManager:
                 continue
             is_all_confirm = True
             for response in user_meeting.user_responses:
-                is_all_confirm = is_all_confirm and response.response.is_confirmed_status()
+                is_all_confirm = is_all_confirm and response.response == EMeetingResponseStatus.confirmed
             confirmed_count += int(is_all_confirm)
 
-        # Meetings with user response in (None, tentative, confirmed)
+        # Meetings with user response in (no_answer, confirmed)
         pended_count: int = len([1 for response in responses 
-                                   if (response.response.is_pended_status() and response.user_id == user_id)])
+                                   if (response.response != EMeetingResponseStatus.declined and response.user_id == user_id)])
         
         confirmation_limit = settings.limits.max_user_confirmed_meetings_count
         pending_limit = settings.limits.max_user_pended_meetings_count
