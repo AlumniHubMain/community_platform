@@ -64,8 +64,8 @@ class MeetingManager:
 
         # Check organizer limits
         organizer_limits = await LimitsManager.get_user_meetings_limits(session, request.organizer_id)
-        cls.check_pendings_limit(request.organizer_id, organizer_limits)
-        cls.check_confirmations_limit(request.organizer_id, organizer_limits)
+        await cls.check_pendings_limit(request.organizer_id, organizer_limits)
+        await cls.check_confirmations_limit(request.organizer_id, organizer_limits)
         
         # Check attendees exist
         for user_id in request.attendees_id:
@@ -79,7 +79,7 @@ class MeetingManager:
         # Check attendees pending limits
         for user_id in request.attendees_id:
             attendee_limits = await LimitsManager.get_user_meetings_limits(session, user_id)
-            cls.check_pendings_limit(user_id, attendee_limits)
+            await cls.check_pendings_limit(user_id, attendee_limits)
 
         # Create meeting
         meeting = ORMMeeting(
@@ -231,10 +231,10 @@ class MeetingManager:
         user_limits = await LimitsManager.get_user_meetings_limits(session, user_id)
         if user_response.response == EMeetingResponseStatus.declined:
             # If status will change form declined to other
-            cls.check_pendings_limit(user_id, user_limits)
+            await cls.check_pendings_limit(user_id, user_limits)
         if new_status == EMeetingResponseStatus.confirmed:
             # If status will change to confirmed from other
-            cls.check_confirmations_limit(user_id, user_limits)
+            await cls.check_confirmations_limit(user_id, user_limits)
 
         # Update the user's response status
         user_response.response = new_status

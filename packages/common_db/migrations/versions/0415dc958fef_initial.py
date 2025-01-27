@@ -71,7 +71,7 @@ def upgrade() -> None:
                     "sales",
                     "business_development",
                     name="user_expertise_enum",
-                    schema=f'schema',
+                    schema=f'{schema}',
                     inherit_schema=True,
                 )
             ),
@@ -479,7 +479,7 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["public.users.id"],
+            [f"{schema}.users.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
         schema=f'{schema}',
@@ -511,14 +511,14 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["intent_id"],
-            ["public.meeting_intents.id"],
+            [f"{schema}.meeting_intents.id"],
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["public.users.id"],
+            [f"{schema}.users.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
-        schema="public",
+        schema=f'{schema}',
     )
     op.create_table(
         "meetings",
@@ -530,21 +530,22 @@ def upgrade() -> None:
         sa.Column(
             "location", 
             sa.Enum(
-                "anywhere", "online", "offline",
+                "anywhere",
+                "offline",
+                "online",
                 name="meeting_location_enum",
                 schema=f'{schema}',
                 inherit_schema=True,
             ),
-            nullable=False,
-        ),
+            nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column(
             "status",
             sa.Enum(
                 "no_answer",
+                "archived",
                 "confirmed",
-                "declined",
-                name="meeting_response_status_enum",
+                name="meeting_status_enum",
                 schema=f'{schema}',
                 inherit_schema=True,
             ),
@@ -564,12 +565,25 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
-            ["organizer_id"], ["public.users.id"], ondelete="CASCADE"
+            ["match_id"],
+            [f"{schema}.matching_results.id"],
+            ondelete="CASCADE",
         ),
-        sa.ForeignKeyConstraint(
-            ["match_id"], ["public.matching_results.id"], ondelete="CASCADE"
-        ),
-        sa.PrimaryKeyConstraint("user_id", "meeting_id"),
+        sa.PrimaryKeyConstraint("id"),
+        schema=f'{schema}',
+    )
+    op.create_index(
+        "ix_meeting_status_enum",
+        "meetings",
+        ["status"],
+        unique=False,
+        schema=f'{schema}',
+    )
+    op.create_index(
+        "ix_meeting_time",
+        "meetings",
+        ["scheduled_time"],
+        unique=False,
         schema=f'{schema}',
     )
     op.create_table(
@@ -578,7 +592,13 @@ def upgrade() -> None:
         sa.Column("meeting_id", sa.Integer(), nullable=False),
         sa.Column(
             "role",
-            sa.Enum("organizer", "attendee", name="meeting_user_role_enum"),
+            sa.Enum(
+                "organizer",
+                "attendee",
+                name="meeting_user_role_enum",
+                schema=f'{schema}',
+                inherit_schema=True,
+            ),
             nullable=False,
         ),
         sa.Column(
@@ -588,6 +608,8 @@ def upgrade() -> None:
                 "confirmed",
                 "declined",
                 name="meeting_response_status_enum",
+                schema=f'{schema}',
+                inherit_schema=True,
             ),
             nullable=False,
         ),
@@ -604,12 +626,16 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
-            ["meeting_id"], ["public.meetings.id"], ondelete="CASCADE"
+            ["meeting_id"],
+            [f"{schema}.meetings.id"],
+            ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
-            ["user_id"], ["public.users.id"], ondelete="CASCADE"
+            ["user_id"],
+            [f"{schema}.users.id"],
+            ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("id"),
+        sa.PrimaryKeyConstraint("user_id", "meeting_id"),
         schema=f'{schema}',
     )
     # ### end Alembic commands ###
@@ -632,13 +658,13 @@ def downgrade() -> None:
         schema=f'{schema}',
     )
     op.drop_index(
-        "ix_meeting_status",
+        "ix_meeting_status_enum",
         table_name="meetings",
         schema=f'{schema}',
     )
     op.drop_table("meetings", schema=f'{schema}')
     
-    op.execute(f"DROP TYPE {schema}.meeting_status")
+    op.execute(f"DROP TYPE {schema}.meeting_status_enum")
     op.execute(f"DROP TYPE {schema}.user_interests_enum")
     op.execute(f"DROP TYPE {schema}.user_expertise_enum")
     op.execute(f"DROP TYPE {schema}.user_specialisation_enum")
@@ -655,6 +681,7 @@ def downgrade() -> None:
     op.execute(f"DROP TYPE {schema}.meeting_intent_query_type")
     op.execute(f"DROP TYPE {schema}.meeting_intent_help_request_type")
     op.execute(f"DROP TYPE {schema}.meeting_intent_looking_for_type")
-    op.execute(f"DROP TYPE {schema}.meeting_user_role")
-    op.execute(f"DROP TYPE {schema}.meeting_response_status")
+    op.execute(f"DROP TYPE {schema}.meeting_user_role_enum")
+    op.execute(f"DROP TYPE {schema}.meeting_response_status_enum") 
+    op.execute(f"DROP TYPE {schema}.meeting_location_enum")   
     # ### end Alembic commands ###

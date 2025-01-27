@@ -22,6 +22,7 @@ class ORMMeeting(ObjectTable):
 
     __tablename__ = 'meetings'
     __table_args__ = (
+        PrimaryKeyConstraint('id'),
         Index('ix_meeting_status', 'status'),
         Index('ix_meeting_time', 'scheduled_time'),
         {'schema': schema},
@@ -39,7 +40,7 @@ class ORMMeeting(ObjectTable):
 
     # Relationship to user_meetings table via ORMUserMeeting
     user_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
-        "ORMMeetingResponse", back_populates="meeting", cascade="all, delete-orphan", lazy='selectin'
+        "ORMMeetingResponse", back_populates="meeting", cascade="all, delete-orphan"
     )
 
 
