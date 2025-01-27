@@ -137,12 +137,24 @@ class LinkedInDBManager:
             main_profile = ORMUserProfile(username=username)
             session.add(main_profile)
 
-        main_profile.is_verified = is_verified
+        # TODO: return for platform users, not community?
+        # main_profile.is_verified = is_verified
+        # await session.commit()
 
     @classmethod
     async def update_api_limits(cls, limits: LinkedInLimitsAlert) -> None:
-        """Обновляет лимиты API в отдельной транзакции"""
-        async for session in db_manager.get_async_session():
+        """Обновляет лимиты API в отдельной транзакции
+        
+        Args:
+            limits: Данные о лимитах API
+                provider_type: тип провайдера (SCRAPIN/TOMQUIRK)
+                provider_id: для SCRAPIN - последние 4 символа API ключа,
+                           для TOMQUIRK - часть email до @
+                credits_left: оставшиеся кредиты
+                rate_limit_left: оставшийся rate limit
+                updated_at: время обновления
+        """
+        async for session in db_manager.get_session():
             stmt = select(LinkedInApiLimits).where(
                 and_(
                     LinkedInApiLimits.provider_type == limits.provider_type,
@@ -153,12 +165,31 @@ class LinkedInDBManager:
             limit = result.scalar_one_or_none()
 
             if not limit:
+                # Создаем новую запись
                 limit = LinkedInApiLimits(
                     provider_type=limits.provider_type,
-                    provider_id=limits.provider_id
+                    provider_id=limits.provider_id,
+                    credits_left=limits.credits_left,
+                    rate_limit_left=limits.rate_limit_left,
+                    updated_at=limits.updated_at
                 )
                 session.add(limit)
-
-            limit.credits_left = limits.credits_left
-            limit.rate_limit_left = limits.rate_limit_left
-            limit.updated_at = limits.updated_at
+            else:
+                # Обновляем существующую запись через update()
+                await session.execute(
+                    update(LinkedInApiLimits)
+                    .where(
+                        and_(
+                            LinkedInApiLimits.provider_type == limits.provider_type,
+                            LinkedInApiLimits.provider_id == limits.provider_id
+                        )
+                    )
+                    .values(
+                        credits_left=limits.credits_left,
+                        rate_limit_left=limits.rate_limit_left,
+                        updated_at=limits.updated_at
+                    )
+                )
+            
+            # Сохраняем изменения
+            await session.commit()

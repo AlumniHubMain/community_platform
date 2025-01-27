@@ -9,14 +9,14 @@ from src.exceptions import (
     LinkedInAuthError, LinkedInBlockedError, 
     LinkedInSessionError, TomQuirkAPIError
 )
-from src.db.models.limits import LinkedInProviderType
+from src.db.models.limits import LinkedInProvider
 
 
 class LinkedInTomquirkRepository(LinkedInRepository):
     """Implementation using TomQuirk's linkedin-api"""
     
     def __init__(self):
-        self.provider_id = LinkedInProviderType.TOMQUIRK
+        self.provider_id = LinkedInProvider.TOMQUIRK
         
     @classmethod
     def _get_api(cls) -> Linkedin:

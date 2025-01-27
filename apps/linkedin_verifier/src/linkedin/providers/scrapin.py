@@ -11,7 +11,7 @@ from src.exceptions import (
     CredentialsError, ProfileNotFoundError, RateLimitError, ScrapinAPIError,
     BadRequestError, PaymentRequiredError, ForbiddenError, ServerError
 )
-from src.db.models.limits import LinkedInProviderType
+from src.db.models.limits import LinkedInProvider
 from .mock_data import MOCK_PROFILE_RESPONSE
 
 
@@ -21,7 +21,7 @@ class LinkedInScrapinRepository(LinkedInRepository):
     BASE_URL = "https://api.scrapin.io/enrichment/profile"
     
     def __init__(self, use_mock: bool = False):
-        self.provider_id = LinkedInProviderType.SCRAPIN
+        self.provider_id = LinkedInProvider.SCRAPIN
     
     @classmethod
     async def _make_request(cls, linkedin_url: str) -> Dict[str, Any]:

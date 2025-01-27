@@ -75,8 +75,7 @@ class LinkedInService:
                 
                 # 4. Отдельная транзакция для лимитов API, именно для LinkedInScrapinRepository,
                 # т.к. только там кредиты есть
-                # TODO: а уменьшатся ли кредиты, если выше не успех? можт if profile and ...
-                if scrapin_profile and isinstance(repository_class, LinkedInScrapinRepository):
+                if scrapin_profile:
                     try:
                         await LinkedInDBManager.update_api_limits(
                             LinkedInLimitsAlert(
