@@ -92,11 +92,7 @@ class LinkedInService:
                         logger.warning(f"Failed to update API limits: {e}")
                     
                 # Преобразуем ORM модель обратно в API модель
-                return LinkedInProfileAPI(
-                    **db_profile.__dict__,
-                    credits_left=scrapin_profile.credits_left if scrapin_profile else None,
-                    rate_limit_left=scrapin_profile.rate_limit_left if scrapin_profile else None
-                )
+                return scrapin_profile
                     
             except Exception as e:
                 raise DatabaseError(f"Error saving profile: {e}")
