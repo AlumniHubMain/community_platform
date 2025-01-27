@@ -9,7 +9,7 @@ from src.exceptions import (
     LinkedInAuthError, LinkedInBlockedError, 
     LinkedInSessionError, TomQuirkAPIError
 )
-from src.types import LinkedInProviderType
+from src.db.models.limits import LinkedInProviderType
 
 
 class LinkedInTomquirkRepository(LinkedInRepository):

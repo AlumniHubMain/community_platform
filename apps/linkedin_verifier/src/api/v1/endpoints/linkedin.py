@@ -5,7 +5,7 @@ from typing import List, Annotated
 
 from linkedin_verifier.app.db.base import get_async_session
 from linkedin_verifier.app.schemas.linkedin import ProfileResponse, LimitsResponse
-from linkedin_verifier.app.db.models.limits import LinkedInApiLimits
+from src.db.models.limits import LinkedInApiLimits
 from linkedin_verifier.app.linkedin.service import LinkedInService
 from linkedin_verifier.app.linkedin.factory import LinkedInRepositoryFactory
 from linkedin_verifier.config import settings

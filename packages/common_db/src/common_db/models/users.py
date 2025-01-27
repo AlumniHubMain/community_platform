@@ -85,6 +85,8 @@ class ORMUserProfile(ObjectTable):
         "ORMMeetingResponse", back_populates="user", cascade="all, delete-orphan"
     )
 
+    linkedin_profile: Mapped["ORMLinkedInProfile"] = relationship(back_populates="user", doc="Профиль linkedIn")
+
     available_meetings_pendings_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
     available_meetings_confirmations_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
 

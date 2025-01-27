@@ -54,7 +54,7 @@ class LinkedInService:
             
             # 3. Начало единой транзакции для сохранения профиля и статуса
             try:
-                async for session in db_manager.get_async_session():
+                async for session in db_manager.get_session():
                     # Все операции внутри этого блока - одна транзакция
                     db_profile = await LinkedInDBManager.save_profile(
                         session=session,

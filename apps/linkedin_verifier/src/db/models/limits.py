@@ -1,19 +1,37 @@
 from datetime import datetime
-from sqlalchemy import String, Enum as SQLEnum
+from enum import Enum
+from sqlalchemy import String, Enum as PGEnum
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.schema import Index
 
-from common_db.models.base import ObjectTable as Base
-from src.types import LinkedInProviderType
+from common_db.models.base import ObjectTable
+from common_db.config import schema
 
 
-class LinkedInApiLimits(Base):
+class LinkedInProvider(str, Enum):
+    """Типы провайдеров LinkedIn"""
+    SCRAPIN = "scrapin"
+    TOMQUIRK = "tomquirk"
+
+
+LinkedInProviderType = PGEnum(LinkedInProvider, name='linkedinprovidertype', inherit_schema=True)
+
+
+class LinkedInApiLimits(ObjectTable):
     """API limits model"""
     __tablename__ = "linkedin_api_limits"
 
+    __table_args__ = (
+        # Уникальность по комбинации тип + идентификатор
+        Index('idx_provider_unique', 'provider_type', 'provider_id', unique=True),
+        # Индекс для мониторинга лимитов
+        Index('idx_limits_status', 'credits_left', 'rate_limit_left'),
+        {'schema': schema}  # Указываем схему для таблицы
+    )
+
     # Тип провайдера
     provider_type: Mapped[str] = mapped_column(
-        SQLEnum(LinkedInProviderType),
+        LinkedInProviderType,
         index=True,
         doc="Provider type"
     )
@@ -28,12 +46,6 @@ class LinkedInApiLimits(Base):
     rate_limit_left: Mapped[int] = mapped_column(doc="Remaining rate limit")
     updated_at: Mapped[datetime] = mapped_column(doc="Last update timestamp")
     
-    __table_args__ = (
-        # Уникальность по комбинации тип + идентификатор
-        Index('idx_provider_unique', 'provider_type', 'provider_id', unique=True),
-        # Индекс для мониторинга лимитов
-        Index('idx_limits_status', 'credits_left', 'rate_limit_left'),
-    )
 
     @staticmethod
     def get_provider_id(provider_type: LinkedInProviderType, api_key: str | None = None, email: str | None = None) -> str:

@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from linkedin_verifier.config import settings
 from packages.common_db.src.common_db.db_abstract import Base, schema
 from packages.common_db.src.common_db.linkedin.models.linkedin_profile import LinkedInProfileORM
-from linkedin_verifier.app.db.models.limits import LinkedInApiLimits
+from src.db.models.limits import LinkedInApiLimits
 
 
 config = context.config

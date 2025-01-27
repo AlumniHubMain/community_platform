@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
-from linkedin_verifier.app.db.models.limits import LinkedInProviderType
+from src.db.models.limits import LinkedInProvider
 
 
 class LinkedInProfileTask(BaseModel):
@@ -12,7 +12,7 @@ class LinkedInProfileTask(BaseModel):
 
 class LinkedInLimitsAlert(BaseModel):
     """Alert schema for API limits update"""
-    provider_type: LinkedInProviderType
+    provider_type: LinkedInProvider
     provider_id: str
     credits_left: int
     rate_limit_left: int

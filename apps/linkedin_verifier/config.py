@@ -5,7 +5,7 @@ from typing import Dict
 from google.oauth2 import service_account
 from loguru import logger
 
-from src.types import LinkedInProviderType
+from src.db.models.limits import LinkedInProvider
 
 
 class Settings(BaseSettings):
@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     linkedin_limits_topic: str = "linkedin-limits"
 
     # LinkedIn Provider
-    linkedin_provider: LinkedInProviderType = LinkedInProviderType.SCRAPIN
+    linkedin_provider: LinkedInProvider = LinkedInProvider.SCRAPIN
     linkedin_email: SecretStr | None = None  # для TomQuirk
     linkedin_password: SecretStr | None = None  # для TomQuirk
 
@@ -73,15 +73,15 @@ class Settings(BaseSettings):
         )
 
     @property
-    def api_keys(self) -> Dict[LinkedInProviderType, SecretStr]:
+    def api_keys(self) -> Dict[LinkedInProvider, SecretStr]:
         """Маппинг provider_id -> api_key с использованием SecretStr"""
         return {
-            LinkedInProviderType.SCRAPIN: self.scrapin_api_key,
-            LinkedInProviderType.TOMQUIRK: self.linkedin_password
+            LinkedInProvider.SCRAPIN: self.scrapin_api_key,
+            LinkedInProvider.TOMQUIRK: self.linkedin_password
         }
 
     @property
-    def current_provider(self) -> LinkedInProviderType:
+    def current_provider(self) -> LinkedInProvider:
         """Текущий провайдер из конфига"""
         return self.linkedin_provider
 
