@@ -3,21 +3,22 @@ from collections.abc import Iterable
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
 
 from event_emitter import EmitterFactory, IProtoEmitter
 from common_db.models import ORMMeeting, ORMMeetingResponse, ORMUserProfile
-from common_db.enums import EMeetingResponseStatus, EMeetingStatus, EMeetingUserRole
+from common_db.enums.meetings import EMeetingResponseStatus, EMeetingStatus, EMeetingUserRole
 from web_gateway.settings import settings
 from web_gateway.limits.limits_manager import LimitsManager, MeetingsUserLimits
 from .notification_event_builder import NotificationEventBuilder
-from .schemas import (
-    MeetingRequestCreate,
+from common_db.schemas.meetings import (
     MeetingRequestRead,
+    MeetingRequestCreate,
     MeetingRequestUpdate,
-    MeetingsFilter,
-    MeetingList
+    MeetingList,
+    MeetingsUserLimits,
+    MeetingFilter,
 )
 
 def to_iterable(object):
@@ -89,7 +90,6 @@ class MeetingManager:
             description=request.description, 
             status=EMeetingStatus.no_answer,
         )
-        session.add(meeting)
         
         # Create response and update limits for users
         for idx, user_orm in enumerate(meeting_users): 
@@ -98,13 +98,19 @@ class MeetingManager:
             meeting_response = ORMMeetingResponse(
                 user=user_orm,
                 role=role,
-                response=response_status,
-                meeting=meeting
+                response=response_status
             )
-            session.add(meeting_response)
+            meeting.user_responses.append(meeting_response)
+        
+        session.add(meeting)
+        
+        print("Num of responses:", len(meeting.user_responses))
+        
+        for user_orm in meeting_users:
             await LimitsManager.update_user_limits(session, user_orm.id)
-
+        
         await session.commit()
+        
         
         created_meeting = MeetingRequestRead.model_validate(meeting, from_attributes=True)
         
@@ -128,22 +134,24 @@ class MeetingManager:
     ) -> MeetingRequestRead:
         meeting = await session.execute(
             select(ORMMeeting)
-            .where(ORMMeeting.id == meeting_id)
             .options(
                 selectinload(ORMMeeting.user_responses).selectinload(
                     ORMMeetingResponse.user
                 )
             )  # eager load
+            .where(ORMMeeting.id == meeting_id)
         )
         meeting = meeting.scalar_one_or_none()
 
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
+        print("Num of responses:", len(meeting.user_responses))
+        
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
     @classmethod
-    async def get_meetings_with_filtering(cls, session: AsyncSession, filter: MeetingsFilter):
+    async def get_meetings_with_filtering(cls, session: AsyncSession, filter: MeetingFilter):
         query = select(ORMMeeting).options(selectinload(ORMMeeting.user_responses))
         query = query.join(ORMMeetingResponse).where(
             (ORMMeetingResponse.user_id == filter.user_id)

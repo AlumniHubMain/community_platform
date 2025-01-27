@@ -1,18 +1,32 @@
 version: '3'
 
 services:
-  matching:
+  # matching:
+  #   build: 
+  #     context: .
+  #     dockerfile: apps/matching/Dockerfile
+  #   environment:
+  #     - ENVIRONMENT=development
+  #     - GOOGLE_APPLICATION_CREDENTIALS=/credentials/service_account_credentials.json
+  #   volumes:
+  #     - ./credentials:/credentials
+  #     - ./config:/config
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - db
+
+  web-gateway:
     build: 
       context: .
-      dockerfile: apps/matching/Dockerfile
+      dockerfile: apps/web_gateway/Dockerfile
     environment:
       - ENVIRONMENT=development
-      - GOOGLE_APPLICATION_CREDENTIALS=/credentials/service_account_credentials.json
     volumes:
-      - ./credentials:/credentials
+      - ./public_config:/public_config
       - ./config:/config
     ports:
-      - "8080:8080"
+      - "8081:8080"
     depends_on:
       - db
 
@@ -28,4 +42,4 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data: 
+  postgres_data:

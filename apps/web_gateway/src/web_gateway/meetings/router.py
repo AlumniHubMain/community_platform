@@ -3,14 +3,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from common_db.db_abstract import db_manager
 from .meeting_manager import MeetingManager
-from .schemas import (
+from common_db.enums.meetings import EMeetingResponseStatus
+from common_db.schemas.meetings import (
     MeetingRequestRead,
     MeetingRequestCreate,
     MeetingRequestUpdate,
     MeetingList,
     MeetingsUserLimits,
-    EMeetingResponseStatus,
-    MeetingsFilter
+    MeetingFilter,
 )
 from web_gateway.limits.limits_manager import LimitsManager
 
@@ -35,7 +35,7 @@ async def get_meeting(
     "", response_model=MeetingList, summary="Get all user meetings"
 )
 async def get_meeting_with_filtering(
-    filter: MeetingsFilter, session: AsyncSession = session_dependency
+    filter: MeetingFilter, session: AsyncSession = session_dependency
 ) -> MeetingRequestRead:
     """
     Fetch all user meetings with filtering.

@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import ARRAY, String, DateTime, Integer, ForeignKey, Index, PrimaryKeyConstraint, Text
+from sqlalchemy import DateTime, Integer, ForeignKey, Index, PrimaryKeyConstraint, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from common_db.enums.meetings import (
     EMeetingStatus,
@@ -8,16 +8,11 @@ from common_db.enums.meetings import (
     MeetingUserRolePGEnum,
     EMeetingResponseStatus,
     MeetingResponseStatusPGEnum,
-    MeetingLocationPGEnum
+    EMeetingLocation,
+    MeetingLocationPGEnum,
 )
 from common_db.config import schema
 from common_db.models.base import ObjectTable
-
-
-class EMeetingLocation(Enum):
-    anywhere = 'anywhere'
-    offline = 'offline'
-    online = 'online'
 
 
 class ORMMeeting(ObjectTable):
@@ -35,15 +30,16 @@ class ORMMeeting(ObjectTable):
     # Meeting-specific fields
     organizer_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.users.id', ondelete="CASCADE"), 
                                               primary_key=True)
-    match_id: Mapped[int] = mapped_column(Integer) # TODO: Change to ForeignKey(f'{schema}.matches.id', ondelete="CASCADE"), primary_key=True
+    match_id: Mapped[int | None] = mapped_column(Integer, ForeignKey(f'{schema}.matching_results.id', ondelete="CASCADE"), 
+                                                 primary_key=True, nullable=True)
     scheduled_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    location: Mapped[str] = mapped_column(EMeetingLocationPGEnum, nullable=False)
+    location: Mapped[EMeetingLocation] = mapped_column(MeetingLocationPGEnum, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     status: Mapped[EMeetingStatus] = mapped_column(MeetingStatusPGEnum, nullable=False, default=EMeetingStatus.no_answer)
 
     # Relationship to user_meetings table via ORMUserMeeting
     user_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
-        "ORMMeetingResponse", back_populates="meeting", cascade="all, delete-orphan"
+        "ORMMeetingResponse", back_populates="meeting", cascade="all, delete-orphan", lazy='selectin'
     )
 
 
