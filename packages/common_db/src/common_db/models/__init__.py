@@ -5,6 +5,7 @@ from .meeting_intents import ORMMeetingIntent
 from .matching import ORMMatchingResult
 from .forms import ORMForm
 from .linkedin import ORMLinkedInProfile, ORMEducation, ORMWorkExperience
+from .linkedin_helpers import LinkedInApiLimits
 
 __all__ = [
     "Base",
@@ -18,4 +19,5 @@ __all__ = [
     "ORMLinkedInProfile",
     "ORMEducation",
     "ORMWorkExperience",
+    "LinkedInApiLimits"
 ]

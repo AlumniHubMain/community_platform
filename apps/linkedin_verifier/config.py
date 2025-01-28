@@ -5,7 +5,8 @@ from typing import Dict
 from google.oauth2 import service_account
 from loguru import logger
 
-from src.db.models.limits import LinkedInProvider
+# from src.db.models.limits import LinkedInProvider
+from common_db.models.linkedin_helpers import LinkedInProvider
 
 
 class Settings(BaseSettings):

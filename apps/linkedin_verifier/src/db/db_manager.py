@@ -16,7 +16,8 @@ from common_db.schemas.linkedin import (
     LinkedInProfileTask
 )
 
-from src.db.models.limits import LinkedInApiLimits
+from common_db.models.linkedin_helpers import LinkedInApiLimits
+# from src.db.models.limits import LinkedInApiLimits
 from ..schemas.pubsub import LinkedInLimitsAlert
 
 

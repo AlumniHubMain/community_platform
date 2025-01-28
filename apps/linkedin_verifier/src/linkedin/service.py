@@ -18,7 +18,8 @@ from apps.linkedin_verifier.src.db.db_manager import LinkedInDBManager
 from loader import broker  # Используем готовый broker
 from src.exceptions import APIError, DatabaseError, RateLimitError
 
-from src.db.models.limits import LinkedInApiLimits
+from common_db.models.linkedin_helpers import LinkedInApiLimits
+# from src.db.models.limits import LinkedInApiLimits
 from config import settings
 from src.schemas.pubsub import LinkedInLimitsAlert
 
@@ -27,7 +28,7 @@ class LinkedInService:
     """Сервис для работы с LinkedIn API"""
 
     @classmethod
-    async def validate_profile(cls, username: str, target_company_label: str, use_mock: bool = False) ->\
+    async def validate_profile(cls, username: str, target_company_label: str, use_mock: bool = False) -> \
             LinkedInProfileAPI:
         """
         Проверяет профиль LinkedIn на наличие опыта работы в целевой компании.
@@ -42,16 +43,16 @@ class LinkedInService:
         """
         try:
             repository_class = LinkedInRepositoryFactory.create()
-            
+
             # 1. Получаем и валидируем данные из API
             raw_data = await repository_class.get_profile(username, use_mock=use_mock)
             scrapin_profile = LinkedInProfileAPI.model_validate(raw_data)
-            
+
             # 2. Проверяем опыт работы (вне транзакции)
             is_verified = cls.validate_work_experience(scrapin_profile, target_company_label)
-            
+
             db_profile = None  # Инициализируем до транзакции
-            
+
             # 3. Начало единой транзакции для сохранения профиля и статуса
             try:
                 async for session in db_manager.get_session():
@@ -67,12 +68,12 @@ class LinkedInService:
                     #     username=scrapin_profile.username,
                     #     is_verified=is_verified
                     # )
-                    
+
                     # Явно коммитим изменения
                     await session.commit()
-                
+
                 # Транзакция завершена успешно
-                
+
                 # 4. Отдельная транзакция для лимитов API, именно для LinkedInScrapinRepository,
                 # т.к. только там кредиты есть
                 if scrapin_profile:
@@ -90,13 +91,13 @@ class LinkedInService:
                         )
                     except Exception as e:
                         logger.warning(f"Failed to update API limits: {e}")
-                    
+
                 # Преобразуем ORM модель обратно в API модель
                 return scrapin_profile
-                    
+
             except Exception as e:
                 raise DatabaseError(f"Error saving profile: {e}")
-            
+
         except Exception as e:
             logger.error(f"Error parsing profile {username}: {e}")
             raise
@@ -118,24 +119,24 @@ class LinkedInService:
             if not profile_data or not target_company_label:
                 logger.warning("Empty profile_data or target_company_label")
                 return False
-                
+
             if not profile_data.work_experience:
                 logger.debug(f"No work experience for profile {getattr(profile_data, 'username', 'N/A')}")
                 return False
-                
+
             # 2. Безопасный поиск позиций в целевой компании
             target_positions = []
             for exp in profile_data.work_experience:
                 if not exp or not exp.company_label:  # Пропускаем записи без названия компании
                     continue
-                    
+
                 try:
                     if target_company_label.lower() in exp.company_label.lower():
                         target_positions.append(exp)
                 except AttributeError as e:
                     logger.warning(f"Error comparing company labels: {e}")
                     continue
-            
+
             # 3. Обработка найденных позиций
             if target_positions:
                 try:
@@ -146,39 +147,39 @@ class LinkedInService:
                         x.start_date if x.start_date is not None else datetime(1900, 1, 1),
                         reverse=True
                     )
-                    
+
                     # Берем самую свежую позицию
                     latest_position = target_positions[0]  # Теперь безопасно, так как проверили if target_positions
-                    
+
                     # Заполняем поля профиля
                     profile_data.is_target_company_found = True
                     profile_data.target_company_positions_count = len(target_positions)
-                    
+
                     # Безопасно заполняем данные о последней позиции
                     if latest_position:
                         profile_data.target_company_label = latest_position.company_label
                         profile_data.target_company_linkedin_id = latest_position.linkedin_id
                         profile_data.target_position_title = latest_position.title
                         profile_data.target_company_linkedin_url = latest_position.company_linkedin_url
-                    
+
                     # Проверяем текущую работу в целевой компании
                     profile_data.is_employee_in_target_company = any(
-                        not pos.end_date 
-                        for pos in target_positions 
+                        not pos.end_date
+                        for pos in target_positions
                         if hasattr(pos, 'end_date')  # Проверяем наличие атрибута
                     )
-                    
+
                     return True
-                    
+
                 except Exception as e:
                     logger.error(f"Error processing target positions: {e}")
                     LinkedInService._set_default_target_values(profile_data)
                     return False
-            
+
             # Если не нашли ни одной позиции
             LinkedInService._set_default_target_values(profile_data)
             return False
-            
+
         except Exception as e:
             logger.error(f"Unexpected error in validate_work_experience: {e}")
             LinkedInService._set_default_target_values(profile_data)

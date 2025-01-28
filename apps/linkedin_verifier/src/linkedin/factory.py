@@ -4,7 +4,8 @@ from src.linkedin.providers.scrapin import LinkedInScrapinRepository
 
 # TODO: add in new service for management AlunniHub LinkedInAccount
 # from src.linkedin.providers.tomquirk import LinkedInTomquirkRepository
-from src.db.models.limits import LinkedInProvider
+# from src.db.models.limits import LinkedInProvider
+from common_db.models.linkedin_helpers import LinkedInProvider
 
 
 class LinkedInRepositoryFactory:

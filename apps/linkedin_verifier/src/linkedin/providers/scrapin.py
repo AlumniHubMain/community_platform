@@ -11,7 +11,9 @@ from src.exceptions import (
     CredentialsError, ProfileNotFoundError, RateLimitError, ScrapinAPIError,
     BadRequestError, PaymentRequiredError, ForbiddenError, ServerError
 )
-from src.db.models.limits import LinkedInProvider
+
+from common_db.models.linkedin_helpers import LinkedInProvider
+# from src.db.models.limits import LinkedInProvider
 from .mock_data import MOCK_PROFILE_RESPONSE
 
 
