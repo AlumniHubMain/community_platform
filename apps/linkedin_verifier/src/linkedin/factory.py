@@ -3,7 +3,7 @@ from src.linkedin.base import LinkedInRepository
 from src.linkedin.providers.scrapin import LinkedInScrapinRepository
 
 # TODO: add in new service for management AlunniHub LinkedInAccount
-# from src.linkedin.providers.tomquirk import LinkedInTomquirkRepository
+# LinkedInTomquirkRepository
 from common_db.models.linkedin_helpers import LinkedInProvider
 
 

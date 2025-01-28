@@ -1,6 +1,5 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
-# from src.db.models.limits import LinkedInProvider
 from common_db.models.linkedin_helpers import LinkedInProvider
 
 
