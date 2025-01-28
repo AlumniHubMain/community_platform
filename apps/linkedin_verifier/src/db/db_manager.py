@@ -1,22 +1,20 @@
 from datetime import datetime
 from typing import Dict, Any
 from loguru import logger
-from sqlalchemy import select, and_, update, text
+from sqlalchemy import select, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 from sqlalchemy.dialects.postgresql import insert
 
 from common_db.db_abstract import db_manager
-from common_db.models.linkedin import ORMLinkedInProfile, ORMLinkedInRawData
 from common_db.models.users import ORMUserProfile
+from common_db.models.linkedin import ORMLinkedInProfile, ORMLinkedInRawData
+from common_db.models.linkedin_helpers import ORMLinkedInApiLimits
 
 from common_db.schemas.linkedin import (
     LinkedInProfileAPI,
-    LinkedInProfileRead,
-    LinkedInProfileTask
+    # LinkedInProfileRead,
+    # LinkedInProfileTask
 )
-
-from common_db.models.linkedin_helpers import ORMLinkedInApiLimits
 # from src.db.models.limits import ORMLinkedInApiLimits
 from ..schemas.pubsub import LinkedInLimitsAlert
 

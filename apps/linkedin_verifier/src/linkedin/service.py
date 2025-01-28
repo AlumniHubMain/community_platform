@@ -1,25 +1,21 @@
 from loguru import logger
-from pydantic import ValidationError
-
-from packages.common_db.src.common_db.db_abstract import db_manager
-
+from common_db.db_abstract import db_manager
+from common_db.models.linkedin_helpers import ORMLinkedInApiLimits
 from datetime import datetime
-
+# from loader import broker  # TODO: Нужен будет для отправки уведомлений кураторам
 # from linkedin_verifier.app.schemas.linkedin import ProfileResponse, ScrapinProfileResponse
 from common_db.schemas.linkedin import (
     LinkedInProfileAPI,
-    LinkedInProfileRead,
-    LinkedInProfileTask
+    # LinkedInProfileRead,
+    # LinkedInProfileTask
 )
 
-from src.linkedin.factory import LinkedInRepositoryFactory
-from src.linkedin.providers.scrapin import LinkedInScrapinRepository
-from apps.linkedin_verifier.src.db.db_manager import LinkedInDBManager
-from loader import broker  # Используем готовый broker
-from src.exceptions import APIError, DatabaseError, RateLimitError
 
-from common_db.models.linkedin_helpers import ORMLinkedInApiLimits
-# from src.db.models.limits import ORMLinkedInApiLimits
+from src.db.db_manager import LinkedInDBManager
+
+from src.exceptions import APIError, DatabaseError, RateLimitError
+from src.linkedin.factory import LinkedInRepositoryFactory
+
 from config import settings
 from src.schemas.pubsub import LinkedInLimitsAlert
 
@@ -77,10 +73,8 @@ class LinkedInService:
                     #     is_verified=is_verified
                     # )
 
-                    # Явно коммитим изменения
+                    # Явно коммитим изменения, хотя вроде у Елисей автокоммит
                     await session.commit()
-
-                # Транзакция завершена успешно
 
                 # 4. Отдельная транзакция для лимитов API, именно для LinkedInScrapinRepository,
                 # т.к. только там кредиты есть

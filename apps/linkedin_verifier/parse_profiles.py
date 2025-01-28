@@ -4,7 +4,6 @@ from typing import List
 
 from src.linkedin.service import LinkedInService
 from config import settings
-from common_db.schemas.linkedin import LinkedInProfileAPI
 
 
 async def parse_linkedin_profiles(usernames: List[str], target_company_label: str):
