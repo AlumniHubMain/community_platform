@@ -33,8 +33,8 @@ async def parse_linkedin_profiles(usernames: List[str], target_company_label: st
                 
                 logger.info(
                     f"Successfully parsed {profile.linkedin_url} "
-                    # f"(credits left: {profile.credits_left}, "
-                    # f"rate limit: {profile.rate_limit_left})"
+                    f"(credits left: {profile.credits_left}, "
+                    f"rate limit: {profile.rate_limit_left})"
                 )
                 
             except Exception as e:
