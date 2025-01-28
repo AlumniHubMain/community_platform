@@ -1,5 +1,5 @@
-# from src.db.models.limits import LinkedInApiLimits
+# from src.db.models.limits import ORMLinkedInApiLimits
 #
 # __all__ = [
-#     "LinkedInApiLimits",
+#     "ORMLinkedInApiLimits",
 # ]

@@ -14,7 +14,7 @@ class LinkedInProvider(str, Enum):
     TOMQUIRK = "tomquirk"
 
 
-class LinkedInApiLimits(ObjectTable):
+class ORMLinkedInApiLimits(ObjectTable):
     """API limits model"""
     __tablename__ = "linkedin_api_limits"
 

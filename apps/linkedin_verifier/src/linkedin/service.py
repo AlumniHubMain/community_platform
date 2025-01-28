@@ -18,8 +18,8 @@ from apps.linkedin_verifier.src.db.db_manager import LinkedInDBManager
 from loader import broker  # Используем готовый broker
 from src.exceptions import APIError, DatabaseError, RateLimitError
 
-from common_db.models.linkedin_helpers import LinkedInApiLimits
-# from src.db.models.limits import LinkedInApiLimits
+from common_db.models.linkedin_helpers import ORMLinkedInApiLimits
+# from src.db.models.limits import ORMLinkedInApiLimits
 from config import settings
 from src.schemas.pubsub import LinkedInLimitsAlert
 
@@ -46,6 +46,14 @@ class LinkedInService:
 
             # 1. Получаем и валидируем данные из API
             raw_data = await repository_class.get_profile(username, use_mock=use_mock)
+            
+            # Сохраняем сырые данные в отдельной транзакции
+            # Пригодятся, т.к. внешние сервисы платные - будем сохранять
+            await LinkedInDBManager.save_raw_data(
+                linkedin_url=f"https://www.linkedin.com/in/{username}/",
+                raw_data=raw_data
+            )
+            
             scrapin_profile = LinkedInProfileAPI.model_validate(raw_data)
 
             # 2. Проверяем опыт работы (вне транзакции)
@@ -81,7 +89,7 @@ class LinkedInService:
                         await LinkedInDBManager.update_api_limits(
                             LinkedInLimitsAlert(
                                 provider_type=settings.current_provider,
-                                provider_id=LinkedInApiLimits.get_provider_id(
+                                provider_id=ORMLinkedInApiLimits.get_provider_id(
                                     provider_type=settings.current_provider,
                                     api_key=settings.scrapin_api_key.get_secret_value()
                                 ),

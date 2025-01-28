@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.dialects.postgresql import insert
 
 from common_db.db_abstract import db_manager
-from common_db.models.linkedin import ORMLinkedInProfile
+from common_db.models.linkedin import ORMLinkedInProfile, ORMLinkedInRawData
 from common_db.models.users import ORMUserProfile
 
 from common_db.schemas.linkedin import (
@@ -16,8 +16,8 @@ from common_db.schemas.linkedin import (
     LinkedInProfileTask
 )
 
-from common_db.models.linkedin_helpers import LinkedInApiLimits
-# from src.db.models.limits import LinkedInApiLimits
+from common_db.models.linkedin_helpers import ORMLinkedInApiLimits
+# from src.db.models.limits import ORMLinkedInApiLimits
 from ..schemas.pubsub import LinkedInLimitsAlert
 
 
@@ -156,10 +156,10 @@ class LinkedInDBManager:
                 updated_at: время обновления
         """
         async for session in db_manager.get_session():
-            stmt = select(LinkedInApiLimits).where(
+            stmt = select(ORMLinkedInApiLimits).where(
                 and_(
-                    LinkedInApiLimits.provider_type == limits.provider_type,
-                    LinkedInApiLimits.provider_id == limits.provider_id
+                    ORMLinkedInApiLimits.provider_type == limits.provider_type,
+                    ORMLinkedInApiLimits.provider_id == limits.provider_id
                 )
             )
             result = await session.execute(stmt)
@@ -167,7 +167,7 @@ class LinkedInDBManager:
 
             if not limit:
                 # Создаем новую запись
-                limit = LinkedInApiLimits(
+                limit = ORMLinkedInApiLimits(
                     provider_type=limits.provider_type,
                     provider_id=limits.provider_id,
                     credits_left=limits.credits_left,
@@ -178,11 +178,11 @@ class LinkedInDBManager:
             else:
                 # Обновляем существующую запись через update()
                 await session.execute(
-                    update(LinkedInApiLimits)
+                    update(ORMLinkedInApiLimits)
                     .where(
                         and_(
-                            LinkedInApiLimits.provider_type == limits.provider_type,
-                            LinkedInApiLimits.provider_id == limits.provider_id
+                            ORMLinkedInApiLimits.provider_type == limits.provider_type,
+                            ORMLinkedInApiLimits.provider_id == limits.provider_id
                         )
                     )
                     .values(
@@ -194,3 +194,28 @@ class LinkedInDBManager:
             
             # Сохраняем изменения
             await session.commit()
+
+    @staticmethod
+    async def save_raw_data(linkedin_url: str, raw_data: Dict[str, Any]) -> None:
+        """Сохраняет сырые данные профиля в отдельной транзакции
+        
+        Args:
+            linkedin_url: URL профиля LinkedIn
+            raw_data: Сырые данные от API
+        """
+        async for session in db_manager.get_session():
+            try:
+                # Создаем новую запись
+                raw_data_record = ORMLinkedInRawData(
+                    target_linkedin_url=linkedin_url,
+                    raw_data=raw_data,
+                    parsed_date=datetime.utcnow()
+                )
+                session.add(raw_data_record)
+                await session.commit()
+                logger.info(f"Saved raw data for profile: {linkedin_url}")
+                
+            except Exception as e:
+                logger.error(f"Failed to save raw data for {linkedin_url}: {e}")
+                await session.rollback()
+                raise

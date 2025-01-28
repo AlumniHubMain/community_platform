@@ -9,6 +9,36 @@ from common_db.models.users import ORMUserProfile
 from common_db.config import schema
 
 
+class ORMLinkedInRawData(Base):
+    """Модель для хранения сырых данных профиля LinkedIn"""
+    __tablename__ = "linkedin_raw_data"
+    
+    __table_args__ = (
+        # Уникальность по URL и дате парсинга
+        UniqueConstraint('target_linkedin_url', 'parsed_date', name='uq_linkedin_raw_data_url_date'),
+        {'schema': schema}
+    )
+    
+    # URL профиля, который парсили
+    target_linkedin_url: Mapped[str] = mapped_column(
+        index=True,  # Для быстрого поиска
+        doc="LinkedIn profile URL that was parsed"
+    )
+    
+    # Сырые данные от API
+    raw_data: Mapped[dict[str, Any]] = mapped_column(
+        JSONB,
+        doc="Raw API response data"
+    )
+    
+    # Дата и время парсинга
+    parsed_date: Mapped[datetime] = mapped_column(
+        DateTime,
+        index=True,  # Для быстрого поиска по дате
+        doc="Profile parsing date"
+    )
+
+
 class ORMLinkedInProfile(Base):
     """LinkedIn profile model"""
     __tablename__ = "linkedin_profiles"

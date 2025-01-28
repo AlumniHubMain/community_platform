@@ -5,7 +5,7 @@ from typing import List, Annotated
 
 from linkedin_verifier.app.db.base import get_async_session
 from linkedin_verifier.app.schemas.linkedin import ProfileResponse, LimitsResponse
-from src.db.models.limits import LinkedInApiLimits
+from src.db.models.limits import ORMLinkedInApiLimits
 from linkedin_verifier.app.linkedin.service import LinkedInService
 from linkedin_verifier.app.linkedin.factory import LinkedInRepositoryFactory
 from linkedin_verifier.config import settings
@@ -37,7 +37,7 @@ async def get_limits(
         session: Annotated[AsyncSession, Depends(get_async_session)]
 ):
     """Get current API limits for all keys"""
-    result = await session.execute(select(LinkedInApiLimits))
+    result = await session.execute(select(ORMLinkedInApiLimits))
     limits = result.scalars().all()
     return limits
 
