@@ -14,4 +14,3 @@ RUN uv sync --frozen --no-cache
 COPY src ./src
 
 ENTRYPOINT ["/build/apps/callbot_calendar/.venv/bin/python", "/build/apps/callbot_calendar/src/callbot_calendar/google_calendar.py"]
- 

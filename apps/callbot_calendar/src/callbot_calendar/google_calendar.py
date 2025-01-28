@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from common_db.db_abstract import db_manager
-from common_db.models.callbot import ORMCallbotScheduledMeeting
+from common_db.models.callbot import ORMCallbotMeeting, ORMCallbotEnabledUser
 from callbot_api import create_callbot
 from schema import Event
 from settings import callbot_calendar_settings as settings
@@ -20,9 +20,19 @@ def is_robot_invited(event: Event) -> bool:
     return settings.robot_email in event.attendees
 
 
-def is_event_valid(stored_event: Event) -> bool:
+async def are_attendees_eligible(event: Event) -> bool:
     """
-    Validates if the event is valid.
+    Checks if at least one attendee is eligible to start the callbot.
+    """
+    async with db_manager.session() as session:
+        stmt = select(ORMCallbotEnabledUser).where(ORMCallbotEnabledUser.email.in_(event.attendees))
+        res = await session.execute(stmt)
+        return res.fetchone() is not None
+
+
+async def is_event_valid(stored_event: Event) -> bool:
+    """
+    Validates if the event is valid for callbot to join.
 
     Args:
         event (Event): The event to validate.
@@ -49,6 +59,9 @@ def is_event_valid(stored_event: Event) -> bool:
             return False
         if event.end_time < datetime.now(UTC):
             logging.info(f"Event {google_id} has already ended")
+            return False
+        if not await are_attendees_eligible(event):
+            logging.info(f"No eligible attendees for event {google_id}")
             return False
         return True
     return False
@@ -117,13 +130,13 @@ def validate_event(event: dict) -> Event:
     return pydantic_event
 
 
-def convert_to_orm(event: Event, orm_event: ORMCallbotScheduledMeeting) -> None:
+def convert_to_orm(event: Event, orm_event: ORMCallbotMeeting) -> None:
     """
-    Converts an Event to an ORMCallbotScheduledMeeting.
+    Converts an Event to an ORMCallbotMeeting.
 
     Args:
         event (Event): The event to convert.
-        orm_event (ORMCallbotScheduledMeeting): The ORM event to convert to.
+        orm_event (ORMCallbotMeeting): The ORM event to convert to.
     """
     orm_event.google_id = event.google_id
     orm_event.start_time = event.start_time
@@ -133,8 +146,8 @@ def convert_to_orm(event: Event, orm_event: ORMCallbotScheduledMeeting) -> None:
     orm_event.subject = event.subject
 
 
-async def get_event_by_google_id(session: AsyncSession, google_id: str) -> ORMCallbotScheduledMeeting | None:
-    stmt = select(ORMCallbotScheduledMeeting).where(ORMCallbotScheduledMeeting.google_id == google_id)
+async def get_event_by_google_id(session: AsyncSession, google_id: str) -> ORMCallbotMeeting | None:
+    stmt = select(ORMCallbotMeeting).where(ORMCallbotMeeting.google_id == google_id)
     result = await session.execute(statement=stmt)
     return result.scalar_one_or_none()
 
@@ -150,7 +163,7 @@ async def process_event(event: Event, session: AsyncSession):
 
     # upsert
     if not stored_event:
-        stored_event = ORMCallbotScheduledMeeting()
+        stored_event = ORMCallbotMeeting()
         session.add(stored_event)
 
     convert_to_orm(event, stored_event)
@@ -171,15 +184,15 @@ async def read_calendar(start_time: datetime):
 async def get_upcoming_events(start_time: datetime, end_time: datetime):
     async with db_manager.session() as session:
         stmt = (
-            select(ORMCallbotScheduledMeeting)
-            .where(ORMCallbotScheduledMeeting.google_id.isnot(None))
-            .where(start_time <= ORMCallbotScheduledMeeting.start_time)
-            .where(ORMCallbotScheduledMeeting.start_time <= end_time)
+            select(ORMCallbotMeeting)
+            .where(ORMCallbotMeeting.google_id.isnot(None))
+            .where(start_time <= ORMCallbotMeeting.start_time)
+            .where(ORMCallbotMeeting.start_time <= end_time)
         )
         res = await session.execute(statement=stmt)
         for e in res.scalars():
             event = Event.model_validate(e)
-            if is_event_valid(event):
+            if await is_event_valid(event):
                 logging.info(f"Upcoming meeting: {event}")
                 logging.info(f"Creating callbot for event {event.google_id}")
                 callbot_id = create_callbot(event)
@@ -204,7 +217,7 @@ async def main():
     elif args.task == "upcoming_events":
         logging.info("Getting upcoming events")
         future = get_upcoming_events(
-            start_time=datetime.now(UTC) - timedelta(days=5), end_time=datetime.now(UTC) + timedelta(minutes=10)
+            start_time=datetime.now(UTC) - timedelta(hours=2), end_time=datetime.now(UTC) + timedelta(minutes=10)
         )
     else:
         return
