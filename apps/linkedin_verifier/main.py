@@ -9,7 +9,7 @@ from loader import broker
 async def main():
     try:
         logger.info("Starting LinkedIn profile validator...")
-        
+
         # Создаем задачу для подписки на PubSub
         subscription_task = asyncio.create_task(
             broker.subscribe(
@@ -17,13 +17,13 @@ async def main():
                 handle_profile_task
             )
         )
-        
+
         logger.info("Started listening for LinkedIn profile tasks")
-        
+
         # Держим приложение активным
         while True:
             await asyncio.sleep(1)
-            
+
     except Exception as e:
         logger.error(f"Error in main loop: {e}")
         raise
@@ -33,7 +33,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
 
     # Example:
     # broker = BrokerFactory.create_broker(BrokerType.GOOGLE_PUBSUB,
