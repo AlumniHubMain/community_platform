@@ -83,6 +83,7 @@ class VacancyExtractorGenerator:
                 async def _extract_links(self, page: Page) -> list[str]:  # noqa: ARG002
                     return list(getattr(self, "all_links", set()))
 
+            return only python code
             {html_content}
             """,
         )
@@ -99,12 +100,17 @@ class VacancyExtractorGenerator:
                 await page.wait_for_load_state("domcontentloaded")
                 await page.wait_for_load_state("networkidle")
                 await page.wait_for_selector(".loading-spinner", state="hidden", timeout=10000)
-                return await page.content()
+            except Exception as e:
+                logger.error(f"Error fetching page content: {e}")
+                pass
+            try:
+                html_content = await page.content()
             except Exception as e:
                 logger.error(f"Error fetching page content: {e}")
                 return None
             finally:
                 await browser.close()
+            return html_content
 
     async def generate_extractor(self, url: str) -> Optional[str]:
         """Generate vacancy extractor class for the given URL."""
@@ -114,13 +120,15 @@ class VacancyExtractorGenerator:
 
         llm_with_prompt = self.prompt | self.llm
         result = llm_with_prompt.invoke({"html_content": html_content})
-        return result.content
+        return result.content.replace("```python", "").replace("```", "")
 
 
 async def main():
     parser = argparse.ArgumentParser(description="Generate vacancy extractor class for a website")
-    parser.add_argument("url", type=str, help="URL of the vacancy page to analyze")
-    parser.add_argument("--output", type=str, default="result.py", help="Output file path (default: result.py)")
+    parser.add_argument("--url", type=str, help="URL of the vacancy page to analyze")
+    parser.add_argument(
+        "--output", type=str, default="notebooks/result.py", help="Output file path (default: notebooks/result.py)"
+    )
     args = parser.parse_args()
 
     generator = VacancyExtractorGenerator()

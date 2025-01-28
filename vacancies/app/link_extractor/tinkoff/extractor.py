@@ -55,6 +55,3 @@ class TinkoffLinkExtractor(BaseLinkExtractor):
 
     async def _extract_links(self, page: Page) -> list[str]:  # noqa: ARG002
         return list(self.all_links)
-
-    async def _cleanup(self) -> None:
-        """Additional cleanup implementation."""

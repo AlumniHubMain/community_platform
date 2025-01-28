@@ -77,12 +77,6 @@ class BaseLinkExtractor(ABC):
             await self._browser.close()
         if self._playwright:
             await self._playwright.stop()
-        # Add any additional cleanup needed by child classes
-        await self._cleanup()
-
-    @abstractmethod
-    async def _cleanup(self) -> None:
-        """Additional cleanup for child classes to implement."""
 
     async def get_links(self) -> list[str]:
         """Extract links from the target URL.

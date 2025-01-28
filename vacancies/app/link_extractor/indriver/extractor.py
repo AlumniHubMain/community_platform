@@ -50,6 +50,3 @@ class IndriverLinkExtractor(BaseLinkExtractor):
             "elements => elements.map(el => el.getAttribute('href'))",
         )
         return list(set(links))
-
-    async def _cleanup(self) -> None:
-        """Additional cleanup implementation."""
