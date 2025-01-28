@@ -13,7 +13,7 @@ class ORMLinkedInProfile(Base):
     __tablename__ = "linkedin_profiles"
 
     # Индексы для оптимизации поиска и сортировки
-    # TODO: добавить индекс users_id_fk
+    # TODO: добавить индекс users_id_fk после согласования
     # __table_args__ = (
     #     {'schema': schema}  # Указываем схему для таблицы
     # )
@@ -24,7 +24,7 @@ class ORMLinkedInProfile(Base):
     users_id_fk: Mapped[int | None] = mapped_column(
         ForeignKey(f"{schema}.users.id"),
         unique=True,  # one-to-one
-        nullable=True,
+        nullable=True,  # т.к. профили из Сообществ можем лить, а их нет в Users
         doc="ID профиля в основной системе"
     )
 
@@ -112,15 +112,18 @@ class ORMEducation(Base):
     __tablename__ = "linkedin_education"
 
     # Индексы для оптимизации поиска и сортировки
-    # TODO: продумать индексы
+    # TODO: добавить индексы
     __table_args__ = (
-        # Уникальный индекс для предотвращения дублей
-        UniqueConstraint('profile_id', 'linkedin_url', name='uq_education_profile_url'),
+        # Уникальный индекс для предотвращения дублей - чтобы сохранять только новые записи
+        UniqueConstraint('profile_id', 'school', 'degree', name='uq_education_profile_url'),
         {'schema': schema}  # Указываем схему для таблицы
     )
+    # 'profile_id', 'school', 'degree' - пока предполагаем, что так будут уникальны,
+    # но смотреть на распределение реальных данных
 
     # Main fields
-    profile_id: Mapped[int] = mapped_column(ForeignKey(f"{schema}.linkedin_profiles.id"), doc="Profile reference")
+    profile_id: Mapped[int] = mapped_column(ForeignKey(f"{schema}.linkedin_profiles.id"),
+                                            doc="Profile reference", index=True)
 
     school: Mapped[str] = mapped_column(doc="School name")
     degree: Mapped[str | None] = mapped_column(doc="Degree")
@@ -144,13 +147,16 @@ class ORMWorkExperience(Base):
 
     # Индексы для оптимизации поиска и сортировки
     __table_args__ = (
-        # Уникальный индекс для предотвращения дублей
-        UniqueConstraint('profile_id', 'linkedin_url', name='uq_work_experience_profile_url'),
+        # Уникальный индекс для предотвращения дублей - чтобы сохранять только новые записи
+        UniqueConstraint('profile_id', 'company_label', 'title', name='uq_work_experience_profile_url'),
         {'schema': schema}  # Указываем схему для таблицы
     )
+    # 'profile_id', 'company_label', 'title' - пока предполагаем, что так будут уникальны,
+    # но смотреть на распределение реальных данных (company_id - зачастую null)
 
     # Main fields
-    profile_id: Mapped[int] = mapped_column(ForeignKey(f"{schema}.linkedin_profiles.id"), doc="Profile reference")
+    profile_id: Mapped[int] = mapped_column(ForeignKey(f"{schema}.linkedin_profiles.id"), doc="Profile reference",
+                                            index=True)
 
     company_label: Mapped[str | None] = mapped_column(doc="Company name")
     title: Mapped[str] = mapped_column(doc="Job title")
