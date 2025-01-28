@@ -13,12 +13,6 @@ class ORMLinkedInRawData(Base):
     """Модель для хранения сырых данных профиля LinkedIn"""
     __tablename__ = "linkedin_raw_data"
     
-    __table_args__ = (
-        # Уникальность по URL и дате парсинга
-        UniqueConstraint('target_linkedin_url', 'parsed_date', name='uq_linkedin_raw_data_url_date'),
-        {'schema': schema}
-    )
-    
     # URL профиля, который парсили
     target_linkedin_url: Mapped[str] = mapped_column(
         index=True,  # Для быстрого поиска
