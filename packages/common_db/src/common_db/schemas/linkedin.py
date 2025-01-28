@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any
 from pydantic import BaseModel, Field, model_validator
+import json
 
 # TODO: добавить логгер, который договорились использовать
 # from loguru import logger
@@ -101,14 +102,18 @@ class LinkedInProfileBase(BaseModel):
     )
 
 
-
 class LinkedInProfileAPI(LinkedInProfileBase):
     """Схема для парсинга и валидации данных из LinkedIn API"""
     model_config = {
         'from_attributes': True,  # Включаем поддержку ORM
-        'populate_by_name': True  # Включаем поддержку алиасов
+        'populate_by_name': True,  # Включаем поддержку алиасов
+        'json_encoders': {
+            # Используем ensure_ascii=False при сериализации в JSON
+            list: lambda v: json.dumps(v, ensure_ascii=False),
+            dict: lambda v: json.dumps(v, ensure_ascii=False)
+        }
     }
-    
+
     # TODO: вынести в локальный пакет - для pubsub
     # Алиасы для маппинга полей из API
     public_identifier: str | None = Field(default=None, alias="publicIdentifier")
@@ -291,6 +296,5 @@ class LinkedInProfileTask(BaseModel):
     # TODO: вынести в локальный пакет - для pubsub
     username: str
     target_company_label: str
-
 
 # TODO: Вынести raw_data, companies в отдельные схемы

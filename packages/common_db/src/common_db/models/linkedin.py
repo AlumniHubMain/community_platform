@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any
 from sqlalchemy import JSON, ForeignKey, Text, DateTime, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from common_db.models.base import ObjectTable as Base
@@ -51,19 +52,19 @@ class ORMLinkedInProfile(Base):
 
     # Professional Info
     skills: Mapped[list[str] | None] = mapped_column(
-        JSON(none_as_null=True),
+        JSONB(none_as_null=True),  # JSONB хранит в бинарном формате, без escape-последовательностей
         doc="Skills"
     )
     languages: Mapped[list[str] | None] = mapped_column(
-        JSON(none_as_null=True),
+        JSONB(none_as_null=True),
         doc="Languages"
     )
     recommendations: Mapped[dict[str, Any] | None] = mapped_column(
-        JSON(none_as_null=True),
+        JSONB(none_as_null=True),
         doc="Recommendations"
     )
     certifications: Mapped[dict[str, Any] | None] = mapped_column(
-        JSON(none_as_null=True),
+        JSONB(none_as_null=True),
         doc="Certifications"
     )
 
