@@ -36,13 +36,11 @@ def validate_linkedin_username(raw_input: str | None) -> str:
         - 'test?com' -> InvalidLinkedInUsernameError (содержит вопрос)
     """
     if not raw_input:
-        logger.error("Username не может быть пустым")
         raise InvalidLinkedInUsernameError("Username не может быть пустым")
         
     # Очищаем вход
     cleaned = raw_input.strip().lower()
     if not cleaned:
-        logger.error("Username не может быть пустым")
         raise InvalidLinkedInUsernameError("Username не может быть пустым")
     
     # Проверяем на чистый username - не должен содержать спецсимволов
@@ -52,7 +50,6 @@ def validate_linkedin_username(raw_input: str | None) -> str:
         
     # Ищем LinkedIn URL
     if 'linkedin' not in cleaned:
-        logger.error(f"Не найден URL LinkedIn: {raw_input}")
         raise InvalidLinkedInUsernameError(f"Не найден URL LinkedIn: {raw_input}")
         
     # Если есть несколько URL, берем первый с LinkedIn
@@ -60,18 +57,15 @@ def validate_linkedin_username(raw_input: str | None) -> str:
         urls = [url.strip() for url in cleaned.split(',')]
         linkedin_urls = [url for url in urls if 'linkedin' in url]
         if not linkedin_urls:
-            logger.error(f"Не найден URL LinkedIn: {raw_input}")
             raise InvalidLinkedInUsernameError(f"Не найден URL LinkedIn: {raw_input}")
         cleaned = linkedin_urls[0]
         
     # Извлекаем username из URL
     if '/in/' not in cleaned:
-        logger.error(f"Неверный формат URL: {raw_input}")
         raise InvalidLinkedInUsernameError(f"Неверный формат URL: {raw_input}")
         
     username = cleaned.split('/in/')[1].split('?')[0].split('/')[0]
     if not username:
-        logger.error("Username не может быть пустым")
         raise InvalidLinkedInUsernameError("Username не может быть пустым")
         
     return username
