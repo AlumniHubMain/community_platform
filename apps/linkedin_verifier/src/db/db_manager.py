@@ -60,7 +60,7 @@ class LinkedInDBManager:
         # Ищем существующий профиль
         db_profile = await session.scalar(
             select(ORMLinkedInProfile)
-            .where(ORMLinkedInProfile.linkedin_identifier == profile_data.linkedin_identifier)
+            .where(ORMLinkedInProfile.public_identifier == profile_data.public_identifier)
         )
 
         if not db_profile:
@@ -76,12 +76,12 @@ class LinkedInDBManager:
             # Обновляем существующий профиль
             await session.execute(
                 update(ORMLinkedInProfile)
-                .where(ORMLinkedInProfile.linkedin_identifier == profile_data.linkedin_identifier)
+                .where(ORMLinkedInProfile.public_identifier == profile_data.public_identifier)
                 .values(**profile_dict)
             )
             db_profile = await session.scalar(
                 select(ORMLinkedInProfile)
-                .where(ORMLinkedInProfile.linkedin_identifier == profile_data.linkedin_identifier)
+                .where(ORMLinkedInProfile.public_identifier == profile_data.public_identifier)
             )
 
         # Добавляем образование и опыт работы через bulk insert
@@ -108,7 +108,7 @@ class LinkedInDBManager:
             )
 
         await session.flush()
-        logger.info(f"{'Обновлен' if db_profile else 'Создан'} профиль для {profile_data.linkedin_identifier}")
+        logger.info(f"{'Обновлен' if db_profile else 'Создан'} профиль для {profile_data.public_identifier}")
         
         return db_profile
 

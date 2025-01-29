@@ -64,6 +64,11 @@ class LinkedInService:
             try:
                 async for session in db_manager.get_session():
                     # Все операции внутри этого блока - одна транзакция
+
+                    # TODO: Удалить
+                    if use_mock:
+                        scrapin_profile.public_identifier = username
+
                     db_profile = await LinkedInDBManager.save_profile(
                         session=session,
                         profile_data=scrapin_profile
