@@ -58,59 +58,65 @@ class LinkedInDBManager:
         )
 
         # Ищем существующий профиль
-        db_profile = await session.scalar(
+        existing_profile = await session.scalar(
             select(ORMLinkedInProfile)
             .where(ORMLinkedInProfile.public_identifier == profile_data.public_identifier)
         )
 
-        if not db_profile:
-            # Создаем новый профиль через insert()
-            result = await session.execute(
-                insert(ORMLinkedInProfile)
-                .values(**profile_dict)
-                .returning(ORMLinkedInProfile)
-            )
-            db_profile = result.scalar_one()
+        try:
+            if not existing_profile:
+                # Создаем новый профиль через insert()
+                result = await session.execute(
+                    insert(ORMLinkedInProfile)
+                    .values(**profile_dict)
+                    .returning(ORMLinkedInProfile)
+                )
+                db_profile = result.scalar_one()
+            else:
+                # Обновляем существующий профиль
+                result = await session.execute(
+                    update(ORMLinkedInProfile)
+                    .where(ORMLinkedInProfile.public_identifier == profile_data.public_identifier)
+                    .values(**profile_dict)
+                    .returning(ORMLinkedInProfile)
+                )
+                db_profile = result.scalar_one()
+
             await session.flush()
-        else:
-            # Обновляем существующий профиль
-            await session.execute(
-                update(ORMLinkedInProfile)
-                .where(ORMLinkedInProfile.public_identifier == profile_data.public_identifier)
-                .values(**profile_dict)
-            )
-            db_profile = await session.scalar(
-                select(ORMLinkedInProfile)
-                .where(ORMLinkedInProfile.public_identifier == profile_data.public_identifier)
-            )
 
-        # Добавляем образование и опыт работы через bulk insert
-        if profile_data.education:
-            education_data = [
-                {**edu.model_dump(), 'profile_id': db_profile.id}
-                for edu in profile_data.education
-            ]
-            await session.execute(
-                insert(ORMLinkedInProfile.education.property.mapper.class_)
-                .values(education_data)
-                .on_conflict_do_nothing()
-            )
+            # Добавляем образование и опыт работы через bulk insert
+            if profile_data.education:
+                education_data = [
+                    {**edu.model_dump(), 'profile_id': db_profile.id}
+                    for edu in profile_data.education
+                ]
+                await session.execute(
+                    insert(ORMLinkedInProfile.education.property.mapper.class_)
+                    .values(education_data)
+                    .on_conflict_do_nothing()
+                )
 
-        if profile_data.work_experience:
-            work_data = [
-                {**work.model_dump(), 'profile_id': db_profile.id}
-                for work in profile_data.work_experience
-            ]
-            await session.execute(
-                insert(ORMLinkedInProfile.work_experience.property.mapper.class_)
-                .values(work_data)
-                .on_conflict_do_nothing()
-            )
+            if profile_data.work_experience:
+                work_data = [
+                    {**work.model_dump(), 'profile_id': db_profile.id}
+                    for work in profile_data.work_experience
+                ]
+                await session.execute(
+                    insert(ORMLinkedInProfile.work_experience.property.mapper.class_)
+                    .values(work_data)
+                    .on_conflict_do_nothing()
+                )
 
-        await session.flush()
-        logger.info(f"{'Обновлен' if db_profile else 'Создан'} профиль для {profile_data.public_identifier}")
-        
-        return db_profile
+            await session.flush()
+            
+            # Логируем результат операции
+            logger.info(f"{'Обновлен' if existing_profile else 'Создан'} профиль для {profile_data.public_identifier}")
+            
+            return db_profile
+
+        except Exception as e:
+            logger.error(f"Ошибка при сохранении профиля {profile_data.public_identifier}: {e}")
+            raise
 
     @classmethod
     async def update_verification_status(
