@@ -29,14 +29,11 @@ exclude = [
     "*pb"
 ]
 
-# Same as Black.
+# Global settings
 line-length = 120
 indent-width = 4
-
-# Assume Python 3.11
-target-version = "py311"
+target-version = "py312"
 extend-exclude = ["*_pb2.py", "*.pyi"]
-
 
 [lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
@@ -80,13 +77,13 @@ docstring-code-format = false
 docstring-code-line-length = "dynamic"
 
 [lint.per-file-ignores]
-"__init__.py" = [
-    "D104"
-]
+# Ignore missing docstring in __init__ files
+"__init__.py" = ["D104"]
+# Ignore specific rules in test files
 "**/tests/*" = [
-    "ANN",
-    "D100",
-    "D103",
-    "INP001",
-    "S101",
+    "ANN",  # Missing type annotations
+    "D100",  # Missing module docstring
+    "D103",  # Missing function docstring
+    "INP001",  # Implicit namespace package
+    "S101",   # Use of assert detected
 ]
