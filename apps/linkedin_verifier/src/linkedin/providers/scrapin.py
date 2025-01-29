@@ -69,7 +69,7 @@ class LinkedInScrapinRepository(LinkedInRepository):
     async def get_profile(cls, username: str, use_mock: bool = False) -> Dict[str, Any]:
         """Get LinkedIn profile data by username"""
         if use_mock:
-            return MOCK_PROFILE_RESPONSE
+            return MOCK_PROFILE_RESPONSE.copy()
 
         linkedin_url = f"https://www.linkedin.com/in/{username}/"
         return await cls._make_request(linkedin_url)

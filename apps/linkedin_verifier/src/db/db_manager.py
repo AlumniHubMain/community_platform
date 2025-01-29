@@ -4,7 +4,6 @@ from loguru import logger
 from sqlalchemy import select, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
-import json
 
 from common_db.db_abstract import db_manager
 from common_db.models.users import ORMUserProfile
@@ -17,15 +16,6 @@ from common_db.schemas.linkedin import (
     # LinkedInProfileTask
 )
 from ..schemas.pubsub import LinkedInLimitsAlert
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    """JSON encoder для datetime объектов"""
-
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        return super().default(obj)
 
 
 class LinkedInDBManager:
@@ -119,7 +109,7 @@ class LinkedInDBManager:
 
         await session.flush()
         logger.info(f"{'Обновлен' if db_profile else 'Создан'} профиль для {profile_data.linkedin_identifier}")
-
+        
         return db_profile
 
     @classmethod
@@ -198,7 +188,7 @@ class LinkedInDBManager:
                         updated_at=limits.updated_at
                     )
                 )
-
+            
             # Сохраняем изменения
             await session.commit()
 
@@ -212,21 +202,16 @@ class LinkedInDBManager:
         """
         async for session in db_manager.get_session():
             try:
-                # Сериализуем данные в JSON с поддержкой datetime
-                json_data = json.loads(
-                    json.dumps(raw_data, cls=DateTimeEncoder)
-                )
-
                 # Создаем новую запись
                 raw_data_record = ORMLinkedInRawData(
                     target_linkedin_url=linkedin_url,
-                    raw_data=json_data,
+                    raw_data=raw_data,
                     parsed_date=datetime.utcnow()
                 )
                 session.add(raw_data_record)
                 await session.commit()
                 logger.info(f"Saved raw data for profile: {linkedin_url}")
-
+                
             except Exception as e:
                 logger.error(f"Failed to save raw data for {linkedin_url}: {e}")
                 await session.rollback()
