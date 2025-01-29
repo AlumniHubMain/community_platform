@@ -279,7 +279,7 @@ class LinkedInProfileAPI(LinkedInProfileBase):
             # logger.error(f"Error processing education: {e}")
             values['education'] = []
 
-        values['raw_data'] = values
+        # values['raw_data'] = values
         return values
 
 
