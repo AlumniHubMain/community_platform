@@ -1,4 +1,4 @@
-from .schemas import Form, SFormRead, EIntentType
+from common_db.schemas.forms import Form, SFormRead, EFormQueryType
 from common_db.models import ORMForm
 from fastapi import HTTPException
 
@@ -14,13 +14,13 @@ class FormsManager:
 
     @classmethod
     async def get_user_form(
-        cls, session: AsyncSession, user_id: int, intent_type: EIntentType
+        cls, session: AsyncSession, user_id: int, query_type: EFormQueryType
     ) -> SFormRead:
         # Select one last form by User and Intent type.
         result = await session.execute(
             select(ORMForm)
             .where(ORMForm.user_id == user_id)
-            .where(ORMForm.intent_type == intent_type)
+            .where(ORMForm.query_type == query_type)
             .order_by(desc("created_at"))
             .limit(1)
         )

@@ -2,8 +2,10 @@ from .schemas import EnumValues
 from .enum_manager import EnumManger
 from fastapi import APIRouter, HTTPException
 from common_db.enums.forms import (
-    EIntentType,
-    EMeetingFormat,
+    EFormMeetingType,
+    EFormLookingForType,
+    EFormHelpRequestType,
+    EFormQueryType,
 )
 from common_db.enums.users import (
     EInterests,
@@ -22,8 +24,6 @@ from common_db.enums.users import (
 
 router = APIRouter(tags=["Enums"], prefix="/enums")
 path_to_type = {
-    'EIntentType': EIntentType,
-    'EMeetingFormat': EMeetingFormat,
     'EInterests': EInterests,
     'EExpertiseArea': EExpertiseArea,
     'ESpecialisation': ESpecialisation,
@@ -35,6 +35,10 @@ path_to_type = {
     'ERequestsToCommunity': ERequestsToCommunity,
     'EWithWhom': EWithWhom,
     'EVisibilitySettings': EVisibilitySettings,
+    'EFormMeetingType': EFormMeetingType,
+    'EFormLookingForType': EFormLookingForType,
+    'EFormHelpRequestType': EFormHelpRequestType,
+    'EFormQueryType': EFormQueryType,
 }
 
 @router.get("/{type}", response_model=EnumValues, summary="Returns possible values of enum class")
