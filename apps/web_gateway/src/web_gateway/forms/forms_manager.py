@@ -1,5 +1,5 @@
 from common_db.schemas.forms import Form, SFormRead, EFormQueryType
-from common_db.models import ORMForm
+from common_db.models import ORMForm, ORMUserProfile
 from fastapi import HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,9 +13,20 @@ class FormsManager:
     """
 
     @classmethod
+    async def check_user_exists(cls, session: AsyncSession, user_id: int):
+        user: ORMUserProfile | None = await session.get(
+            ORMUserProfile, user_id
+        )
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+    
+    @classmethod
     async def get_user_form(
         cls, session: AsyncSession, user_id: int, query_type: EFormQueryType
     ) -> SFormRead:
+
+        await cls.check_user_exists(session, user_id)
+        
         # Select one last form by User and Intent type.
         result = await session.execute(
             select(ORMForm)
@@ -33,6 +44,9 @@ class FormsManager:
     async def create_form(
         cls, session: AsyncSession, form: Form
     ) -> SFormRead:
+        
+        await cls.check_user_exists(session, form.user_id)
+        
         form_orm = ORMForm(
             **form.model_dump(exclude_unset=True, exclude_none=True)
         )
