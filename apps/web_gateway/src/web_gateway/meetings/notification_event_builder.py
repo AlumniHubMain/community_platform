@@ -21,3 +21,12 @@ class NotificationEventBuilder:
             recipient_id=0,  # unspecified, send to organisers
             meeting_response=events_pb2.MeetingResponseEvent(meeting_id=meeting_id),
         )
+        
+    @staticmethod
+    def build_meeting_update_event(updater_id: int, recipient_id: int, meeting_id: int) -> events_pb2.Event:
+        return events_pb2.Event(
+            event_type=events_pb2.eMeetingUpdate,
+            initiator_id=updater_id,
+            recipient_id=recipient_id,
+            meeting_update=events_pb2.MeetingUpdateEvent(meeting_id=meeting_id),
+        )

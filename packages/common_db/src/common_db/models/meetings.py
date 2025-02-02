@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String, DateTime, Integer, ForeignKey, Index, PrimaryKeyConstraint, Text
+from sqlalchemy import DateTime, Integer, ForeignKey, Index, PrimaryKeyConstraint, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from common_db.enums.meetings import (
     EMeetingStatus,
@@ -8,6 +8,8 @@ from common_db.enums.meetings import (
     MeetingUserRolePGEnum,
     EMeetingResponseStatus,
     MeetingResponseStatusPGEnum,
+    EMeetingLocation,
+    MeetingLocationPGEnum,
 )
 from common_db.config import schema
 from common_db.models.base import ObjectTable
@@ -20,16 +22,21 @@ class ORMMeeting(ObjectTable):
 
     __tablename__ = 'meetings'
     __table_args__ = (
+        PrimaryKeyConstraint('id'),
         Index('ix_meeting_status', 'status'),
         Index('ix_meeting_time', 'scheduled_time'),
         {'schema': schema},
     )
 
     # Meeting-specific fields
-    description: Mapped[str | None] = mapped_column(Text)
-    location: Mapped[str | None] = mapped_column(String(200))
+    organizer_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.users.id', ondelete="CASCADE"), 
+                                              primary_key=True)
+    match_id: Mapped[int | None] = mapped_column(Integer, ForeignKey(f'{schema}.matching_results.id', ondelete="CASCADE"), 
+                                                 primary_key=True, nullable=True)
     scheduled_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    status: Mapped[EMeetingStatus] = mapped_column(MeetingStatusPGEnum, nullable=False, default=EMeetingStatus.new)
+    location: Mapped[EMeetingLocation] = mapped_column(MeetingLocationPGEnum, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[EMeetingStatus] = mapped_column(MeetingStatusPGEnum, nullable=False, default=EMeetingStatus.no_answer)
 
     # Relationship to user_meetings table via ORMUserMeeting
     user_responses: Mapped[list["ORMMeetingResponse"]] = relationship(

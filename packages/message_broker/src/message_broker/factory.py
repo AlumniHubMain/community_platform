@@ -43,7 +43,7 @@ class BrokerFactory:
         creator = cls._BROKER_CREATORS.get(broker_type)
         if not creator:
             raise ValueError(f"Unknown broker type: {broker_type}")
-        result = creator(kwargs)
+        result = creator(**kwargs)
         if isinstance(result, Exception):
             raise result
         return result

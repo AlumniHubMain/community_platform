@@ -10,6 +10,8 @@ __pycache__
 service-account-credentials.json
 .ruff_cache
 apps/web_gateway/config
+packages/common_db/config
 build/
 *.egg-info/
 *_pb2.py*
+*locdev*

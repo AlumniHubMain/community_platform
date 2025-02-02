@@ -6,6 +6,7 @@ enum MessageType {
   eUndefined = 0;
   eMeetingInvitation = 1;
   eMeetingResponse = 2;
+  eMeetingUpdate = 3;
 }
 
 // MeetingInviteEvent inherits from EventData
@@ -20,6 +21,11 @@ message MeetingResponseEvent {
   // responding user is supposedly the initiator
 }
 
+// MeetingUpdateEvent inherits from EventData
+message MeetingUpdateEvent {
+  int32 meeting_id = 1;  // ID of the meeting
+}
+
 // Event structure
 message Event {
   MessageType event_type = 1;
@@ -29,5 +35,6 @@ message Event {
   oneof data { // message type specific payload
     MeetingInvitationEvent meeting_invitation = 101;
     MeetingResponseEvent meeting_response = 102;
+    MeetingUpdateEvent meeting_update = 103;
   }
 }

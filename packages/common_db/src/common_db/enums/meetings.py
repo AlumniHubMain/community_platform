@@ -3,44 +3,48 @@ from sqlalchemy import Enum as PGEnum
 
 
 class EMeetingStatus(Enum):
-    new = 'new'
+    no_answer = 'no_answer'
     archived = 'archived'
     confirmed = 'confirmed'
 
 
 class EMeetingResponseStatus(Enum):
     no_answer = 'no_answer'
-    confirmed = 'confirmed' 
-    tentative = 'tentative' 
+    confirmed = 'confirmed'
     declined = 'declined'
-    
-    def is_confirmed_status(self) -> bool:
-        # Check if meeting confirmed
-        return EMeetingResponseStatus(self.value) in (EMeetingResponseStatus.confirmed, EMeetingResponseStatus.tentative)
-
-    def is_pended_status(self) -> bool:
-        # Check if meeting pended
-        return EMeetingResponseStatus(self.value) != EMeetingResponseStatus.declined
 
 
 class EMeetingUserRole(Enum):
     organizer = 'organizer'
     attendee = 'attendee'
 
+
+class EMeetingLocation(Enum):
+    anywhere = 'anywhere'
+    offline = 'offline'
+    online = 'online'
+
+
 MeetingStatusPGEnum = PGEnum(
     EMeetingStatus,
-    name="meeting_status",
+    name="meeting_status_enum",
     inherit_schema=True,
 )
 
 MeetingUserRolePGEnum = PGEnum(
     EMeetingUserRole,
-    name="meeting_user_role",
+    name="meeting_user_role_enum",
     inherit_schema=True,
 )
 
 MeetingResponseStatusPGEnum = PGEnum(
     EMeetingResponseStatus,
-    name="meeting_response_status",
+    name="meeting_response_status_enum",
+    inherit_schema=True,
+)
+
+MeetingLocationPGEnum = PGEnum(
+    EMeetingLocation,
+    name="meeting_location_enum",
     inherit_schema=True,
 )

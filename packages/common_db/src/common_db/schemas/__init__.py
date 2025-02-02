@@ -1,24 +1,33 @@
 from .base import BaseSchema, TimestampedSchema, convert_enum_value
 from .users import UserProfile, SUserProfileRead, SUserProfileUpdate
-from .meeting_intents import MeetingIntent, SMeetingIntentRead
-from .meetings import MeetingResponse, MeetingRead
-from .linkedin import LinkedInProfileTask, LinkedInProfileBase, LinkedInProfileResponse, LinkedInProfileRead
-from .linkedin_helpers import Education, Experience
+from .forms import Form, SFormRead
+from .meetings import (
+    MeetingResponse, 
+    MeetingRead,
+    MeetingRequestCreate,
+    MeetingRequestUpdate,
+    MeetingResponse,
+    MeetingRequestRead,
+    MeetingFilter,
+    MeetingList,
+    MeetingsUserLimits,
+)
 
 __all__ = [
     "BaseSchema",
+    "Form",
     "TimestampedSchema",
     "UserProfile",
-    "MeetingIntent",
     "MeetingResponse",
     "MeetingRead",
+    "MeetingRequestCreate",
+    "MeetingRequestUpdate",
+    "MeetingResponse",
+    "MeetingRequestRead",
+    "MeetingFilter",
+    "MeetingList",
+    "MeetingsUserLimits",
     "SUserProfileRead",
     "SUserProfileUpdate",
-    "SMeetingIntentRead",
-    "LinkedInProfileTask",
-    "LinkedInProfileBase",
-    "LinkedInProfileResponse",
-    "LinkedInProfileRead",
-    "Education",
-    "Experience",
+    "SFormRead",
 ]
