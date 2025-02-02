@@ -53,24 +53,24 @@ class EFormLookingForType(Enum):
 # PostgreSQL Enum types
 FormMeetingTypePGEnum = PGEnum(
     EFormMeetingType,
-    name="form_meeting_type",
+    name="form_meeting_type_enum",
     inherit_schema=True,
 )
 
 FormQueryTypePGEnum = PGEnum(
     EFormQueryType,
-    name="form_query_type",
+    name="form_query_type_enum",
     inherit_schema=True,
 )
 
 FormHelpRequestTypePGEnum = PGEnum(
     EFormHelpRequestType,
-    name="form_help_request_type",
+    name="form_help_request_type_enum",
     inherit_schema=True,
 )
 
 FormLookingForTypePGEnum = PGEnum(
     EFormLookingForType,
-    name="form_looking_for_type",
+    name="form_looking_for_type_enum",
     inherit_schema=True,
 )
