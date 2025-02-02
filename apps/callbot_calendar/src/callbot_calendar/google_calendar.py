@@ -7,30 +7,19 @@ from datetime import UTC, datetime, timedelta
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
 from common_db.db_abstract import db_manager
-from common_db.models.callbot import ORMCallbotMeeting, ORMCallbotEnabledUser
 from callbot_api import create_callbot
 from schema import Event
 from settings import callbot_calendar_settings as settings
+from callbot_calendar_manager import CallbotCalendarManager
 
 
 def is_robot_invited(event: Event) -> bool:
     return settings.robot_email in event.attendees
 
 
-async def are_attendees_eligible(event: Event) -> bool:
-    """
-    Checks if at least one attendee is eligible to start the callbot.
-    """
-    async with db_manager.session() as session:
-        stmt = select(ORMCallbotEnabledUser).where(ORMCallbotEnabledUser.email.in_(event.attendees))
-        res = await session.execute(stmt)
-        return res.fetchone() is not None
-
-
-async def is_event_valid(stored_event: Event) -> bool:
+async def is_event_valid(session: AsyncSession, stored_event: Event) -> bool:
     """
     Validates if the event is valid for callbot to join.
 
@@ -57,10 +46,10 @@ async def is_event_valid(stored_event: Event) -> bool:
         if not is_robot_invited(event):
             logging.info(f"Robot not invited to event {google_id}")
             return False
-        if event.end_time < datetime.now(UTC):
+        if event.end_time < datetime.now():
             logging.info(f"Event {google_id} has already ended")
             return False
-        if not await are_attendees_eligible(event):
+        if not await CallbotCalendarManager.any_of_attendees_enabled(session, event):
             logging.info(f"No eligible attendees for event {google_id}")
             return False
         return True
@@ -130,45 +119,13 @@ def validate_event(event: dict) -> Event:
     return pydantic_event
 
 
-def convert_to_orm(event: Event, orm_event: ORMCallbotMeeting) -> None:
-    """
-    Converts an Event to an ORMCallbotMeeting.
-
-    Args:
-        event (Event): The event to convert.
-        orm_event (ORMCallbotMeeting): The ORM event to convert to.
-    """
-    orm_event.google_id = event.google_id
-    orm_event.start_time = event.start_time
-    orm_event.end_time = event.end_time
-    orm_event.attendees = "\n".join(event.attendees)
-    orm_event.join_url = event.join_url
-    orm_event.subject = event.subject
-
-
-async def get_event_by_google_id(session: AsyncSession, google_id: str) -> ORMCallbotMeeting | None:
-    stmt = select(ORMCallbotMeeting).where(ORMCallbotMeeting.google_id == google_id)
-    result = await session.execute(statement=stmt)
-    return result.scalar_one_or_none()
-
-
 async def process_event(event: Event, session: AsyncSession):
-    stored_event = await get_event_by_google_id(session, event.google_id)
-
-    if not is_robot_invited(event):
+    if is_robot_invited(event):
+        CallbotCalendarManager.save_event(session, event)
+    else:
         logging.info(f"Robot not invited to event {event.google_id}")
-        if stored_event:
-            session.delete(stored_event)
+        CallbotCalendarManager.delete_event(session, event.google_id)
         return
-
-    # upsert
-    if not stored_event:
-        stored_event = ORMCallbotMeeting()
-        session.add(stored_event)
-
-    convert_to_orm(event, stored_event)
-
-    await session.commit()
 
 
 async def read_calendar(start_time: datetime):
@@ -181,24 +138,16 @@ async def read_calendar(start_time: datetime):
                 raise
 
 
-async def get_upcoming_events(start_time: datetime, end_time: datetime):
+async def start_callbot_for_upcoming_events(start_time_from: datetime, start_time_to: datetime):
     async with db_manager.session() as session:
-        stmt = (
-            select(ORMCallbotMeeting)
-            .where(ORMCallbotMeeting.google_id.isnot(None))
-            .where(start_time <= ORMCallbotMeeting.start_time)
-            .where(ORMCallbotMeeting.start_time <= end_time)
-        )
-        res = await session.execute(statement=stmt)
-        for e in res.scalars():
+        async for e in CallbotCalendarManager.get_upcoming_events_not_joined(session, start_time_from, start_time_to):
             event = Event.model_validate(e)
-            if await is_event_valid(event):
+            if await is_event_valid(session, event):
                 logging.info(f"Upcoming meeting: {event}")
                 logging.info(f"Creating callbot for event {event.google_id}")
                 callbot_id = create_callbot(event)
                 logging.info(f"Callbot created: {callbot_id}")
-                e.callbot_id = callbot_id
-                await session.commit()
+                CallbotCalendarManager.record_callbot_id(session, e.google_id, callbot_id)
 
 
 async def main():
@@ -213,13 +162,15 @@ async def main():
 
     if args.task == "read_calendar":
         logging.info(f"Reading Google calendar: {settings.calendar_id}")
-        future = read_calendar(start_time=datetime.now(UTC) - timedelta(days=2))
+        future = read_calendar(start_time=datetime.now(UTC) - timedelta(hours=2))
     elif args.task == "upcoming_events":
-        logging.info("Getting upcoming events")
-        future = get_upcoming_events(
-            start_time=datetime.now(UTC) - timedelta(hours=2), end_time=datetime.now(UTC) + timedelta(minutes=10)
+        logging.info("Processing upcoming events")
+        future = start_callbot_for_upcoming_events(
+            start_time_from=datetime.now(UTC) - timedelta(minutes=10),  # not more than 10 minutes late
+            end_time=datetime.now(UTC) + timedelta(minutes=5),  # try to join 5 minutes before the event
         )
     else:
+        logging.error("Invalid task")
         return
 
     await future
