@@ -32,7 +32,6 @@ class ORMLinkedInRawData(Base):
         doc="Profile parsing date"
     )
 
-
 class ORMLinkedInProfile(Base):
     """LinkedIn profile model"""
     __tablename__ = "linkedin_profiles"

@@ -1,6 +1,6 @@
 from .base import BaseSchema, TimestampedSchema, convert_enum_value
 from .users import UserProfile, SUserProfileRead, SUserProfileUpdate
-from .meeting_intents import MeetingIntent, SMeetingIntentRead
+from .forms import Form, SFormRead
 from .meetings import (
     MeetingResponse, 
     MeetingRead,
@@ -15,9 +15,9 @@ from .meetings import (
 
 __all__ = [
     "BaseSchema",
+    "Form",
     "TimestampedSchema",
     "UserProfile",
-    "MeetingIntent",
     "MeetingResponse",
     "MeetingRead",
     "MeetingRequestCreate",
@@ -29,5 +29,5 @@ __all__ = [
     "MeetingsUserLimits",
     "SUserProfileRead",
     "SUserProfileUpdate",
-    "SMeetingIntentRead",
+    "SFormRead",
 ]
