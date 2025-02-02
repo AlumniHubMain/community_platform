@@ -28,6 +28,7 @@ async def process_matching_request(  # pylint: disable=too-many-arguments, too-m
 
             all_users = await DataLoader.get_all_user_profiles(session)
             intent = await DataLoader.get_meeting_intent(session, meeting_intent_id)
+            linkedin_profiles = await DataLoader.get_all_linkedin_profiles(session)
 
             model = None
             if model_settings.model_type == ModelType.CATBOOST:
@@ -35,7 +36,7 @@ async def process_matching_request(  # pylint: disable=too-many-arguments, too-m
 
             matcher = Model(model_settings)
             matcher.load_model(model)
-            predictions = matcher.predict(all_users, intent, user_id, n)
+            predictions = matcher.predict(all_users, intent, linkedin_profiles, user_id, n)
 
             matching_result = ORMMatchingResult(
                 model_settings_preset=model_settings_preset,

@@ -1,7 +1,7 @@
 """Model class for loading and applying catboost model with filters and diversification"""
 
 import pandas as pd
-from common_db.schemas import UserProfile, MeetingIntent, convert_enum_value
+from common_db.schemas import UserProfile, MeetingIntent, convert_enum_value, LinkedInProfileRead
 
 from .model_settings import ModelSettings, FilterType, DiversificationType, ModelType
 from .predictors import CatBoostPredictor, HeuristicPredictor
@@ -14,6 +14,8 @@ class Model:
         """Initialize model with settings"""
         self.model_settings = model_settings
         self.predictor = None
+        self.current_intent = None
+        self.current_user = None
 
     def load_model(self, model_path: str | None = None):
         """Load model predictor based on settings"""
@@ -43,7 +45,7 @@ class Model:
             mask = df[filter_setting.filter_column].apply(lambda x: self.check_match(x, filter_setting))
             filtered_df = df[mask]
             return filtered_df
-        if filter_setting.filter_type == FilterType.SOFT:
+        elif filter_setting.filter_type == FilterType.SOFT:
             mask = df[filter_setting.filter_column].apply(lambda x: self.check_match(x, filter_setting))
             df.loc[~mask, "score"] *= 0.5
             return df
@@ -53,10 +55,15 @@ class Model:
         self,
         all_users: list[UserProfile],
         intent: MeetingIntent,
+        linkedin_profiles: list[LinkedInProfileRead], # pylint: disable=unused-argument
         user_id: int,
         n: int,
     ) -> list[int]:
         """Make predictions and apply filters and diversification"""
+        # Store current intent and user for custom filters
+        self.current_intent = intent
+        self.current_user = next((user for user in all_users if user.id == user_id), None)
+        
         if self.predictor is None:
             raise ValueError("Model not loaded")
         users_data = [user.model_dump() for user in all_users]
@@ -69,10 +76,12 @@ class Model:
         users_df = pd.DataFrame(users_data).rename(columns={"id": "user_id"})
         intents_df = pd.DataFrame([intent_data])
         main_user_df = users_df[users_df["user_id"] == user_id].copy()
-        main_user_df = intents_df.merge(main_user_df, on="user_id", how="left", suffixes=("_intent", ""))
+        # main_user_df = main_user_df.merge(linkedin_profiles, on="user_id", how="left",)
+        main_user_df = intents_df.merge(main_user_df, on="user_id", how="left",)
         main_user_df = main_user_df.add_prefix("main_")
         main_user_df = main_user_df.iloc[0:1]
         other_users_df = users_df[users_df["user_id"] != user_id].copy()
+        # other_users_df = other_users_df.merge(linkedin_profiles, on="user_id", how="left",)
         main_user_repeated = pd.concat([main_user_df] * len(other_users_df), ignore_index=True)
         features_df = pd.concat([main_user_repeated, other_users_df.reset_index(drop=True)], axis=1)
         predictions = self.predictor.predict(features_df)

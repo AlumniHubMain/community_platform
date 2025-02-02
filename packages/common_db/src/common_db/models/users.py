@@ -88,6 +88,14 @@ class ORMUserProfile(ObjectTable):
     available_meetings_pendings_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
     available_meetings_confirmations_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
 
+    # Add this to the existing relationships in ORMUserProfile
+    linkedin_profile: Mapped["ORMLinkedInProfile"] = relationship(
+        "ORMLinkedInProfile",
+        back_populates="user",
+        uselist=False,  # one-to-one relationship
+        cascade="all, delete-orphan"
+    )
+
     __table_args__ = (Index('ix_users_telegram_id', 'telegram_id'),
                       {'schema': f"{schema}"}
                       )
