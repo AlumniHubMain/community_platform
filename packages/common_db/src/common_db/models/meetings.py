@@ -59,7 +59,8 @@ class ORMMeetingResponse(ObjectTable):
 
     __tablename__ = 'meeting_responses'
     __table_args__ = (
-        PrimaryKeyConstraint('user_id', 'meeting_id'),
+        # Temporary removed
+        PrimaryKeyConstraint('user_id'), #, 'meeting_id'),
         {'schema': schema},
     )
     id = None  # no separate ids
@@ -67,8 +68,9 @@ class ORMMeetingResponse(ObjectTable):
     # Two foreign keys, one for users and one for meetings
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.users.id', ondelete="CASCADE"),
                                          primary_key=True)
-    meeting_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.meetings.id', ondelete="CASCADE"),
-                                            primary_key=True)
+    # Temporary removed
+    # meeting_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.meetings.id', ondelete="CASCADE"),
+    #                                         primary_key=True)
 
     role: Mapped[EMeetingUserRole] = mapped_column(MeetingUserRolePGEnum, nullable=False)
     response: Mapped[EMeetingResponseStatus] = mapped_column(MeetingResponseStatusPGEnum, nullable=False)

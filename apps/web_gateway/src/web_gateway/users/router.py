@@ -34,8 +34,8 @@ async def update_current_user_profile(
     return await UserProfileManager.update_user_profile(session, profile)
 
 
-@router.get("/{user_id}", response_model=SUserProfileRead, summary="Get user's profile",
-            dependencies=[Depends(auth.owner_or_admin)])
+@router.get("/{user_id}", response_model=SUserProfileRead, summary="Get user's profile")
+            # , dependencies=[Depends(auth.owner_or_admin)])
 async def get_profile(
         user_id: int, session: Annotated[AsyncSession, Depends(db_manager.get_session)]
 ) -> SUserProfileRead:
@@ -44,8 +44,8 @@ async def get_profile(
 
 # ToDo: evseev.dmsr check user id before patch
 # https://app.clickup.com/t/86c11fz94
-@router.patch("/{user_id}", response_model=SUserProfileRead, summary="Modify user's profile",
-              dependencies=[Depends(auth.owner_or_admin)])
+@router.patch("/{user_id}", response_model=SUserProfileRead, summary="Modify user's profile")
+            # , dependencies=[Depends(auth.owner_or_admin)])
 async def update_profile(
         profile: SUserProfileUpdate, session: Annotated[AsyncSession, Depends(db_manager.get_session)]
 ) -> SUserProfileRead:
