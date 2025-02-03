@@ -1,5 +1,5 @@
 from .base import BaseSchema, TimestampedSchema, convert_enum_value
-from .users import UserProfile, SUserProfileRead, SUserProfileUpdate
+from .users import UserProfile, SUserProfileRead, SUserProfileUpdate, DTOSearchUser
 from .meeting_intents import MeetingIntent, SMeetingIntentRead
 from .meetings import (
     MeetingResponse, 
@@ -30,4 +30,5 @@ __all__ = [
     "SUserProfileRead",
     "SUserProfileUpdate",
     "SMeetingIntentRead",
+    "DTOSearchUser"
 ]

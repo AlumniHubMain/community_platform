@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import ConfigDict
+from pydantic import ConfigDict, BaseModel
 from common_db.enums.users import (
     EInterests,
     EExpertiseArea,
@@ -46,3 +46,13 @@ class SUserProfileUpdate(UserProfile):
 
 class SUserProfileRead(SUserProfileUpdate):
     model_config = ConfigDict(from_attributes=True)
+
+
+class DTOSearchUser(BaseModel):
+    name: str | None = None
+    surname: str | None = None
+    location: ELocation | None = None
+    expertise_area: EExpertiseArea | None = None
+    specialisation: ESpecialisation | None = None
+    skills: ESkills | None = None
+    limit: str | None = 30
