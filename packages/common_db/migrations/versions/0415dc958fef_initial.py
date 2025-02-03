@@ -573,7 +573,7 @@ def upgrade() -> None:
         schema=f'{schema}',
     )
     op.create_index(
-        "ix_meeting_status_enum",
+        "ix_meeting_status",
         "meetings",
         ["status"],
         unique=False,
