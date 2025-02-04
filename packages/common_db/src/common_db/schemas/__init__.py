@@ -43,4 +43,5 @@ __all__ = [
     "FormRead",
     "FormFilter",
     "FormList",
+    "DTOSearchUser"
 ]
