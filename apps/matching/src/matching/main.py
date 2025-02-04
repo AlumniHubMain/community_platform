@@ -52,10 +52,9 @@ app.add_middleware(
 
 class MatchingRequest(BaseModel):
     user_id: int
-    meeting_intent_id: int
+    form_id: int
     model_settings_preset: str
     n: int
-    form_id: int | None = None
 
     @classmethod
     def from_pubsub_message(cls, message: dict) -> "MatchingRequest":
@@ -83,9 +82,9 @@ async def pubsub_push(request: Request):
         matching_request = MatchingRequest.from_pubsub_message(message)
 
         logger.info(
-            "Received matching request: user_id: %d, meeting_intent_id: %d, model_settings_preset: %s, n: %d",
+            "Received matching request: user_id: %d, form_id: %d, model_settings_preset: %s, n: %d",
             matching_request.user_id,
-            matching_request.meeting_intent_id,
+            matching_request.form_id,
             matching_request.model_settings_preset,
             matching_request.n,
         )
@@ -95,10 +94,9 @@ async def pubsub_push(request: Request):
             psclient=psclient,
             logger=logger,
             user_id=matching_request.user_id,
-            meeting_intent_id=matching_request.meeting_intent_id,
+            form_id=matching_request.form_id,
             model_settings_preset=matching_request.model_settings_preset,
             n=matching_request.n,
-            form_id=matching_request.form_id,
         )
 
         return {"status": "ok", "match_id": match_id}

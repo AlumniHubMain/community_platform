@@ -1,11 +1,21 @@
 from datetime import datetime
+from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 
 class BaseSchema(BaseModel):
     """Base schema for all models"""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        ser_json_timedelta='iso8601',
+        validate_assignment=True
+    )
+
+    def model_dump(self, *args, **kwargs) -> dict[str, Any]:
+        """Override model_dump to handle enum serialization"""
+        data = super().model_dump(*args, **kwargs)
+        return {k: convert_enum_value(v) for k, v in data.items()}
 
 
 class TimestampedSchema(BaseSchema):
@@ -16,7 +26,8 @@ class TimestampedSchema(BaseSchema):
     updated_at: datetime
 
 
-def convert_enum_value(value):
+def convert_enum_value(value: Any) -> Any:
+    """Convert enum values for serialization"""
     try:
         if value is None:
             return None
