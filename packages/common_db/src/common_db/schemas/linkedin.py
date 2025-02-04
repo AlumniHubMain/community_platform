@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Any
-from pydantic import BaseModel, Field, model_validator
-import json
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 # TODO: добавить логгер, который договорились использовать
 # from loguru import logger
@@ -11,6 +10,8 @@ from common_db.schemas.linkedin_helpers import EducationAPIResponse, WorkExperie
 
 class LinkedInProfileBase(BaseModel):
     """Базовый класс для LinkedIn профиля с общими полями"""
+    model_config = ConfigDict(from_attributes=True)
+
     # Basic Info
     public_identifier: str | None = None
     linkedin_identifier: str | None = None
@@ -104,15 +105,7 @@ class LinkedInProfileBase(BaseModel):
 
 class LinkedInProfileAPI(LinkedInProfileBase):
     """Схема для парсинга и валидации данных из LinkedIn API"""
-    model_config = {
-        'from_attributes': True,  # Включаем поддержку ORM
-        'populate_by_name': True,  # Включаем поддержку алиасов
-        'json_encoders': {
-            # Используем ensure_ascii=False при сериализации в JSON
-            list: lambda v: json.dumps(v, ensure_ascii=False),
-            dict: lambda v: json.dumps(v, ensure_ascii=False)
-        }
-    }
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     # TODO: вынести в локальный пакет - для pubsub
     # Алиасы для маппинга полей из API
@@ -285,6 +278,8 @@ class LinkedInProfileAPI(LinkedInProfileBase):
 
 class LinkedInProfileRead(LinkedInProfileBase):
     """Схема для чтения профиля из БД другими сервисами"""
+    model_config = ConfigDict(from_attributes=True)
+
     users_id_fk: int
     id: int
     created_at: datetime
@@ -293,6 +288,8 @@ class LinkedInProfileRead(LinkedInProfileBase):
 
 class LinkedInProfileTask(BaseModel):
     """Схема для задачи парсинга профиля"""
+    model_config = ConfigDict(from_attributes=True)
+
     # TODO: вынести в локальный пакет - для pubsub
     username: str
     target_company_label: str

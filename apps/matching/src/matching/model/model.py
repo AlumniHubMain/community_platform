@@ -1,7 +1,12 @@
 """Model class for loading and applying catboost model with filters and diversification"""
 
 import pandas as pd
-from common_db.schemas import UserProfile, MeetingIntent, convert_enum_value, LinkedInProfileRead
+from common_db.schemas import (
+    SUserProfileRead,
+    FormRead,
+    LinkedInProfileRead,
+)
+from common_db.schemas.base import convert_enum_value
 
 from .model_settings import ModelSettings, FilterType, DiversificationType, ModelType
 from .predictors import CatBoostPredictor, HeuristicPredictor
@@ -25,8 +30,36 @@ class Model:
             self.predictor = CatBoostPredictor()
             self.predictor.load_model(model_path)
 
-    def create_features(self, features_df: pd.DataFrame, user_id: int) -> pd.DataFrame:  # pylint: disable=unused-argument
-        """Create features for the model"""
+    def create_features(self, features_df: pd.DataFrame, user_id: int) -> pd.DataFrame:
+        """Create additional features for the model using LinkedIn data"""
+        # Add skill matching feature
+        if 'skills' in features_df.columns and 'main_skills' in features_df.columns:
+            features_df['skill_match_score'] = features_df.apply(
+                lambda row: len(
+                    set(row['skills'] or []) & 
+                    set(row['main_skills'] or [])
+                ) if isinstance(row['skills'], list) and isinstance(row['main_skills'], list)
+                else 0,
+                axis=1
+            )
+
+        # Add language matching feature
+        if 'languages' in features_df.columns and 'main_languages' in features_df.columns:
+            features_df['language_match_score'] = features_df.apply(
+                lambda row: len(
+                    set(row['languages'] or []) & 
+                    set(row['main_languages'] or [])
+                ) if isinstance(row['languages'], list) and isinstance(row['main_languages'], list)
+                else 0,
+                axis=1
+            )
+
+        # Add location matching feature
+        if 'location' in features_df.columns and 'main_location' in features_df.columns:
+            features_df['same_location'] = (
+                features_df['location'] == features_df['main_location']
+            ).astype(int)
+
         return features_df
 
     @staticmethod
@@ -53,47 +86,88 @@ class Model:
 
     def predict(
         self,
-        all_users: list[UserProfile],
-        intent: MeetingIntent,
-        linkedin_profiles: list[LinkedInProfileRead], # pylint: disable=unused-argument
+        all_users: list[SUserProfileRead],
+        form: FormRead,
+        linkedin_profiles: list[LinkedInProfileRead],
         user_id: int,
         n: int,
     ) -> list[int]:
         """Make predictions and apply filters and diversification"""
-        # Store current intent and user for custom filters
-        self.current_intent = intent
+        # Store current form and user for custom filters
+        self.current_form = form
         self.current_user = next((user for user in all_users if user.id == user_id), None)
         
         if self.predictor is None:
             raise ValueError("Model not loaded")
+
+        # Convert users and form data
         users_data = [user.model_dump() for user in all_users]
-        intent_data = intent.model_dump()
+        form_data = form.model_dump()
+        
+        # Convert enum values
         for i, user in enumerate(users_data):
             for field, value in user.items():
                 users_data[i][field] = convert_enum_value(value)
-        for field, value in intent_data.items():
-            intent_data[field] = convert_enum_value(value)
+        for field, value in form_data.items():
+            form_data[field] = convert_enum_value(value)
+
+        # Create DataFrames
         users_df = pd.DataFrame(users_data).rename(columns={"id": "user_id"})
-        intents_df = pd.DataFrame([intent_data])
+        linkedin_df = pd.DataFrame([p.model_dump() for p in linkedin_profiles])
+        
+        # Prepare LinkedIn features
+        if not linkedin_df.empty:
+            linkedin_features = linkedin_df[[
+                'users_id_fk',
+                'current_company_label',
+                'current_position_title',
+                'is_currently_employed',
+                'skills',
+                'languages',
+                'headline',
+                'location'
+            ]].rename(columns={'users_id_fk': 'user_id'})
+            
+            # Merge LinkedIn data with users
+            users_df = users_df.merge(
+                linkedin_features,
+                on="user_id",
+                how="left"
+            )
+
+        intents_df = pd.DataFrame([form_data])
+        
+        # Create main user DataFrame
         main_user_df = users_df[users_df["user_id"] == user_id].copy()
-        # main_user_df = main_user_df.merge(linkedin_profiles, on="user_id", how="left",)
-        main_user_df = intents_df.merge(main_user_df, on="user_id", how="left",)
+        main_user_df = intents_df.merge(main_user_df, on="user_id", how="left")
         main_user_df = main_user_df.add_prefix("main_")
         main_user_df = main_user_df.iloc[0:1]
+        
+        # Create other users DataFrame
         other_users_df = users_df[users_df["user_id"] != user_id].copy()
-        # other_users_df = other_users_df.merge(linkedin_profiles, on="user_id", how="left",)
+        
+        # Create features DataFrame
         main_user_repeated = pd.concat([main_user_df] * len(other_users_df), ignore_index=True)
         features_df = pd.concat([main_user_repeated, other_users_df.reset_index(drop=True)], axis=1)
+        
+        # Create additional features using LinkedIn data
+        features_df = self.create_features(features_df, user_id)
+        
+        # Get predictions and apply filters/diversification
         predictions = self.predictor.predict(features_df)
         results_df = other_users_df.copy()
         results_df["score"] = predictions
+        
         for filter_setting in self.model_settings.filters:
             results_df = self._apply_filter(results_df, filter_setting)
+        
         for div_setting in self.model_settings.diversifications:
             results_df = self._apply_diversification(results_df, div_setting)
+        
         results_df = self._apply_exclusions(results_df)
         results_df = results_df.sort_values("score", ascending=False)
         predictions = results_df.head(n)["user_id"].tolist()
+        
         return predictions
 
     def _apply_diversification(self, df: pd.DataFrame, div_setting) -> pd.DataFrame:

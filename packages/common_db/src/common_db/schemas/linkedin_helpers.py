@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 
 class EducationBase(BaseModel):
@@ -13,6 +13,7 @@ class EducationBase(BaseModel):
     linkedin_url: str | None = Field(default=None, description="LinkedIn URL")
     school_logo: str | None = Field(default=None, description="URL логотипа учебного заведения")
 
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 class EducationAPIResponse(EducationBase):
     """Схема записи об образовании для входных данных API"""
@@ -44,18 +45,11 @@ class EducationAPIResponse(EducationBase):
             values['end_date'] = cls._convert_api_date(start_end_date.get('end'))
         return values
 
-    class Config:
-        from_attributes = True
-        populate_by_name = True
-
 
 class EducationRead(EducationBase):
     """Схема ответа для записи об образовании"""
     profile_id: int
     id: int
-
-    class Config:
-        from_attributes = True
 
 
 class WorkExperienceBase(BaseModel):
@@ -72,6 +66,8 @@ class WorkExperienceBase(BaseModel):
     company_logo: str | None = Field(default=None, description="URL логотипа компании")
     linkedin_url: str | None = Field(default=None, description="LinkedIn URL")
     linkedin_id: str | None = Field(default=None, description="LinkedIn ID")
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class WorkExperienceAPIResponse(WorkExperienceBase):
@@ -115,15 +111,8 @@ class WorkExperienceAPIResponse(WorkExperienceBase):
             values['end_date'] = cls._convert_api_date(start_end_date.get('end'))
         return values
 
-    class Config:
-        from_attributes = True
-        populate_by_name = True
-
 
 class WorkExperienceRead(WorkExperienceBase):
     """Схема ответа для записи об опыте работы"""
     profile_id: int
     id: int
-
-    class Config:
-        from_attributes = True
