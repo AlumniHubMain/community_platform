@@ -52,7 +52,7 @@ class CallbotCalendarManager:
 
     @classmethod
     async def get_upcoming_events_not_joined(
-        cls, session: AsyncSession, start_time_from: datetime, start_time_to: datetime
+        cls, session: AsyncSession, start_time_from: datetime, end_time_to: datetime
     ):
         """
         Fetches upcoming events that have not been joined by the callbot.
@@ -65,8 +65,9 @@ class CallbotCalendarManager:
         stmt = (
             select(ORMCallbotMeeting)
             .where(ORMCallbotMeeting.google_id.isnot(None))
-            .where(start_time_from <= ORMCallbotMeeting.start_time)
-            .where(ORMCallbotMeeting.start_time <= start_time_to)
+            .where(ORMCallbotMeeting.start_time <= start_time_from)
+            .where(ORMCallbotMeeting.end_time >= end_time_to)
+            .where(ORMCallbotMeeting.callbot_id.is_(None))
         )
         res = await session.execute(statement=stmt)
         for e in res.scalars():
