@@ -46,10 +46,10 @@ async def is_event_valid(session: AsyncSession, stored_event: Event) -> bool:
         if not is_robot_invited(event):
             logging.info(f"Robot not invited to event {google_id}")
             return False
-        if event.end_time < datetime.now():
+        if event.end_time < datetime.now(UTC):
             logging.info(f"Event {google_id} has already ended")
             return False
-        if not await CallbotCalendarManager.any_of_attendees_enabled(session, event):
+        if not await CallbotCalendarManager.any_of_attendees_enabled(session, event.attendees):
             logging.info(f"No eligible attendees for event {google_id}")
             return False
         return True
@@ -148,7 +148,7 @@ async def start_callbot_for_upcoming_events(start_time_from: datetime, start_tim
                 logging.info(f"Creating callbot for event {event.google_id}")
                 callbot_id = create_callbot(event)
                 logging.info(f"Callbot created: {callbot_id}")
-                CallbotCalendarManager.record_callbot_id(session, e.google_id, callbot_id)
+                await CallbotCalendarManager.record_callbot_id(session, e.google_id, callbot_id)
 
 
 async def main():
