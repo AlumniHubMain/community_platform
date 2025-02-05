@@ -184,7 +184,8 @@ if __name__ == "__main__":
     TARGET_SCHEMA = db_settings.db.db_schema
     # Заменяем asyncpg на обычный postgresql драйвер
     TARGET_DB_URL = (db_settings.db.database_url_asyncpg
-                     .get_secret_value().replace('postgresql+asyncpg://', 'postgresql://'))
+                     .get_secret_value()
+                     .replace('postgresql+asyncpg://', 'postgresql://'))
 
     # Выгрузка данных из БД в файлы (перезапишет соответсвующие json-файлы)
     # export_profiles_data(SOURCE_DB_URL, SOURCE_SCHEMA, DATA_DIR)
