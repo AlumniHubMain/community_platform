@@ -2,7 +2,7 @@ from typing import Annotated
 
 from common_db.db_abstract import db_manager
 from common_db.managers.user import UserManager
-from common_db.schemas import DTOSearchUser, SUserProfileRead
+from common_db.schemas import DTOSearchUser, DTOUserProfileRead
 
 from fastapi import (
     APIRouter,
@@ -63,12 +63,12 @@ async def create_user(
         return created_profile
 
 
-@router.post("/search", response_model=list[SUserProfileRead])
+@router.post("/search", response_model=list[DTOUserProfileRead])
 async def search_users(
         search_params: DTOSearchUser,
         session: Annotated[AsyncSession, Depends(db_manager.get_session)]
-) -> list[SUserProfileRead]:
+) -> list[DTOUserProfileRead]:
     """
     Endpoint for searching for a user using the specified optional parameters
     """
-    return await UserManager.search_users(session=session, user=search_params)
+    return await UserManager.search_users(session=session, search_params=search_params)

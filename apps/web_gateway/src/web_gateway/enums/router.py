@@ -6,15 +6,15 @@ from common_db.enums.forms import (
     EMeetingFormat,
 )
 from common_db.enums.users import (
-    EInterests,
+    EInterestsArea,
     EExpertiseArea,
     ESpecialisation,
     EGrade,
     EIndustry,
-    ESkills,
+    ESkillsArea,
     ECompanyServices,
     ELocation,
-    ERequestsToCommunity,
+    ERequestsArea,
     EWithWhom,
     EVisibilitySettings
 )
@@ -24,15 +24,15 @@ router = APIRouter(tags=["Enums"], prefix="/enums")
 path_to_type = {
     'EIntentType': EIntentType,
     'EMeetingFormat': EMeetingFormat,
-    'EInterests': EInterests,
+    'EInterestsArea': EInterestsArea,
     'EExpertiseArea': EExpertiseArea,
     'ESpecialisation': ESpecialisation,
     'EGrade': EGrade,
     'EIndustry': EIndustry,
-    'ESkills': ESkills,
+    'ESkillsArea': ESkillsArea,
     'ECompanyServices': ECompanyServices,
     'ELocation': ELocation,
-    'ERequestsToCommunity': ERequestsToCommunity,
+    'ERequestsArea': ERequestsArea,
     'EWithWhom': EWithWhom,
     'EVisibilitySettings': EVisibilitySettings,
 }

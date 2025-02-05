@@ -1,8 +1,20 @@
 from .base import BaseSchema, TimestampedSchema, convert_enum_value
-from .users import UserProfile, SUserProfileRead, SUserProfileUpdate, DTOSearchUser
+from .users import (
+    UserProfile,
+    SUserProfileRead,
+    SUserProfileUpdate,
+    DTOUserProfile,
+    DTOUserProfileRead,
+    DTOUserProfileUpdate,
+    DTOSpecialisation,
+    DTOInterest,
+    DTOSkill,
+    DTOIndustry,
+    DTORequestsCommunity,
+    DTOSearchUser)
 from .meeting_intents import MeetingIntent, SMeetingIntentRead
 from .meetings import (
-    MeetingResponse, 
+    MeetingResponse,
     MeetingRead,
     MeetingRequestCreate,
     MeetingRequestUpdate,
@@ -30,5 +42,12 @@ __all__ = [
     "SUserProfileRead",
     "SUserProfileUpdate",
     "SMeetingIntentRead",
+    "DTOUserProfileUpdate",
+    "DTOUserProfileRead",
+    "DTOSpecialisation",
+    "DTOInterest",
+    "DTOSkill",
+    "DTOIndustry",
+    "DTORequestsCommunity",
     "DTOSearchUser"
 ]
