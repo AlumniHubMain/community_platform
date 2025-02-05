@@ -107,6 +107,7 @@ def validate_event(event: dict) -> Event:
     Returns:
         Event: The validated event.
     """
+    print(event)
     pydantic_event = Event(
         google_id=event["id"],
         subject=event["summary"],
@@ -121,10 +122,10 @@ def validate_event(event: dict) -> Event:
 
 async def process_event(event: Event, session: AsyncSession):
     if is_robot_invited(event):
-        CallbotCalendarManager.save_event(session, event)
+        await CallbotCalendarManager.save_event(session, event)
     else:
         logging.info(f"Robot not invited to event {event.google_id}")
-        CallbotCalendarManager.delete_event(session, event.google_id)
+        await CallbotCalendarManager.delete_event(session, event.google_id)
         return
 
 
@@ -135,10 +136,10 @@ async def read_calendar(start_time: datetime):
                 await process_event(validate_event(event), session)
             except Exception as e:
                 logging.error(e, event, event)
-                raise
 
 
 async def start_callbot_for_upcoming_events(start_time_from: datetime, start_time_to: datetime):
+    logging.info(f"Checking for upcoming events from {start_time_from} to {start_time_to}")
     async with db_manager.session() as session:
         async for e in CallbotCalendarManager.get_upcoming_events_not_joined(session, start_time_from, start_time_to):
             event = Event.model_validate(e)
@@ -166,8 +167,9 @@ async def main():
     elif args.task == "upcoming_events":
         logging.info("Processing upcoming events")
         future = start_callbot_for_upcoming_events(
-            start_time_from=datetime.now(UTC) - timedelta(minutes=10),  # not more than 10 minutes late
-            end_time=datetime.now(UTC) + timedelta(minutes=5),  # try to join 5 minutes before the event
+            start_time_from=datetime.now(UTC) - timedelta(minutes=settings.join_time_earliest),  # not more than 10 minutes late
+            start_time_to=datetime.now(UTC)
+            + timedelta(minutes=settings.join_time_latest),  # try to join 5 minutes before the event
         )
     else:
         logging.error("Invalid task")

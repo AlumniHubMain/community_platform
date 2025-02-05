@@ -2,8 +2,8 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from .schema import Event
-from common_db.model.callbot import ORMCallbotMeeting, ORMCallbotEnabledUser
+from schema import Event
+from common_db.models.callbot import ORMCallbotMeeting, ORMCallbotEnabledUser
 
 
 class CallbotCalendarManager:

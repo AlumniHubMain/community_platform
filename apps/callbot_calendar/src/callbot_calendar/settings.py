@@ -9,10 +9,12 @@ class CallbotCalendarConfig(BaseModel):
     credentials_file: str
     robot_email: str
     callbot_password: str
+    join_time_earliest: int = 5  # The earliest time to join a call in minutes before the start time.
+    join_time_latest: int = 20  # The latest time to join a call in minutes after the start time.
 
 
 class CallbotCalendarSettings(BaseConfig):
-    callbot_calendar: FieldType[CallbotCalendarConfig] = "./config/callbot_calendar.json"
+    callbot_calendar: FieldType[CallbotCalendarConfig] = "./config/callbot/callbot_calendar.json"
 
 
 callbot_calendar_settings = CallbotCalendarSettings().callbot_calendar
