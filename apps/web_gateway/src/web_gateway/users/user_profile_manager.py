@@ -6,8 +6,8 @@ from common_db.models import ORMUserProfile, ORMMeeting, ORMMeetingResponse, ORM
 from common_db.schemas import DTOSearchUser, DTOUserProfileRead
 
 from fastapi import HTTPException
-from sqlalchemy import and_
 
+from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -93,7 +93,7 @@ class UserProfileManager(UserManager):
                 list[DTOUserProfileRead]: the list of found users
             """
 
-        await cls.check_user(session=session, user_id=verified_user_id)
+        await cls.check_user(session=session, user_id=user_id)
 
         query = (
             select(ORMUserProfile)

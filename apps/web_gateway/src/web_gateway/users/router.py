@@ -5,13 +5,17 @@ from common_db.schemas import DTOUserProfile, DTOUserProfileRead, DTOUserProfile
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from web_gateway import auth
+from .properties_router import router as properties_router
 from .user_profile_manager import UserProfileManager
 
 
 router = APIRouter(tags=["Client profiles"], prefix="/user")
+router.include_router(properties_router)
+
 
 
 @router.get("/me", response_model=DTOUserProfileRead)
