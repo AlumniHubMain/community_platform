@@ -1,67 +1,25 @@
 from datetime import datetime
-from common_db.models import ORMUserProfile, ORMMeeting, ORMMeetingResponse
+
 from common_db.enums import EMeetingResponseStatus
+from common_db.managers.user import UserManager
+from common_db.models import ORMUserProfile, ORMMeeting, ORMMeetingResponse, ORMSpecialisation, ORMSkill
+from common_db.schemas import DTOSearchUser, DTOUserProfileRead
+
 from fastapi import HTTPException
+from sqlalchemy import and_
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from .schemas import SUserProfileRead, SUserProfileUpdate, UserProfile
+from .schemas import SUserProfileRead
 from web_gateway.settings import settings
 
 
-class UserProfileManager:
+class UserProfileManager(UserManager):
     """
-    Класс для управления профилями пользователей.
+    A class for managing user profiles.
     """
-
-    @classmethod
-    async def get_user_profile(
-        cls, session: AsyncSession, user_id: int
-    ) -> SUserProfileRead:
-        result = await session.execute(
-            select(ORMUserProfile).where(ORMUserProfile.id == user_id)
-        )
-        profile = result.scalar_one_or_none()
-        if profile is None:
-            raise HTTPException(status_code=404, detail="Profile not found")
-        return SUserProfileRead.model_validate(profile)
-
-    @classmethod
-    async def update_user_profile(
-        cls, session: AsyncSession, profile_passed: SUserProfileUpdate) -> SUserProfileRead:
-        result = await session.execute(select(ORMUserProfile).where(ORMUserProfile.id == profile_passed.id))
-        profile_to_write = result.scalar_one_or_none()
-        if profile_to_write is None:
-            raise HTTPException(status_code=400, detail="Wrong request")
-
-        for key, value in profile_passed.model_dump(exclude_unset=True, exclude_none=True).items():
-            setattr(profile_to_write, key, value)
-
-        await session.commit()
-        return SUserProfileRead.model_validate(profile_to_write)
-
-
-    @classmethod
-    async def create_user_profile(
-        cls, session: AsyncSession, profile: UserProfile
-    ) -> SUserProfileRead:
-        profile_orm = ORMUserProfile(
-            **profile.model_dump(exclude_unset=True, exclude_none=True)
-        )
-        session.add(profile_orm)
-        await session.commit()
-        return SUserProfileRead.model_validate(profile_orm)
-    
-    @classmethod
-    async def get_user_id_by_telegram_id(cls, session: AsyncSession, tg_id: int) -> int:
-        result = await session.execute(
-            select(ORMUserProfile.user_id).where(ORMUserProfile.telegram_id == tg_id)
-        )
-        user_id = result.scalar_one_or_none()
-        if user_id is None:
-            raise HTTPException(status_code=404, detail="Profile not found")
-        return user_id
     
     @classmethod
     async def update_meetings_counters(
@@ -115,3 +73,80 @@ class UserProfileManager:
         
         await session.commit()
         return SUserProfileRead.model_validate(profile_to_write)
+
+    @classmethod
+    async def search_users(
+            cls,
+            user_id: int,
+            session: AsyncSession,
+            search_params: DTOSearchUser
+    ) -> list[DTOUserProfileRead]:
+        """
+            Search for users by the specified parameters.
+
+            Args:
+                user_id: user ID of the verified user
+                search_params: search parameters (DTOSearchUser)
+                session: database session
+
+            Returns:
+                list[DTOUserProfileRead]: the list of found users
+            """
+
+        await cls.check_user(session=session, user_id=verified_user_id)
+
+        query = (
+            select(ORMUserProfile)
+            .options(
+                selectinload(ORMUserProfile.specialisations),
+                selectinload(ORMUserProfile.skills)
+            )
+        )
+
+        # Creating a list of conditions
+        conditions = []
+
+        if search_params.name:
+            conditions.append(ORMUserProfile.name.ilike(f"%{search_params.name}%"))
+
+        if search_params.surname:
+            conditions.append(ORMUserProfile.surname.ilike(f"%{search_params.surname}%"))
+
+        if search_params.country:
+            conditions.append(ORMUserProfile.country.ilike(f"%{search_params.country}%"))
+
+        if search_params.city:
+            conditions.append(ORMUserProfile.city.ilike(f"%{search_params.city}%"))
+
+        # To search by expertise_area or specialisation, need to join with the specialisation table.
+        if search_params.expertise_area or search_params.specialisation:
+            query = query.join(
+                ORMUserProfile.specialisations
+            )
+
+            # To search by expertise_area
+            if search_params.expertise_area:
+                conditions.append(ORMSpecialisation.expertise_area.ilike(f"%{search_params.expertise_area}%"))
+
+            # To search by specialization
+            if search_params.specialisation:
+                conditions.append(ORMSpecialisation.label.ilike(f"%{search_params.specialisation}%"))
+
+        # To search by skills
+        if search_params.skill:
+            query = query.join(
+                ORMUserProfile.skills
+            )
+            conditions.append(ORMSkill.label.ilike(f"%{search_params.skill}%"))
+
+        # Adding all the conditions to the request using and_
+        if conditions:
+            query = query.where(and_(*conditions))
+
+        # Adding a limit
+        query = query.limit(search_params.limit)
+
+        # Executing the request
+        result = await session.execute(query)
+        users = result.scalars().unique().all()
+        return [DTOUserProfileRead.model_validate(user) for user in users]
