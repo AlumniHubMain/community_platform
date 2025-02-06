@@ -3,9 +3,10 @@ from datetime import datetime
 from common_db.enums import EMeetingResponseStatus
 from common_db.managers.user import UserManager
 from common_db.models import ORMUserProfile, ORMMeeting, ORMMeetingResponse, ORMSpecialisation, ORMSkill
-from common_db.schemas import DTOSearchUser, DTOUserProfileRead
+from common_db.schemas import DTOSearchUser, DTOUserProfileRead, DTOUserProfile
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
 
 from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +21,35 @@ class UserProfileManager(UserManager):
     """
     A class for managing user profiles.
     """
+
+    @classmethod
+    async def create_user(
+            cls,
+            session: AsyncSession,
+            user_data: DTOUserProfile
+    ) -> JSONResponse:
+        """
+        Create a new user in the database.
+
+        Args:
+            session: database session
+            user_data: user data for creation
+
+        Returns:
+            JSONResponse: response with status and created user id
+        """
+        user = ORMUserProfile(**user_data.model_dump(exclude_unset=True, exclude_none=True))
+        session.add(user)
+        await session.flush()
+        await session.commit()
+        return JSONResponse(
+            content={
+                "status": "success",
+                "message": "Create successfully",
+                "user_id": user.id
+            },
+            status_code=status.HTTP_201_CREATED
+        )
     
     @classmethod
     async def update_meetings_counters(

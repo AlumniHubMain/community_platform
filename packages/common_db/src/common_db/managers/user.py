@@ -7,7 +7,6 @@ from sqlalchemy.orm import selectinload
 
 from ..models.users import ORMUserProfile, ORMSpecialisation, ORMInterest, ORMSkill, ORMRequestsCommunity
 from ..schemas.users import (
-    DTOUserProfile,
     DTOUserProfileUpdate,
     DTOUserProfileRead,
     DTOSpecialisation,
@@ -87,34 +86,7 @@ class UserManager:
             raise HTTPException(status_code=404, detail="Not found")
         return DTOUserProfileRead.model_validate(user)
 
-    @classmethod
-    async def create_user(
-            cls,
-            session: AsyncSession,
-            user_data: DTOUserProfile
-    ) -> JSONResponse:
-        """
-        Create a new user in the database.
 
-        Args:
-            session: database session
-            user_data: user data for creation
-
-        Returns:
-            JSONResponse: response with status and created user id
-        """
-        user = ORMUserProfile(**user_data.model_dump(exclude_unset=True, exclude_none=True))
-        session.add(user)
-        await session.flush()
-        await session.commit()
-        return JSONResponse(
-            content={
-                "status": "success",
-                "message": "Create successfully",
-                "user_id": user.id
-            },
-            status_code=status.HTTP_201_CREATED
-        )
 
     @classmethod
     async def update_user(
