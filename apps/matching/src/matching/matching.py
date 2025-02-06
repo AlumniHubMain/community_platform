@@ -8,14 +8,13 @@ from matching.model.model_settings import model_settings_presets, ModelType
 from matching.transport import PSClient
 
 
-async def process_matching_request(  # pylint: disable=too-many-arguments, too-many-positional-arguments
+async def process_matching_request(  # pylint: disable=too-many-arguments
     db_session_callable: Callable[[], AsyncSession],
     psclient: PSClient,
     user_id: int,
-    meeting_intent_id: int,
+    form_id: int,
     model_settings_preset: str,
     n: int,
-    form_id: int | None = None,
     logger: logging.Logger = None,
 ) -> tuple[int, list[int]]:
     """Common matching logic used by both endpoints"""
@@ -27,7 +26,7 @@ async def process_matching_request(  # pylint: disable=too-many-arguments, too-m
             model_settings = model_settings_presets[model_settings_preset]
 
             all_users = await DataLoader.get_all_user_profiles(session)
-            intent = await DataLoader.get_meeting_intent(session, meeting_intent_id)
+            form = await DataLoader.get_form(session, form_id)
             linkedin_profiles = await DataLoader.get_all_linkedin_profiles(session)
 
             model = None
@@ -36,14 +35,13 @@ async def process_matching_request(  # pylint: disable=too-many-arguments, too-m
 
             matcher = Model(model_settings)
             matcher.load_model(model)
-            predictions = matcher.predict(all_users, intent, linkedin_profiles, user_id, n)
+            predictions = matcher.predict(all_users, form, linkedin_profiles, user_id, n)
 
             matching_result = ORMMatchingResult(
                 model_settings_preset=model_settings_preset,
                 match_users_count=n,
                 user_id=user_id,
                 form_id=form_id,
-                intent_id=meeting_intent_id,
                 matching_result=predictions,
             )
             session.add(matching_result)
@@ -52,9 +50,9 @@ async def process_matching_request(  # pylint: disable=too-many-arguments, too-m
 
             if logger:
                 logger.info(
-                    "Matching results saved for user_id: %d, meeting_intent_id: %d",
+                    "Matching results saved for user_id: %d, form_id: %d",
                     user_id,
-                    meeting_intent_id,
+                    form_id,
                 )
 
             return matching_result.id, predictions
@@ -65,7 +63,6 @@ async def process_matching_request(  # pylint: disable=too-many-arguments, too-m
                 match_users_count=n,
                 user_id=user_id,
                 form_id=form_id,
-                intent_id=meeting_intent_id,
                 error_code="MATCHING_ERROR",
                 error_details={"error": str(e)},
                 matching_result=[],

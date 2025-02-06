@@ -17,13 +17,13 @@ from matching.model.model_settings import (
 )
 from common_db.schemas import (
     SUserProfileRead,
-    SMeetingIntentRead,
+    FormRead,
 )
-from common_db.enums.meeting_intents import (
-    EMeetingIntentMeetingType,
-    EMeetingIntentLookingForType,
-    EMeetingIntentQueryType,
-    EMeetingIntentHelpRequestType,
+from common_db.enums.forms import (
+    EFormMeetingType,
+    EFormLookingForType,
+    EFormQueryType,
+    EFormHelpRequestType,
 )
 
 
@@ -68,28 +68,29 @@ def mock_users():
 
 
 @pytest.fixture
-def mock_intent():
-    return SMeetingIntentRead(
+def mock_form():
+    return FormRead(
         id=1,
         user_id=1,
-        meeting_type=EMeetingIntentMeetingType.online,
-        looking_for_type=EMeetingIntentLookingForType.part_time,
-        query_type=EMeetingIntentQueryType.looking_for,
-        help_request_type=EMeetingIntentHelpRequestType.development,
-        text_intent="Looking for Python developers",
+        meeting_type=EFormMeetingType.online,
+        query_type=EFormQueryType.looking_for,
+        help_request_type=EFormHelpRequestType.development,
+        looking_for_type=EFormLookingForType.part_time,
+        calendar="available",
+        description="Looking for Python developers",
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
 
 
 @pytest.fixture
-def mock_session(mock_users, mock_intent):
+def mock_session(mock_users, mock_form):
     class MockAsyncSession:
         def __init__(self):
             self._id_counter = 1
             self._stored_objects = {}
             self.mock_users = mock_users
-            self.mock_intent = mock_intent
+            self.mock_form = mock_form
 
         def add(self, obj):
             self._stored_objects[id(obj)] = obj
@@ -113,7 +114,7 @@ def mock_session(mock_users, mock_intent):
 
         async def execute(self, statement):
             from sqlalchemy import Select
-            from common_db.models import ORMUserProfile, ORMMeetingIntent
+            from common_db.models import ORMUserProfile, ORMForm
 
             class MockResult:
                 def __init__(self, results):
@@ -133,12 +134,11 @@ def mock_session(mock_users, mock_intent):
                     return MockScalars(self._results)
 
             if isinstance(statement, Select):
-                # Check the primary entity of the select
                 entity = statement.column_descriptions[0]["entity"]
                 if entity == ORMUserProfile:
                     return MockResult(self.mock_users)
-                elif entity == ORMMeetingIntent:
-                    return MockResult([self.mock_intent])
+                elif entity == ORMForm:
+                    return MockResult([self.mock_form])
             return MockResult([])
 
     class AsyncSessionContextManager:
@@ -200,7 +200,7 @@ async def test_process_matching_basic(
         psclient=None,
         logger=MagicMock(),
         user_id=1,
-        meeting_intent_id=1,
+        form_id=1,
         model_settings_preset="heuristic",
         n=2,
     )
@@ -237,7 +237,7 @@ async def test_process_matching_with_diversification(
         psclient=None,
         logger=MagicMock(),
         user_id=1,
-        meeting_intent_id=1,
+        form_id=1,
         model_settings_preset="heuristic",
         n=3,
     )
@@ -263,7 +263,7 @@ async def test_process_matching_error_handling(
                 psclient=None,
                 logger=MagicMock(),
                 user_id=1,
-                meeting_intent_id=1,
+                form_id=1,
                 model_settings_preset="heuristic",
                 n=2,
             )
@@ -281,7 +281,7 @@ async def test_process_matching_invalid_preset(
             psclient=None,
             logger=MagicMock(),
             user_id=1,
-            meeting_intent_id=1,
+            form_id=1,
             model_settings_preset="invalid_preset",
             n=2,
         )
@@ -314,7 +314,7 @@ async def test_process_matching_with_filters_context_manager(mock_session, mock_
             psclient=None,
             logger=MagicMock(),
             user_id=1,
-            meeting_intent_id=1,
+            form_id=1,
             model_settings_preset="heuristic",
             n=5,
         )

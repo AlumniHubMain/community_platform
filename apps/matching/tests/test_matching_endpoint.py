@@ -75,7 +75,7 @@ async def test_pubsub_push_heuristic(client, mock_process_matching_request):
     """Test Pub/Sub push endpoint with heuristic model settings"""
     message_data = {
         "user_id": 1,
-        "meeting_intent_id": 1,
+        "form_id": 1,
         "model_settings_preset": "heuristic",
         "n": 5,
     }
@@ -93,7 +93,7 @@ async def test_pubsub_push_with_filters(client, mock_process_matching_request):
     """Test Pub/Sub push endpoint with filters"""
     message_data = {
         "user_id": 1,
-        "meeting_intent_id": 1,
+        "form_id": 1,
         "model_settings_preset": "filtered",
         "n": 5,
     }
@@ -131,7 +131,7 @@ async def test_pubsub_push_missing_required_field(client):
     """Test Pub/Sub push endpoint with missing required field"""
     message_data = {
         "user_id": 1,
-        # missing meeting_intent_id
+        # missing form_id
         "model_settings_preset": "heuristic",
         "n": 5,
     }

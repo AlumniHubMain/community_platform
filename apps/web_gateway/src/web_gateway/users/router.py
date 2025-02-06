@@ -1,6 +1,9 @@
 from typing import Annotated
 
 from common_db.db_abstract import db_manager
+from common_db.managers.user import UserManager
+from common_db.schemas import DTOSearchUser, SUserProfileRead
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -11,38 +14,40 @@ from .schemas import SUserProfileRead, SUserProfileUpdate, UserProfile
 from .user_profile_manager import UserProfileManager
 from web_gateway import auth
 
-
 router = APIRouter(tags=["Client profiles"], prefix="/user")
 
 
 @router.get("/me", response_model=SUserProfileRead)
 async def get_current_user_profile(
-    user_id: Annotated[int, Depends(auth.current_user_id)],
-    session: Annotated[AsyncSession, Depends(db_manager.get_session)],
-    ) -> SUserProfileRead:
+        user_id: Annotated[int, Depends(auth.current_user_id)],
+        session: Annotated[AsyncSession, Depends(db_manager.get_session)],
+) -> SUserProfileRead:
     return await UserProfileManager.get_user_profile(session, user_id)
+
 
 @router.patch("/me", response_model=SUserProfileRead)
 async def update_current_user_profile(
-    profile: SUserProfileUpdate,
-    user_id: Annotated[int, Depends(auth.current_user_id)],
-    session: Annotated[AsyncSession, Depends(db_manager.get_session)],
+        profile: SUserProfileUpdate,
+        user_id: Annotated[int, Depends(auth.current_user_id)],
+        session: Annotated[AsyncSession, Depends(db_manager.get_session)],
 ) -> SUserProfileRead:
     return await UserProfileManager.update_user_profile(session, profile)
 
 
-@router.get("/{user_id}", response_model=SUserProfileRead, summary="Get user's profile", dependencies=[Depends(auth.owner_or_admin)])
+@router.get("/{user_id}", response_model=SUserProfileRead, summary="Get user's profile",
+            dependencies=[Depends(auth.owner_or_admin)])
 async def get_profile(
-    user_id: int, session: Annotated[AsyncSession, Depends(db_manager.get_session)]
+        user_id: int, session: Annotated[AsyncSession, Depends(db_manager.get_session)]
 ) -> SUserProfileRead:
     return await UserProfileManager.get_user_profile(session, user_id)
 
 
 # ToDo: evseev.dmsr check user id before patch
 # https://app.clickup.com/t/86c11fz94
-@router.patch("/{user_id}", response_model=SUserProfileRead, summary="Modify user's profile", dependencies=[Depends(auth.owner_or_admin)])
+@router.patch("/{user_id}", response_model=SUserProfileRead, summary="Modify user's profile",
+              dependencies=[Depends(auth.owner_or_admin)])
 async def update_profile(
-    profile: SUserProfileUpdate, session: Annotated[AsyncSession, Depends(db_manager.get_session)]
+        profile: SUserProfileUpdate, session: Annotated[AsyncSession, Depends(db_manager.get_session)]
 ) -> SUserProfileRead:
     return await UserProfileManager.update_user_profile(session, profile)
 
@@ -51,8 +56,19 @@ async def update_profile(
     "", response_model=SUserProfileRead, summary="Creates user's profile"
 )
 async def create_user(
-    profile: UserProfile, session: Annotated[AsyncSession, Depends(db_manager.get_session)]
+        profile: UserProfile, session: Annotated[AsyncSession, Depends(db_manager.get_session)]
 ) -> SUserProfileRead:
     async with session.begin():
         created_profile = await UserProfileManager.create_user_profile(session, profile)
         return created_profile
+
+
+@router.post("/search", response_model=list[SUserProfileRead])
+async def search_users(
+        search_params: DTOSearchUser,
+        session: Annotated[AsyncSession, Depends(db_manager.get_session)]
+) -> list[SUserProfileRead]:
+    """
+    Endpoint for searching for a user using the specified optional parameters
+    """
+    return await UserManager.search_users(session=session, user=search_params)

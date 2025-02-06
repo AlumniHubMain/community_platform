@@ -3,7 +3,8 @@ from .users import ORMUserProfile
 from .meetings import ORMMeeting, ORMMeetingResponse
 from .matching import ORMMatchingResult
 from .forms import ORMForm
-from .linkedin import ORMLinkedInProfile
+from .linkedin import ORMLinkedInProfile, ORMEducation, ORMWorkExperience, ORMLinkedInRawData
+from .linkedin_helpers import ORMLinkedInApiLimits
 
 __all__ = [
     "Base",
@@ -14,4 +15,8 @@ __all__ = [
     "ORMMatchingResult",
     "ORMForm",
     "ORMLinkedInProfile",
+    "ORMEducation",
+    "ORMWorkExperience",
+    "ORMLinkedInApiLimits",
+    "ORMLinkedInRawData"
 ]

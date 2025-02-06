@@ -3,13 +3,23 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from common_db.models import ORMUserProfile, ORMMeetingIntent, ORMLinkedInProfile
-from common_db.schemas import SUserProfileRead, SMeetingIntentRead, LinkedInProfileRead
+from common_db.models import (
+    ORMUserProfile, 
+    ORMLinkedInProfile,
+    ORMForm,
+    ORMMeetingResponse,
+)
+from common_db.schemas import (
+    SUserProfileRead,
+    LinkedInProfileRead,
+    FormRead,
+)
 
 
 class DataLoader:
     @classmethod
     async def get_user_profile(cls, session, user_id: int) -> SUserProfileRead:
+        """Get user profile by ID with meeting responses"""
         stmt = (
             select(ORMUserProfile)
             .where(ORMUserProfile.id == user_id)
@@ -23,6 +33,7 @@ class DataLoader:
 
     @classmethod
     async def get_all_user_profiles(cls, session: AsyncSession) -> list[SUserProfileRead]:
+        """Get all user profiles with meeting responses"""
         stmt = select(ORMUserProfile).options(
             selectinload(ORMUserProfile.meeting_responses).selectinload(ORMMeetingResponse.meeting)
         )
@@ -49,15 +60,19 @@ class DataLoader:
         return [LinkedInProfileRead.model_validate(p) for p in profiles]
 
     @classmethod
-    async def get_meeting_intent(cls, session: AsyncSession, intent_id: int) -> SMeetingIntentRead:
-        result = await session.execute(select(ORMMeetingIntent).where(ORMMeetingIntent.id == intent_id))
-        profile = result.scalar_one_or_none()
-        if profile is None:
-            raise HTTPException(status_code=404, detail="Intent not found")
-        return SMeetingIntentRead.model_validate(profile)
+    async def get_form(cls, session: AsyncSession, form_id: int) -> FormRead:
+        """Get form by ID"""
+        result = await session.execute(
+            select(ORMForm).where(ORMForm.id == form_id)
+        )
+        form = result.scalar_one_or_none()
+        if form is None:
+            raise HTTPException(status_code=404, detail="Form not found")
+        return FormRead.model_validate(form)
 
     @classmethod
-    async def get_all_meeting_intents(cls, session: AsyncSession) -> list[SMeetingIntentRead]:
-        result = await session.execute(select(ORMMeetingIntent))
-        intents = result.scalars().all()
-        return [SMeetingIntentRead.model_validate(i) for i in intents]
+    async def get_all_forms(cls, session: AsyncSession) -> list[FormRead]:
+        """Get all forms"""
+        result = await session.execute(select(ORMForm))
+        forms = result.scalars().all()
+        return [FormRead.model_validate(f) for f in forms]
