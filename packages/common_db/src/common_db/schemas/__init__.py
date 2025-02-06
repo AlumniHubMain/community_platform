@@ -42,6 +42,7 @@ __all__ = [
     "SUserProfileRead",
     "SUserProfileUpdate",
     "SMeetingIntentRead",
+    "DTOUserProfile",
     "DTOUserProfileUpdate",
     "DTOUserProfileRead",
     "DTOSpecialisation",

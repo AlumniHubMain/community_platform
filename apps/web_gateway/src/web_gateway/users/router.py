@@ -2,68 +2,66 @@ from typing import Annotated
 
 from common_db.db_abstract import db_manager
 from common_db.managers.user import UserManager
-from common_db.schemas import DTOSearchUser, DTOUserProfileRead
+from common_db.schemas import DTOUserProfile, DTOUserProfileRead, DTOUserProfileUpdate, DTOSearchUser
 
-from fastapi import (
-    APIRouter,
-    Depends,
-)
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .schemas import SUserProfileRead, SUserProfileUpdate, UserProfile
-from .user_profile_manager import UserProfileManager
 from web_gateway import auth
 
 router = APIRouter(tags=["Client profiles"], prefix="/user")
 
 
-@router.get("/me", response_model=SUserProfileRead)
+@router.get("/me", response_model=DTOUserProfileRead)
 async def get_current_user_profile(
         user_id: Annotated[int, Depends(auth.current_user_id)],
         session: Annotated[AsyncSession, Depends(db_manager.get_session)],
-) -> SUserProfileRead:
-    return await UserProfileManager.get_user_profile(session, user_id)
+) -> DTOUserProfileRead:
+    return await UserManager.get_user_by_id(session=session, user_id=user_id)
 
 
-@router.patch("/me", response_model=SUserProfileRead)
+@router.patch("/me")
 async def update_current_user_profile(
-        profile: SUserProfileUpdate,
-        user_id: Annotated[int, Depends(auth.current_user_id)],
+        profile: DTOUserProfileUpdate,
         session: Annotated[AsyncSession, Depends(db_manager.get_session)],
-) -> SUserProfileRead:
-    return await UserProfileManager.update_user_profile(session, profile)
+) -> JSONResponse:
+    return await UserManager.update_user(session, profile)
 
 
-@router.get("/{user_id}", response_model=SUserProfileRead, summary="Get user's profile",
-            dependencies=[Depends(auth.owner_or_admin)])
+@router.get(
+    "/{user_id}",
+    response_model=DTOUserProfileRead,
+    summary="Get user's profile",
+    dependencies=[Depends(auth.owner_or_admin)]
+)
 async def get_profile(
-        user_id: int, session: Annotated[AsyncSession, Depends(db_manager.get_session)]
-) -> SUserProfileRead:
-    return await UserProfileManager.get_user_profile(session, user_id)
+        user_id: int,
+        session: Annotated[AsyncSession, Depends(db_manager.get_session)]
+) -> DTOUserProfileRead:
+    return await UserManager.get_user_by_id(session=session, user_id=user_id)
 
 
 # ToDo: evseev.dmsr check user id before patch
 # https://app.clickup.com/t/86c11fz94
-@router.patch("/{user_id}", response_model=SUserProfileRead, summary="Modify user's profile",
-              dependencies=[Depends(auth.owner_or_admin)])
+@router.patch("/{user_id}", summary="Modify user's profile", dependencies=[Depends(auth.owner_or_admin)])
 async def update_profile(
-        profile: SUserProfileUpdate, session: Annotated[AsyncSession, Depends(db_manager.get_session)]
-) -> SUserProfileRead:
-    return await UserProfileManager.update_user_profile(session, profile)
+        profile: DTOUserProfileUpdate,
+        session: Annotated[AsyncSession, Depends(db_manager.get_session)]
+) -> JSONResponse:
+    return await UserManager.update_user(session=session, user_data=profile)
 
 
-@router.post(
-    "", response_model=SUserProfileRead, summary="Creates user's profile"
-)
+@router.post("", response_model=DTOUserProfile, summary="Creates user's profile")
 async def create_user(
-        profile: UserProfile, session: Annotated[AsyncSession, Depends(db_manager.get_session)]
-) -> SUserProfileRead:
+        profile: DTOUserProfile,
+        session: Annotated[AsyncSession, Depends(db_manager.get_session)]
+) -> JSONResponse:
     async with session.begin():
-        created_profile = await UserProfileManager.create_user_profile(session, profile)
-        return created_profile
+        return await UserManager.create_user(session=session, user_data=profile)
 
 
-@router.post("/search", response_model=list[DTOUserProfileRead])
+@router.get("/search", response_model=list[DTOUserProfileRead])
 async def search_users(
         search_params: DTOSearchUser,
         session: Annotated[AsyncSession, Depends(db_manager.get_session)]
