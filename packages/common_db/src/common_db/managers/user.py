@@ -306,7 +306,7 @@ class UserManager:
         Returns:
             list[str]: list of all labels of requests to community
         """
-        query = select(ORMRequestsCommunity).filter(ORMSkill.is_custom == False)
+        query = select(ORMRequestsCommunity).filter(ORMRequestsCommunity.is_custom == False)
         result = await session.execute(query)
         requests = result.scalars().all()
         return [DTORequestsCommunity.model_validate(request).label for request in requests]
