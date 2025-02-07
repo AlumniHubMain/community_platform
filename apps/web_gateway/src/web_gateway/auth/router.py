@@ -1,8 +1,4 @@
-import os
-import hashlib
-import hmac
-from datetime import datetime, timedelta
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import (
     Depends,
@@ -60,13 +56,13 @@ async def login_page(request: Request):
     return HTMLResponse(content=login_page_content)
 
 
-async def token_response(session: AsyncSession, telegram_id, response: Response):   
+async def token_response(session: AsyncSession, telegram_id, response: Response):
     user_id = await UserProfileManager.get_user_id_by_telegram_id(session, telegram_id)
-  
+
     if not user_id:
         raise HTTPException(status=404)
-    
-    user_data = {'user_id': user_id}
+
+    user_data = {"user_id": user_id}
     if user_data:
         access_token = create_access_token(user_data)
         refresh_token = create_refresh_token(user_id)
@@ -92,10 +88,11 @@ async def telegram_widget_token(
     session: Annotated[AsyncSession, Depends(db_manager.get_session)],
 ):
     if data := validate_telegram_widget(data):
-        telegram_id = data['id']
+        telegram_id = data["id"]
         return await token_response(session, telegram_id, response)
 
     raise HTTPException(status_code=401, detail="Authentication failed")
+
 
 @router.get("/telegram/miniapp/token")
 async def telegram_miniapp_token(
@@ -109,14 +106,15 @@ async def telegram_miniapp_token(
 
     raise HTTPException(status_code=401, detail="Authentication failed")
 
-    
+
 @router.get("/logout")
 async def logout(response: Response):
     response.delete_cookie(key="access_token")
     return {"message": "Successfully logged out"}
 
 
-if settings.environment == 'dev':
+if settings.environment == "dev":
+
     @router.get("/dev/token")
     async def dev_token(
         telegram_id: int,
@@ -125,6 +123,7 @@ if settings.environment == 'dev':
         session: Annotated[AsyncSession, Depends(db_manager.get_session)],
     ):
         from .security import BOT_TOKEN
+
         if telegram_bot_token == BOT_TOKEN:
             return await token_response(session, telegram_id, response)
         raise HTTPException(status_code=401, detail="Authentication failed")

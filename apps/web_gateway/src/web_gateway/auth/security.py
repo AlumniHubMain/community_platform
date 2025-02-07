@@ -30,7 +30,7 @@ def check_autorization(user_data: dict) -> bool:
 
 async def get_access_token(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())],
-    access_token: str = Cookie(None, include_in_schema=False), 
+    access_token: str = Cookie(None, include_in_schema=False),
 ) -> str:
     if credentials:
         return credentials.credentials
@@ -55,7 +55,7 @@ def decode_token(token):
                 logger.warning(f"Undexpected token decoding error: {str(e)}")
         raise HTTPException(status_code=401)
     return token_data
-    
+
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
@@ -74,12 +74,12 @@ def create_refresh_token(user_id):
 
 
 def validate_telegram_widget(data) -> dict | bool:
-    
     if check_integrity(BOT_TOKEN, data):
         res = data.copy()
-        res.pop('hash')
+        res.pop("hash")
         return res
     return False
+
 
 def validate_telegram_miniapp(init_string) -> WebAppInitData | bool:
     try:
@@ -97,7 +97,7 @@ async def get_user_roles(user_id: str) -> list[str]:
 async def current_user_id(token: Annotated[str, Depends(get_access_token)]) -> int:
     token_data = decode_token(token)
     return int(token_data.get("user_id"))
-    
+
 
 async def owner_or_admin(
     user_id: int,
@@ -112,5 +112,5 @@ async def owner_or_admin(
     raise HTTPException(status_code=403)
 
 
-async def authorize(user_id = Depends(current_user_id)):
+async def authorize(user_id=Depends(current_user_id)):
     assert user_id is not None
