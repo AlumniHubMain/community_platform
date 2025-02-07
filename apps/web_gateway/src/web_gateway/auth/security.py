@@ -1,15 +1,14 @@
-import os
 from datetime import timedelta, datetime
 from web_gateway.settings import settings
-from typing import Optional, Annotated
+from typing import Annotated
 
-from fastapi import Request, Depends, HTTPException, Cookie, Header
-from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel
+from fastapi import Depends, HTTPException, Cookie
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
-import hashlib
-import hmac
 import logging
+from aiogram.utils.web_app import safe_parse_webapp_init_data, WebAppInitData
+from aiogram.utils.auth_widget import check_integrity
+import secrets
 
 
 logger = logging.getLogger(__name__)
@@ -19,35 +18,24 @@ BOT_TOKEN = settings.bot_token_file
 ALGORITHM = "HS256"
 TOKEN_EXPIRY_SECONDS = 3600  # 1 hour
 
-
-class TelegramUser(BaseModel):
-    id: str
-    first_name: str
-    last_name: Optional[str] = None
-    username: Optional[str] = None
-    photo_url: Optional[str] = None
-    auth_date: Optional[str] = None
-    hash: str
+ADMIN_TELEGRAM_IDS = []
 
 
 def check_autorization(user_data: dict) -> bool:
     telegram_id = user_data.get("user_id")
-    # TODO (anemirov) return is_telegram_id_in_whitelist(telegram_id) или что-то более сложное с user_data
-    if not telegram_id:
+    if telegram_id in ADMIN_TELEGRAM_IDS:
         logger.warning("Unauthorized user")
-        raise HTTPException(status_code=401)
+        raise HTTPException(status_code=403)
 
 
 async def get_access_token(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())],
     access_token: str = Cookie(None, include_in_schema=False), 
-    authorization: str = Header(None, include_in_schema=False)
 ) -> str:
-    if access_token:
+    if credentials:
+        return credentials.credentials
+    elif access_token:
         return access_token
-    BEARER_PREFIX = "Bearer "
-    if authorization and authorization.startswith(BEARER_PREFIX):
-        return authorization[len(BEARER_PREFIX):]
-
     logger.warning("Authorization token missing")
     raise HTTPException(status_code=401)
 
@@ -69,7 +57,6 @@ def decode_token(token):
     return token_data
     
 
-
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
@@ -81,23 +68,29 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     return encoded_jwt
 
 
-def validate_telegram_data(data: TelegramUser) -> bool:
-    """
-    https://core.telegram.org/widgets/login#checking-authorization
-    """
-    if not data:
+def create_refresh_token(user_id):
+    # TODO писать refresh в БД
+    return secrets.token_urlsafe(32)
+
+
+def validate_telegram_widget(data) -> dict | bool:
+    
+    if check_integrity(BOT_TOKEN, data):
+        res = data.copy()
+        res.pop('hash')
+        return res
+    return False
+
+def validate_telegram_miniapp(init_string) -> WebAppInitData | bool:
+    try:
+        return safe_parse_webapp_init_data(BOT_TOKEN, init_string)
+    except ValueError:
         return False
-
-    secret_key = hashlib.sha256(BOT_TOKEN.encode()).digest()
-    data_check_string = "\n".join(sorted(f"{key}={value}" for key, value in data.dict(exclude={"hash"}).items() if value))
-
-    calculated_hash = hmac.new(
-        secret_key, data_check_string.encode(), hashlib.sha256
-    ).hexdigest()
-    return hmac.compare_digest(calculated_hash, data.hash)
 
 
 async def get_user_roles(user_id: str) -> list[str]:
+    if user_id in ADMIN_TELEGRAM_IDS:
+        return ["admin"]
     return []
 
 
@@ -118,5 +111,6 @@ async def owner_or_admin(
 
     raise HTTPException(status_code=403)
 
+
 async def authorize(user_id = Depends(current_user_id)):
-    assert user_id is not None 
+    assert user_id is not None

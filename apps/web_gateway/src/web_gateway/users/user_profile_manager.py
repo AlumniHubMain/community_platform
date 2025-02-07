@@ -56,7 +56,7 @@ class UserProfileManager:
     @classmethod
     async def get_user_id_by_telegram_id(cls, session: AsyncSession, tg_id: int) -> int:
         result = await session.execute(
-            select(ORMUserProfile.user_id).where(ORMUserProfile.telegram_id == tg_id)
+            select(ORMUserProfile.id).where(ORMUserProfile.telegram_id == tg_id)
         )
         user_id = result.scalar_one_or_none()
         if user_id is None:
