@@ -1,4 +1,4 @@
-from common_db.schemas.forms import Form, SFormRead, EFormQueryType
+from common_db.schemas.forms import FormBase, FormRead, EFormQueryType
 from common_db.models import ORMForm, ORMUserProfile
 from fastapi import HTTPException
 
@@ -23,7 +23,7 @@ class FormsManager:
     @classmethod
     async def get_user_form(
         cls, session: AsyncSession, user_id: int, query_type: EFormQueryType
-    ) -> SFormRead:
+    ) -> FormRead:
 
         await cls.check_user_exists(session, user_id)
         
@@ -38,12 +38,12 @@ class FormsManager:
         form_orm = result.scalar_one_or_none()
         if form_orm is None:
             raise HTTPException(status_code=404, detail="Form not found")
-        return SFormRead.model_validate(form_orm)
+        return FormRead.model_validate(form_orm)
 
     @classmethod
     async def create_form(
-        cls, session: AsyncSession, form: Form
-    ) -> SFormRead:
+        cls, session: AsyncSession, form: FormBase
+    ) -> FormRead:
         
         await cls.check_user_exists(session, form.user_id)
         
@@ -52,4 +52,4 @@ class FormsManager:
         )
         session.add(form_orm)
         await session.commit()
-        return SFormRead.model_validate(form_orm)
+        return FormRead.model_validate(form_orm)
