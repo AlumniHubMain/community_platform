@@ -43,7 +43,7 @@ async def login_page(request: Request):
                 data-telegram-login="yndx_cofee_bot" 
                 data-size="large" 
                 data-radius="10" 
-                data-auth-url="{request.base_url}/auth/telegram/widget"
+                data-auth-url="{request.base_url}/auth/telegram/widget/token"
                 data-request-access="write"></script>
         <script type="text/javascript">
           function onTelegramAuth(user) {{
