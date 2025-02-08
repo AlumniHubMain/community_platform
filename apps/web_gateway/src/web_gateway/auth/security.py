@@ -2,6 +2,8 @@ from datetime import timedelta, datetime
 from web_gateway.settings import settings
 from typing import Annotated
 
+from pydantic import BaseModel
+from typing import Optional
 from fastapi import Depends, HTTPException, Cookie
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
@@ -73,11 +75,18 @@ def create_refresh_token(user_id):
     return secrets.token_urlsafe(32)
 
 
-def validate_telegram_widget(data) -> dict | bool:
+class TelegramWidgetData(BaseModel):
+    id: int
+    first_name: str
+    hash: str
+    username: Optional[str] = None
+    photo_url: Optional[str] = None
+    auth_date: Optional[datetime] = None
+
+
+def validate_telegram_widget(data) -> TelegramWidgetData | bool:
     if check_integrity(BOT_TOKEN, data):
-        res = data.copy()
-        res.pop("hash")
-        return res
+        return TelegramWidgetData.model_validate(data)
     return False
 
 

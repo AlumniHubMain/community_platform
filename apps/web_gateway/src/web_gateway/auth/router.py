@@ -89,7 +89,7 @@ async def telegram_widget_token(
 ):
     data = dict(request.query_params)
     if data := validate_telegram_widget(data):
-        telegram_id = data["id"]
+        telegram_id = data.id
         return await token_response(session, telegram_id, response)
 
     raise HTTPException(status_code=401, detail="Authentication failed")
