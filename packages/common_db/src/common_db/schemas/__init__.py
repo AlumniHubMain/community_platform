@@ -1,5 +1,5 @@
 from .base import BaseSchema, TimestampedSchema, convert_enum_value
-from .users import UserProfile, SUserProfileRead, SUserProfileUpdate
+from .users import UserProfile, SUserProfileRead, SUserProfileUpdate, DTOSearchUser
 from .linkedin import LinkedInProfileRead
 from .meetings import (
     MeetingResponse, 
@@ -15,10 +15,7 @@ from .meetings import (
 from .forms import (
     FormBase,
     FormCreate,
-    FormUpdate,
     FormRead,
-    FormFilter,
-    FormList,
 )
 
 __all__ = [
@@ -39,9 +36,6 @@ __all__ = [
     "LinkedInProfileRead",
     "FormBase",
     "FormCreate",
-    "FormUpdate",
     "FormRead",
-    "FormFilter",
-    "FormList",
     "DTOSearchUser"
 ]

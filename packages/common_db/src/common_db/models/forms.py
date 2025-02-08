@@ -4,14 +4,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from common_db.config import schema
 from common_db.models.base import ObjectTable
 from common_db.enums.forms import (
-    EFormMeetingType,
-    FormMeetingTypePGEnum,
-    EFormLookingForType,
-    FormLookingForTypePGEnum,
-    EFormHelpRequestType,
-    FormHelpRequestTypePGEnum,
-    EFormQueryType,
-    FormQueryTypePGEnum,
+    EFormIntentType,
+    FormIntentTypePGEnum,
 )
     
 
@@ -22,7 +16,7 @@ class ORMForm(ObjectTable):
 
     __tablename__ = 'forms'
     __table_args__ = (
-        Index('ix_form_query_type', 'query_type'),
+        Index('ix_form_intent', 'intent'),
         PrimaryKeyConstraint('user_id', 'id'),
         {'schema': schema},
     )
@@ -30,9 +24,6 @@ class ORMForm(ObjectTable):
     user_id: Mapped[int] = mapped_column(Integer, 
                                          ForeignKey(f'{schema}.users.id', ondelete="CASCADE"),
                                          primary_key=True)
-    meeting_type: Mapped[EFormMeetingType] = mapped_column(FormMeetingTypePGEnum, nullable=False)
-    query_type: Mapped[EFormQueryType] = mapped_column(FormQueryTypePGEnum, nullable=False)
-    help_request_type: Mapped[EFormHelpRequestType] = mapped_column(FormHelpRequestTypePGEnum, nullable=False)
-    looking_for_type: Mapped[EFormLookingForType] = mapped_column(FormLookingForTypePGEnum, nullable=False)
+    intent: Mapped[EFormIntentType] = mapped_column(FormIntentTypePGEnum, nullable=False)
+    content: Mapped[str] = mapped_column(Text)
     calendar: Mapped[str] = mapped_column(String(200))
-    description: Mapped[str | None] = mapped_column(Text)
