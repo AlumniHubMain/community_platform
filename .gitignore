@@ -15,3 +15,5 @@ build/
 *_pb2.py*
 *locdev*
 credentials.json
+access_secret
+bot_token
