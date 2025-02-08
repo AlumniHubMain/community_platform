@@ -62,7 +62,7 @@ async def token_response(session: AsyncSession, telegram_id, response: Response)
     if not user_id:
         raise HTTPException(status=404)
 
-    user_data = {"user_id": user_id}
+    user_data = {"user_id": user_id, "telegram_id": telegram_id}
     if user_data:
         access_token = create_access_token(user_data)
         refresh_token = create_refresh_token(user_id)

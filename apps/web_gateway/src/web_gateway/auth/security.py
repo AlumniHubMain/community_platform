@@ -20,12 +20,11 @@ BOT_TOKEN = settings.bot_token_file
 ALGORITHM = "HS256"
 TOKEN_EXPIRY_SECONDS = 3600  # 1 hour
 
-ADMIN_TELEGRAM_IDS = []
+ADMIN_TELEGRAM_IDS = [453529592]
 
 
-def check_autorization(user_data: dict) -> bool:
-    telegram_id = user_data.get("user_id")
-    if telegram_id in ADMIN_TELEGRAM_IDS:
+def check_autorization(telegram_id: int) -> bool:
+    if telegram_id not in ADMIN_TELEGRAM_IDS:
         logger.warning("Unauthorized user")
         raise HTTPException(status_code=403)
 
@@ -97,10 +96,9 @@ def validate_telegram_miniapp(init_string) -> WebAppInitData | bool:
         return False
 
 
-async def get_user_roles(user_id: str) -> list[str]:
-    if user_id in ADMIN_TELEGRAM_IDS:
-        return ["admin"]
-    return []
+async def get_user_roles(token: Annotated[str, Depends(get_access_token)]) -> list[str]:
+    token_data = decode_token(token)
+    return token_data.get("roles", [])
 
 
 async def current_user_id(token: Annotated[str, Depends(get_access_token)]) -> int:
@@ -108,18 +106,18 @@ async def current_user_id(token: Annotated[str, Depends(get_access_token)]) -> i
     return int(token_data.get("user_id"))
 
 
-async def owner_or_admin(
-    user_id: int,
-    current_user_id: int = Depends(current_user_id),
-    roles: list[str] = Depends(get_user_roles),
-) -> int:
-    if "admin" in roles:
-        return current_user_id
-    if user_id == current_user_id:
-        return current_user_id
+async def owner_or_admin(user_id: int, token: Annotated[str, Depends(get_access_token)]) -> int:
+    token_data = decode_token(token)
+
+    if "admin" in token_data.get("roles", []):
+        return user_id
+    if user_id == token_data.get("user_id"):
+        return user_id
 
     raise HTTPException(status_code=403)
 
 
-async def authorize(user_id=Depends(current_user_id)):
-    assert user_id is not None
+async def authorize(token: Annotated[str, Depends(get_access_token)]):
+    token_data = decode_token(token)
+
+    check_autorization(token_data.get("telegram_id"))
