@@ -83,10 +83,11 @@ async def token_response(session: AsyncSession, telegram_id, response: Response)
 
 @router.get("/telegram/widget/token")
 async def telegram_widget_token(
-    data: dict,
+    request: Request,
     response: Response,
     session: Annotated[AsyncSession, Depends(db_manager.get_session)],
 ):
+    data = dict(request.query_params)
     if data := validate_telegram_widget(data):
         telegram_id = data["id"]
         return await token_response(session, telegram_id, response)
@@ -94,7 +95,7 @@ async def telegram_widget_token(
     raise HTTPException(status_code=401, detail="Authentication failed")
 
 
-@router.get("/telegram/miniapp/token")
+@router.post("/telegram/miniapp/token")
 async def telegram_miniapp_token(
     auth: str,
     response: Response,
