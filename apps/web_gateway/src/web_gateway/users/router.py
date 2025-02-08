@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from common_db.db_abstract import db_manager
+from common_db.managers.user import UserManager
 from common_db.schemas import DTOUserProfile, DTOUserProfileRead, DTOUserProfileUpdate, DTOSearchUser
 
 from fastapi import APIRouter, Depends
@@ -10,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from web_gateway import auth
 from .properties_router import router as properties_router
-from .user_profile_manager import UserProfileManager
 
 
 router = APIRouter(tags=["Client profiles"], prefix="/user")
@@ -23,7 +23,7 @@ async def get_current_user_profile(
         user_id: Annotated[int, Depends(auth.current_user_id)],
         session: Annotated[AsyncSession, Depends(db_manager.get_session)],
 ) -> DTOUserProfileRead:
-    return await UserProfileManager.get_user_by_id(session=session, user_id=user_id)
+    return await UserManager.get_user_by_id(session=session, user_id=user_id)
 
 
 @router.patch("/me")
@@ -31,7 +31,7 @@ async def update_current_user_profile(
         profile: DTOUserProfileUpdate,
         session: Annotated[AsyncSession, Depends(db_manager.get_session)],
 ) -> JSONResponse:
-    return await UserProfileManager.update_user(session, profile)
+    return await UserManager.update_user(session, profile)
 
 
 @router.get(
@@ -44,7 +44,7 @@ async def get_profile(
         user_id: int,
         session: Annotated[AsyncSession, Depends(db_manager.get_session)]
 ) -> DTOUserProfileRead:
-    return await UserProfileManager.get_user_by_id(session=session, user_id=user_id)
+    return await UserManager.get_user_by_id(session=session, user_id=user_id)
 
 
 # ToDo: evseev.dmsr check user id before patch
@@ -54,7 +54,7 @@ async def update_profile(
         profile: DTOUserProfileUpdate,
         session: Annotated[AsyncSession, Depends(db_manager.get_session)]
 ) -> JSONResponse:
-    return await UserProfileManager.update_user(session=session, user_data=profile)
+    return await UserManager.update_user(session=session, user_data=profile)
 
 
 @router.post("", response_model=DTOUserProfile, summary="Creates user's profile")
@@ -63,7 +63,7 @@ async def create_user(
         session: Annotated[AsyncSession, Depends(db_manager.get_session)]
 ) -> JSONResponse:
     async with session.begin():
-        return await UserProfileManager.create_user(session=session, user_data=profile)
+        return await UserManager.create_user(session=session, user_data=profile)
 
 
 @router.get("/search", response_model=list[DTOUserProfileRead])
@@ -75,4 +75,4 @@ async def search_users(
     """
     Endpoint for searching for a user using the specified optional parameters
     """
-    return await UserProfileManager.search_users(user_id=user_id, session=session, search_params=search_params)
+    return await UserManager.search_users(user_id=user_id, session=session, search_params=search_params)

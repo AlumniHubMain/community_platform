@@ -1,8 +1,6 @@
 from .base import BaseSchema, TimestampedSchema, convert_enum_value
 from .users import (
-    UserProfile,
     SUserProfileRead,
-    SUserProfileUpdate,
     DTOUserProfile,
     DTOUserProfileRead,
     DTOUserProfileUpdate,
@@ -11,7 +9,12 @@ from .users import (
     DTOSkill,
     DTOIndustry,
     DTORequestsCommunity,
-    DTOSearchUser)
+    DTOSpecialisationRead,
+    DTOInterestRead,
+    DTOSkillRead,
+    DTORequestsCommunityRead,
+    DTOSearchUser,
+    DTOAllProperties)
 from .meeting_intents import MeetingIntent, SMeetingIntentRead
 from .meetings import (
     MeetingResponse,
@@ -28,7 +31,6 @@ from .meetings import (
 __all__ = [
     "BaseSchema",
     "TimestampedSchema",
-    "UserProfile",
     "MeetingIntent",
     "MeetingResponse",
     "MeetingRead",
@@ -40,7 +42,6 @@ __all__ = [
     "MeetingList",
     "MeetingsUserLimits",
     "SUserProfileRead",
-    "SUserProfileUpdate",
     "SMeetingIntentRead",
     "DTOUserProfile",
     "DTOUserProfileUpdate",
@@ -50,5 +51,10 @@ __all__ = [
     "DTOSkill",
     "DTOIndustry",
     "DTORequestsCommunity",
-    "DTOSearchUser"
+    "DTOSpecialisationRead",
+    "DTOInterestRead",
+    "DTOSkillRead",
+    "DTORequestsCommunityRead",
+    "DTOSearchUser",
+    "DTOAllProperties"
 ]

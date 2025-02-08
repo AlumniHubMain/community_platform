@@ -61,6 +61,12 @@ class ORMUserProfile(ObjectTable):
         back_populates="users"
     )
 
+    user_specialisations: Mapped[list["ORMUserSpecialisation"]] = relationship(
+        "ORMUserSpecialisation",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
     interests: Mapped[list["ORMInterest"]] = relationship(
         "ORMInterest",
         secondary=f"{schema}.users_interests",
@@ -127,6 +133,12 @@ class ORMSpecialisation(PropertyTable):
         back_populates="specialisations"
     )
 
+    user_specialisations: Mapped[list["ORMUserSpecialisation"]] = relationship(
+        "ORMUserSpecialisation",
+        back_populates="specialisation",
+        cascade="all, delete-orphan"
+    )
+
 
 class ORMUserSpecialisation(Base):
     """
@@ -141,6 +153,12 @@ class ORMUserSpecialisation(Base):
                                                    index=True)
 
     grade: Mapped[EGrade | None] = mapped_column(GradePGEnum)
+
+    user: Mapped["ORMUserProfile"] = relationship("ORMUserProfile", back_populates="user_specialisations")
+    specialisation: Mapped["ORMSpecialisation"] = relationship(
+        "ORMSpecialisation",
+        back_populates="user_specialisations"
+    )
 
 
 class ORMInterest(PropertyTable):

@@ -2,18 +2,15 @@ from datetime import datetime
 
 from common_db.enums import EMeetingResponseStatus
 from common_db.managers.user import UserManager
-from common_db.models import ORMUserProfile, ORMMeeting, ORMMeetingResponse, ORMSpecialisation, ORMSkill
-from common_db.schemas import DTOSearchUser, DTOUserProfileRead, DTOUserProfile
+from common_db.models import ORMUserProfile, ORMMeeting, ORMMeetingResponse
+from common_db.schemas import DTOUserProfileRead, SUserProfileRead
 
-from fastapi import HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi import HTTPException
 
-from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from .schemas import SUserProfileRead
 from web_gateway.settings import settings
 
 
@@ -23,44 +20,15 @@ class UserProfileManager(UserManager):
     """
 
     @classmethod
-    async def create_user(
-            cls,
-            session: AsyncSession,
-            user_data: DTOUserProfile
-    ) -> JSONResponse:
-        """
-        Create a new user in the database.
-
-        Args:
-            session: database session
-            user_data: user data for creation
-
-        Returns:
-            JSONResponse: response with status and created user id
-        """
-        user = ORMUserProfile(**user_data.model_dump(exclude_unset=True, exclude_none=True))
-        session.add(user)
-        await session.flush()
-        await session.commit()
-        return JSONResponse(
-            content={
-                "status": "success",
-                "message": "Create successfully",
-                "user_id": user.id
-            },
-            status_code=status.HTTP_201_CREATED
-        )
-    
-    @classmethod
     async def update_meetings_counters(
-        cls, session: AsyncSession, 
-        user_id: int
+            cls, session: AsyncSession,
+            user_id: int
     ) -> SUserProfileRead:
-        
+
         # Select user meeting responses
         reponses_query = select(ORMMeetingResponse).options(selectinload(ORMMeetingResponse.meeting)) \
-                         .where(ORMMeetingResponse.user_id == user_id) \
-                         .join(ORMMeeting).where(ORMMeeting.scheduled_time >= datetime.now())
+            .where(ORMMeetingResponse.user_id == user_id) \
+            .join(ORMMeeting).where(ORMMeeting.scheduled_time >= datetime.now())
 
         result = await session.execute(reponses_query)
         responses = result.scalars().all()
@@ -68,11 +36,11 @@ class UserProfileManager(UserManager):
         # Select user filtered meetings with all responses
         meeting_ids = tuple({response.meeting.id for response in responses})
         meetings_query = select(ORMMeeting).options(selectinload(ORMMeeting.user_responses)) \
-                         .filter(ORMMeeting.id.in_(meeting_ids))
+            .filter(ORMMeeting.id.in_(meeting_ids))
 
         result = await session.execute(meetings_query)
         user_meetings = result.scalars().all()
-        
+
         # Find meetings which all users confirm
         confirmed_count = 0
         for user_meeting in user_meetings:
@@ -85,9 +53,10 @@ class UserProfileManager(UserManager):
             confirmed_count += int(is_all_confirm)
 
         # Meetings with user response in (no_answer, confirmed)
-        pended_count: int = len([1 for response in responses 
-                                   if (response.response != EMeetingResponseStatus.declined and response.user_id == user_id)])
-        
+        pended_count: int = len([1 for response in responses
+                                 if (
+                                             response.response != EMeetingResponseStatus.declined and response.user_id == user_id)])
+
         confirmation_limit = settings.limits.max_user_confirmed_meetings_count
         pending_limit = settings.limits.max_user_pended_meetings_count
 
@@ -100,83 +69,6 @@ class UserProfileManager(UserManager):
         # Update counters
         profile_to_write.available_meetings_pendings_count = max(0, pending_limit - pended_count)
         profile_to_write.available_meetings_confirmations_count = max(0, confirmation_limit - confirmed_count)
-        
+
         await session.commit()
-        return SUserProfileRead.model_validate(profile_to_write)
-
-    @classmethod
-    async def search_users(
-            cls,
-            user_id: int,
-            session: AsyncSession,
-            search_params: DTOSearchUser
-    ) -> list[DTOUserProfileRead]:
-        """
-            Search for users by the specified parameters.
-
-            Args:
-                user_id: user ID of the verified user
-                search_params: search parameters (DTOSearchUser)
-                session: database session
-
-            Returns:
-                list[DTOUserProfileRead]: the list of found users
-            """
-
-        await cls.check_user(session=session, user_id=user_id)
-
-        query = (
-            select(ORMUserProfile)
-            .options(
-                selectinload(ORMUserProfile.specialisations),
-                selectinload(ORMUserProfile.skills)
-            )
-        )
-
-        # Creating a list of conditions
-        conditions = []
-
-        if search_params.name:
-            conditions.append(ORMUserProfile.name.ilike(f"%{search_params.name}%"))
-
-        if search_params.surname:
-            conditions.append(ORMUserProfile.surname.ilike(f"%{search_params.surname}%"))
-
-        if search_params.country:
-            conditions.append(ORMUserProfile.country.ilike(f"%{search_params.country}%"))
-
-        if search_params.city:
-            conditions.append(ORMUserProfile.city.ilike(f"%{search_params.city}%"))
-
-        # To search by expertise_area or specialisation, need to join with the specialisation table.
-        if search_params.expertise_area or search_params.specialisation:
-            query = query.join(
-                ORMUserProfile.specialisations
-            )
-
-            # To search by expertise_area
-            if search_params.expertise_area:
-                conditions.append(ORMSpecialisation.expertise_area.ilike(f"%{search_params.expertise_area}%"))
-
-            # To search by specialization
-            if search_params.specialisation:
-                conditions.append(ORMSpecialisation.label.ilike(f"%{search_params.specialisation}%"))
-
-        # To search by skills
-        if search_params.skill:
-            query = query.join(
-                ORMUserProfile.skills
-            )
-            conditions.append(ORMSkill.label.ilike(f"%{search_params.skill}%"))
-
-        # Adding all the conditions to the request using and_
-        if conditions:
-            query = query.where(and_(*conditions))
-
-        # Adding a limit
-        query = query.limit(search_params.limit)
-
-        # Executing the request
-        result = await session.execute(query)
-        users = result.scalars().unique().all()
-        return [DTOUserProfileRead.model_validate(user) for user in users]
+        return DTOUserProfileRead.model_validate(profile_to_write).to_old_schema()

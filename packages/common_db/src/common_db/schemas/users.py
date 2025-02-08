@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import ConfigDict, BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr
 from common_db.enums.users import (
     EExpertiseArea,
     EGrade,
@@ -11,42 +11,9 @@ from common_db.enums.users import (
     EVisibilitySettings,
 )
 
-from common_db.schemas.base import TimestampedSchema
 from common_db.schemas.meetings import MeetingResponseRead
 from pydantic_extra_types.country import CountryAlpha2, CountryAlpha3
 from pydantic_extra_types.timezone_name import TimeZoneName
-
-
-class UserProfile(TimestampedSchema):
-    name: str
-    surname: str
-    email: str
-    avatars: list[str] | None = None
-    about: str | None = None
-    interests: list[str] | None = None
-    linkedin_link: str | None = None
-    telegram_name: str | None = None
-    telegram_id: int | None = None
-    expertise_area: list[str] | None = None
-    specialisation: list[str] | None = None
-    grade: EGrade | None = None
-    industry: list[str] | None = None
-    skills: list[str] | None = None
-    country: str | None = None
-    city: str | None = None
-    referral: bool | None = None
-    requests_to_community: list[str] | None = None
-    is_tg_bot_blocked: bool | None = None
-    blocked_status_update_date: datetime | None = None
-    meeting_responses: list[MeetingResponseRead] | None = None
-
-
-class SUserProfileUpdate(UserProfile):
-    id: int
-
-
-class SUserProfileRead(SUserProfileUpdate):
-    model_config = ConfigDict(from_attributes=True)
 
 
 class DTOSpecialisation(BaseModel):
@@ -54,6 +21,23 @@ class DTOSpecialisation(BaseModel):
     description: str | None = None
     is_custom: bool | None = None
     expertise_area: EExpertiseArea | None = None
+
+
+class DTOSpecialisationRead(DTOSpecialisation):
+    id: int | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class DTOUserSpecialisation(BaseModel):
+    user_id: int = None
+    specialisation_id: int
+    grade: EGrade | None = None
+
+
+class DTOUserSpecialisationRead(DTOUserSpecialisation):
+    specialisation: DTOSpecialisationRead
 
     class Config:
         from_attributes = True
@@ -64,6 +48,10 @@ class DTOInterest(BaseModel):
     description: str | None = None
     is_custom: bool | None = None
     interest_area: EInterestsArea | None = None
+
+
+class DTOInterestRead(DTOInterest):
+    id: int | None = None
 
     class Config:
         from_attributes = True
@@ -82,6 +70,10 @@ class DTOSkill(BaseModel):
     is_custom: bool | None = None
     skill_area: ESkillsArea | None = None
 
+
+class DTOSkillRead(DTOSkill):
+    id: int | None = None
+
     class Config:
         from_attributes = True
 
@@ -91,6 +83,10 @@ class DTORequestsCommunity(BaseModel):
     description: str | None = None
     is_custom: bool | None = None
     requests_area: ERequestsArea | None = None
+
+
+class DTORequestsCommunityRead(DTORequestsCommunity):
+    id: int | None = None
 
     class Config:
         from_attributes = True
@@ -128,18 +124,26 @@ class DTOUserProfileUpdate(DTOUserProfile):
     id: int
 
 
+class SUserProfileRead(DTOUserProfile):
+    specialisations: list[str] | None = None
+    interests: list[str] | None = None
+    industry: list[str] | None = None
+    skills: list[str] | None = None
+    requests_to_community: list[str] | None = None
+
+
 class DTOUserProfileRead(DTOUserProfileUpdate):
-    specialisations: list[DTOSpecialisation] | None = None
-    interests: list[DTOInterest] | None = None
+    specialisations: list[DTOUserSpecialisationRead] | None = None
+    interests: list[DTOInterestRead] | None = None
     industry: list[DTOIndustry] | None = None
-    skills: list[DTOSkill] | None = None
-    requests_to_community: list[DTORequestsCommunity] | None = None
+    skills: list[DTOSkillRead] | None = None
+    requests_to_community: list[DTORequestsCommunityRead] | None = None
 
     class Config:
         from_attributes = True
 
-    def to_lazy_schema(self) -> SUserProfileRead:
-        lazy_schema: SUserProfileRead = SUserProfileRead(**self.model_dump(
+    def to_old_schema(self) -> SUserProfileRead:
+        old_schema: SUserProfileRead = SUserProfileRead(**self.model_dump(
             exclude={
                 'specialisations',
                 'interests',
@@ -148,15 +152,16 @@ class DTOUserProfileRead(DTOUserProfileUpdate):
                 'requests_to_community'
             }
         ))
-        lazy_schema.specialisation = [x.label for x in self.specialisation] if self.specialisation else None
-        lazy_schema.expertise_area = list({x.expertise_area.name for x in self.specialisation}) \
-            if self.specialisation else None
-        lazy_schema.interests = [x.label for x in self.interests] if self.interests else None
-        lazy_schema.industry = [x.label for x in self.industry] if self.industry else None
-        lazy_schema.skills = [x.label for x in self.skills] if self.skills else None
-        lazy_schema.requests_to_community = [x.label for x in self.requests_to_community] \
+        old_schema.specialisation = [x.specialisation.label for x in self.specialisations] \
+            if self.specialisations else None
+        old_schema.expertise_area = list({x.specialisation.expertise_area.name for x in self.specialisations}) \
+            if self.specialisations else None
+        old_schema.interests = [x.label for x in self.interests] if self.interests else None
+        old_schema.industry = [x.label for x in self.industry] if self.industry else None
+        old_schema.skills = [x.label for x in self.skills] if self.skills else None
+        old_schema.requests_to_community = [x.label for x in self.requests_to_community] \
             if self.requests_to_community else None
-        return lazy_schema
+        return old_schema
 
 
 class DTOSearchUser(BaseModel):
@@ -168,3 +173,10 @@ class DTOSearchUser(BaseModel):
     specialisation: str | None = None
     skill: str | None = None
     limit: int | None = 30
+
+
+class DTOAllProperties(BaseModel):
+    specialisations: list[DTOSpecialisationRead] | None = None
+    interests: list[DTOInterestRead] | None = None
+    skills: list[DTOSkillRead] | None = None
+    requests_to_community: list[DTORequestsCommunityRead] | None = None
