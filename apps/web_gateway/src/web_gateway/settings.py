@@ -3,9 +3,9 @@ from pydantic import BaseModel
 from config_library import BaseConfig, FieldType
 
 
-class SecretFiles(BaseModel):
-    access_secret_file: str
-    bot_token_file: str
+class Secrets(BaseConfig, BaseModel):
+    access_secret: FieldType[str]
+    bot_token: FieldType[str]
 
 
 class EmitterSettings(BaseModel):
@@ -27,7 +27,7 @@ class Settings(BaseConfig):
     environment: str = "../../config/environment/environment"
     emitter_settings: FieldType[EmitterSettings] = "../../config/emitter_settings/emitter_settings.json"
     limits: FieldType[LimitsSettings] = "../../config/limits/limits.json"
-    secret_files: FieldType[SecretFiles] = "../../config/secret_files/secret_files.json"
+    secrets: FieldType[Secrets] = "../../config/secret_files/secret_files.json"
 
 
 settings = Settings()

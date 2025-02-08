@@ -14,9 +14,8 @@ import secrets
 
 
 logger = logging.getLogger(__name__)
-ACCESS_SECRET_KEY = settings.secret_files.access_secret_file
-BOT_TOKEN = settings.secret_files.bot_token_file
-
+ACCESS_SECRET_KEY = settings.secrets.access_secret
+BOT_TOKEN = settings.secrets.bot_token
 ALGORITHM = "HS256"
 TOKEN_EXPIRY_SECONDS = 3600  # 1 hour
 

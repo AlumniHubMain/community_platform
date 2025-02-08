@@ -11,7 +11,7 @@ RUN uv sync --frozen --no-install-project
 
 COPY ./config/ /build/config/
 COPY ./credentials/ /build/credentials/
-COPY ./secrets/ /build/secrets/
+COPY ./secrets/ /secrets/
 
 COPY ./apps/web_gateway/ /build/apps/web_gateway/
 
