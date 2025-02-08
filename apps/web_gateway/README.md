@@ -62,7 +62,7 @@ uv add package-name
 
 #### environment
 
-Описывает конфигурацию сервера: `development`/`production`.
+Описывает конфигурацию сервера: `dev`/`staging`/`prod`.
 
 #### limits.json
 

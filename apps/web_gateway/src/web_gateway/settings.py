@@ -20,13 +20,12 @@ class LimitsSettings(BaseModel):
 
 class Settings(BaseConfig):
     # ToDo(und3v3l0p3d): Move db_config into root config
-    environment: str = 'dev'
-    google_application_credentials: str  = './config/credentials.json'
-    google_cloud_bucket: str = 'community_platform_media1'
-    access_secret_file: FieldType[str] = './config/access_secret_file'
-    bot_token_file: FieldType[str] = './config/token'
-    emitter_settings: FieldType[EmitterSettings] = './public_config/emitter_settings.json'
-    limits: FieldType[LimitsSettings] = './public_config/limits.json'
+    environment: str = "dev"
+    google_application_credentials: str = "./config/credentials.json"
+    google_cloud_bucket: str = "community_platform_media1"
+    emitter_settings: FieldType[EmitterSettings] = "./public_config/emitter_settings.json"
+    limits: FieldType[LimitsSettings] = "./public_config/limits.json"
+    secret_files: FieldType[SecretFiles] = "./config/secret_files.json"
 
 
 settings = Settings()
