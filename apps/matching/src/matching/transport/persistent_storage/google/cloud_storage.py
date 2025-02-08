@@ -5,9 +5,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 import aiofiles
 from google.cloud import storage
-
+from google.oauth2.service_account import Credentials
 from matching.transport.persistent_storage.persistent_adapter import PersistentAdapter
-from matching.config import matching_settings
+from matching.config import settings
 
 
 class CloudStorageAdapter(PersistentAdapter):
@@ -45,4 +45,7 @@ class CloudStorageAdapter(PersistentAdapter):
         return True
 
     async def initialize(self):
-        self.storage_client = storage.Client(project=matching_settings.matching.project_id)  # pylint: disable=no-member
+        self.storage_client = storage.Client(
+            project=settings.matching.project_id,
+            credentials=Credentials.from_service_account_file(settings.google_application_credentials),
+        )  # pylint: disable=no-member

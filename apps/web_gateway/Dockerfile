@@ -9,9 +9,9 @@ WORKDIR /build/apps/web_gateway/
 COPY ./apps/web_gateway/pyproject.toml ./apps/web_gateway/uv.lock .
 RUN uv sync --frozen --no-install-project
 
-# configs for local development
 COPY ./config/ /build/config/
 COPY ./credentials/ /build/credentials/
+COPY ./secrets/ /build/secrets/
 
 COPY ./apps/web_gateway/ /build/apps/web_gateway/
 

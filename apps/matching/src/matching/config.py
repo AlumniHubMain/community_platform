@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from pydantic_core import ValidationError
 from config_library import FieldType, BaseConfig
 
 
@@ -8,16 +7,24 @@ class MatchingConfig(BaseModel):
     bucket_name: str
 
 
-class MatchingSettings(BaseConfig):
-    matching: FieldType[MatchingConfig] = "/config/matching.json"
+class EmitterSettings(BaseModel):
+    meetings_notification_target: str
+    meetings_google_pubsub_notification_topic: str
 
 
-class MatchingSettingsLocal(BaseConfig):
+class LimitsSettings(BaseModel):
+    max_user_confirmed_meetings_count: int
+    max_user_pended_meetings_count: int
+
+
+class Settings(BaseConfig):
+    # ToDo(und3v3l0p3d): Move db_config into root config
+    environment: str = "../../config/environment"
+    google_application_credentials: str = "../../credentials/credentials.json"
+    google_cloud_bucket: str = "community_platform_media1"
+    emitter_settings: FieldType[EmitterSettings] = "../../config/emitter_settings.json"
+    limits: FieldType[LimitsSettings] = "../../config/limits.json"
     matching: FieldType[MatchingConfig] = "../../config/matching.json"
 
 
-try:
-    matching_settings = MatchingSettings()
-except ValidationError as e:
-    print(f"Error loading MatchingSettings from /config/matching.json: {e}")
-    matching_settings = MatchingSettingsLocal()
+settings = Settings()

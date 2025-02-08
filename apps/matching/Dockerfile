@@ -21,6 +21,8 @@ RUN uv sync --frozen --no-install-project
 # configs for local development
 COPY ./config/ /build/config/
 COPY ./credentials/ /build/credentials/
+COPY ./secrets/ /build/secrets/
+
 
 COPY ./apps/matching/ /build/apps/matching/
 

@@ -5,12 +5,6 @@ services:
     build: 
       context: .
       dockerfile: apps/matching/Dockerfile
-    environment:
-      - ENVIRONMENT=development
-      - GOOGLE_APPLICATION_CREDENTIALS=/credentials/service_account_credentials.json
-    volumes:
-      - ./credentials:/credentials
-      - ./config:/config
     ports:
       - "8080:8080"
     depends_on:
@@ -20,11 +14,6 @@ services:
     build: 
       context: .
       dockerfile: apps/web_gateway/Dockerfile
-    environment:
-      - ENVIRONMENT=development
-    volumes:
-      - ./public_config:/public_config
-      - ./config:/config
     ports:
       - "8081:8080"
     depends_on:

@@ -14,4 +14,4 @@ build/
 *.egg-info/
 *_pb2.py*
 *locdev*
-credentials
+credentials.json
