@@ -1,5 +1,5 @@
 
-from sqlalchemy import Index, PrimaryKeyConstraint, ForeignKey, Integer, Text, String
+from sqlalchemy import Index, PrimaryKeyConstraint, ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 from common_db.config import schema
 from common_db.models.base import ObjectTable
@@ -25,5 +25,5 @@ class ORMForm(ObjectTable):
                                          ForeignKey(f'{schema}.users.id', ondelete="CASCADE"),
                                          primary_key=True)
     intent: Mapped[EFormIntentType] = mapped_column(FormIntentTypePGEnum, nullable=False)
-    content: Mapped[str] = mapped_column(Text)
-    calendar: Mapped[str] = mapped_column(String(200))
+    content: Mapped[dict] = mapped_column(JSON, nullable=False)
+    calendar: Mapped[str] = mapped_column(String(200), nullable=False)

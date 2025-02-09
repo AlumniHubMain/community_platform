@@ -391,80 +391,20 @@ def upgrade() -> None:
         "forms",
         sa.Column("user_id", sa.BIGINT(), nullable=False),
         sa.Column(
-            "meeting_type",
+            "intent",
             sa.Enum(
-                "online",
-                "offline",
-                "both",
-                name="form_meeting_type_enum",
-                schema=f'{schema}',
-                inherit_schema=True,
-            ),
-            nullable=False,
-        ),
-        sa.Column(
-            "query_type",
-            sa.Enum(
-                "interests_chatting",
-                "offline_meeting",
-                "news_discussion",
-                "startup_discussion",
-                "feedback",
-                "cooperative_learning",
-                "practical_discussion",
-                "tools_discussion",
-                "exam_preparation",
-                "help_request",
-                "looking_for",
+                "connects",
+                "referrals_recommendation",
+                "referrals_find",
                 "mentoring",
-                "other",
-                name="form_query_type_enum",
+                name="form_intent_type_enum",
                 schema=f'{schema}',
                 inherit_schema=True,
             ),
             nullable=False,
         ),
-        sa.Column(
-            "help_request_type",
-            sa.Enum(
-                "management",
-                "product",
-                "development",
-                "design",
-                "marketing",
-                "sales",
-                "finance",
-                "entrepreneurship",
-                "hr",
-                "business_development",
-                "law",
-                "other",
-                name="form_help_request_type_enum",
-                schema=f'{schema}',
-                inherit_schema=True,
-            ),
-            nullable=False,
-        ),
-        sa.Column(
-            "looking_for_type",
-            sa.Enum(
-                "work",
-                "part_time",
-                "recommendation",
-                "pet_project",
-                "mock_interview_partner",
-                "mentor",
-                "mentee",
-                "cofounder",
-                "contributor",
-                name="form_looking_for_type_enum",
-                schema=f'{schema}',
-                inherit_schema=True,
-            ),
-            nullable=False,
-        ),
+        sa.Column("content", sa.JSON(), nullable=False),
         sa.Column("calendar", sa.String(length=200), nullable=False),
-        sa.Column("description", sa.Text(), nullable=True),
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column(
             "created_at",
@@ -486,9 +426,9 @@ def upgrade() -> None:
         schema=f'{schema}',
     )
     op.create_index(
-        "ix_form_query_type",
+        "ix_form_intent_type",
         "forms",
-        ["query_type"],
+        ["intent"],
         unique=False,
         schema=f'{schema}',
     )
@@ -697,11 +637,8 @@ def downgrade() -> None:
     op.execute(f"DROP TYPE {schema}.user_requests_to_community_enum")
     op.execute(f"DROP TYPE {schema}.user_with_whom_enum")
     op.execute(f"DROP TYPE {schema}.user_visibility_settings_enum")
-    op.execute(f"DROP TYPE {schema}.form_meeting_type_enum")
+    op.execute(f"DROP TYPE {schema}.form_intent_type_enum")
     op.execute(f"DROP TYPE {schema}.meeting_format")
-    op.execute(f"DROP TYPE {schema}.from_query_type_enum")
-    op.execute(f"DROP TYPE {schema}.form_help_request_type_enum")
-    op.execute(f"DROP TYPE {schema}.form_looking_for_type_enum")
     op.execute(f"DROP TYPE {schema}.meeting_user_role_enum")
     op.execute(f"DROP TYPE {schema}.meeting_response_status_enum") 
     op.execute(f"DROP TYPE {schema}.meeting_location_enum")

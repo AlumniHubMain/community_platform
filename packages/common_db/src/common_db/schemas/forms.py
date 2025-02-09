@@ -86,4 +86,4 @@ class FormCreate(FormBase):
 
 class FormRead(FormBase, TimestampedSchema):
     """Schema for reading a form"""
-    pass
+    id: int
