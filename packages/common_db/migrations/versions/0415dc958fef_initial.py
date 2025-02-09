@@ -397,6 +397,8 @@ def upgrade() -> None:
                 "referrals_recommendation",
                 "referrals_find",
                 "mentoring",
+                "mock_interview",
+                "help_requests",
                 name="form_intent_type_enum",
                 schema=f'{schema}',
                 inherit_schema=True,

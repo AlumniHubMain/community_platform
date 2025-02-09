@@ -62,28 +62,7 @@ class FormsManager:
     @classmethod
     async def create_form(
         cls, session: AsyncSession, form: FormCreate
-    ) -> FormRead:
-        
-        """mock_interview
-        {
-            "interview_type": ["technical", "behavioral", "role"] <- list,
-            "possible_english_interview": bool,
-            "resume_from_profile": bool,
-            "resume_link": Text,
-            "job_link": Text,
-            "comment": Text
-        }
-        """
-        """help_requests
-        {
-            "subtype": ["question", "assistance"],
-            "query_area": [...] <- list,
-            "query_area_details": "Text",
-            (opt)"query_text": Text,
-            (opt)"file_link": Text
-        }
-        """
-        
+    ) -> FormRead:    
         await cls.check_user_exists(session, form.user_id)
         
         if not (form.intent in INTENT_TO_SCHEMA):

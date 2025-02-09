@@ -7,6 +7,8 @@ class EFormIntentType(Enum):
     referrals_recommendation = "referrals_recommendation"
     referrals_find = "referrals_find"
     mentoring = "mentoring"
+    mock_interview = "mock_interview"
+    help_requests = "help_requests"
 
 
 class EFormSocialExpansionQueryType(Enum):
@@ -73,6 +75,24 @@ class EFormEnglishLevel(Enum):
     B2 = "B2"
     C1 = "C1"
     C2 = "C2"
+
+
+class EFormMockInterviewType(Enum):
+    technical = "technical"
+    behavioral = "behavioral"
+    role_playing = "role_playing"
+
+
+class EFormHelpRequestSubtype(Enum):
+    ask_question = "ask_question"
+    answer_question = "answer_question"
+    
+
+class EFormHelpRequestQueryArea(Enum):
+    management = "management"
+    product = "product"
+    # TODO: Fill me
+    custom = "custom"
 
 
 # PostgreSQL Enum types
