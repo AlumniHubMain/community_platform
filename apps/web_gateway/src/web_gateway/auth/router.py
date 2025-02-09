@@ -22,6 +22,13 @@ from .security import (
     TOKEN_EXPIRY_SECONDS,
 )
 
+import os
+
+if os.getenv("env") == "staging":
+    BOT_NAME = "yndx_coffee_staging_bot"
+else:
+    BOT_NAME = "yndx_cofee_bot"
+
 
 router = APIRouter(tags=["Simple authentication and authorization"], prefix="/auth")
 
@@ -40,11 +47,12 @@ async def login_page(request: Request):
         <h1>Login with Telegram</h1>
         <div id="telegram-widget"></div>
         <script async src="https://telegram.org/js/telegram-widget.js?7"
-                data-telegram-login="yndx_cofee_bot" 
+                data-telegram-login="{BOT_NAME}" 
                 data-size="large" 
                 data-radius="10" 
                 data-auth-url="{request.base_url}/auth/telegram/widget/token"
-                data-request-access="write"></script>
+                data-request-access="write">
+        </script>
         <script type="text/javascript">
           function onTelegramAuth(user) {{
             alert('Logged in as ' + user.first_name + ' ' + user.last_name + ' (' + user.id + (user.username ? ', @' + user.username : '') + ')');
