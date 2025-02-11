@@ -5,7 +5,6 @@ from sqlalchemy import Enum as PGEnum
 class EFormIntentType(Enum):
     connects = "connects"
     referrals_recommendation = "referrals_recommendation"
-    referrals_find = "referrals_find"
     mentoring = "mentoring"
     mock_interview = "mock_interview"
     help_requests = "help_requests"
@@ -17,6 +16,11 @@ class EFormConnectsMeetingFormat(Enum):
 
 
 class EFormConnectsSocialExpansionTopic(Enum):
+    """
+    Warning! __ separator must be user for construction of tree structure.
+    For example: 
+        development__data_science__deep_learning means this tree -> [development -> data science -> deep learning]
+    """
     development__web_development = "development__web_development"
     development__mobile_development = "development__mobile_development"
     design__design_system_development = "design__design_system_development"
@@ -56,6 +60,11 @@ class EFormMentoringSpecialozations(Enum):
     # TODO: Fill me
 
 
+class EFormRefferalsCompanyType(Enum):
+    dummy = "dummy"
+    # TODO: Fill me
+
+
 class EFormCompanies(Enum):
     any = "any"
     vk = "vk"
@@ -63,13 +72,14 @@ class EFormCompanies(Enum):
 
 
 class EFormEnglishLevel(Enum):
-    unknown = "unknown"
+    not_required = "not_required"
     A1 = "A1"
     A2 = "A2"
     B1 = "B1"
     B2 = "B2"
     C1 = "C1"
     C2 = "C2"
+    native = "Native"
 
 
 class EFormMockInterviewType(Enum):

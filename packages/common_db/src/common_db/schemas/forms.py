@@ -9,6 +9,7 @@ from common_db.enums.forms import (
     EFormMentoringRole,
     EFormMentoringHelpRequest, 
     EFormMentoringSpecialozations,
+    EFormRefferalsCompanyType,
     EFormCompanies,
     EFormEnglishLevel,
     EFormMockInterviewType,
@@ -99,25 +100,20 @@ class FormMentoring(BaseModel):
 
 # ============================ Refferals form schema ===========================
 
-class FormReferralsFind(BaseModel):
-    selected_companies: list[EFormReferralsCompanies]
-    resume_s3_link: str
-    english_level: EFormEnglishLevel
-    english_sertificat_s3_link: str | None = None
-    
-    @model_validator(mode='after')
-    def extended_model_validation(self):
-        # Check nonempty lists
-        if len(self.help_request) == 0:
-            raise ValueError("\"selected_companies\" list must be non-empty")
-        return self
-
-
 class FormReferralsRecommendation(BaseModel):
+    required_companies: list[EFormCompanies]
     is_all_experts_type: bool
     is_need_call: bool
     required_english_level: EFormEnglishLevel
     job_link: str
+    company_type: EFormRefferalsCompanyType
+    
+    @model_validator(mode='after')
+    def check_nonempty(self):
+        if len(self.required_companies) == 0:
+            raise ValueError("\"required_companies\" list must be non-empty")
+        return self
+
 
 # ==============================================================================
 
@@ -163,7 +159,6 @@ class FormHelpRequests(BaseModel):
 INTENT_TO_SCHEMA = {
     EFormIntentType.connects: FormConnects,
     EFormIntentType.mentoring: FormMentoring,
-    EFormIntentType.referrals_find: FormReferralsFind,
     EFormIntentType.referrals_recommendation: FormReferralsRecommendation,
     EFormIntentType.mock_interview: FormMockInterview,
     EFormIntentType.help_requests: FormHelpRequests,
