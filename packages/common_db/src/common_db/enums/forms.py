@@ -11,29 +11,23 @@ class EFormIntentType(Enum):
     help_requests = "help_requests"
 
 
-class EFormSocialExpansionQueryType(Enum):
-    interest_discussion = "interest_discussion"
-    offline_meetings = "offline_meetings"
+class EFormConnectsMeetingFormat(Enum):
+    offline = "offline"
+    online = "online"
 
 
-class EFormProfessionalNetworkingQueryType(Enum):
-    trends_discussion = "trends_discussion"
-    startup_ideas = "startup_ideas"
+class EFormConnectsSocialExpansionTopic(Enum):
+    development__web_development = "development__web_development"
+    development__mobile_development = "development__mobile_development"
+    design__design_system_development = "design__design_system_development"
+    custom = "custom"
+    # TODO: Fill me
 
 
-class EFormProfessionalNetworkingSpecializationType(Enum):
-    # TODO: Fill it
-    ml = "ml"
+class EFormProfessionalNetworkingTopic(Enum):
     development = "development"
-    frontend = "frontend"
-
-
-class EFormExperienceExchangeQueryType(Enum):
-    product_feedback = "product_feedback"
-    coeducation = "coeducation"
-    best_practies_discussion = "best_practies_discussion"
-    new_technologies_discussion = "new_technologies_discussion"
-    exam_preparation = "exam_preparation"
+    analytics = "analytics"
+    # TODO: Fill me
 
 
 class EFormMentoringRole(Enum):
@@ -62,7 +56,8 @@ class EFormMentoringSpecialozations(Enum):
     # TODO: Fill me
 
 
-class EFormReferralsCompanies(Enum):
+class EFormCompanies(Enum):
+    any = "any"
     vk = "vk"
     yandex = "yandex"
 

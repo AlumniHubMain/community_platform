@@ -1,17 +1,15 @@
-from datetime import datetime
 from pydantic import BaseModel, model_validator
 
 from common_db.schemas.base import BaseSchema, TimestampedSchema
 from common_db.enums.forms import (
     EFormIntentType,
-    EFormSocialExpansionQueryType,
-    EFormProfessionalNetworkingQueryType,
-    EFormProfessionalNetworkingSpecializationType,
-    EFormExperienceExchangeQueryType,
+    EFormConnectsMeetingFormat,
+    EFormConnectsSocialExpansionTopic,
+    EFormProfessionalNetworkingTopic,
     EFormMentoringRole,
     EFormMentoringHelpRequest, 
     EFormMentoringSpecialozations,
-    EFormReferralsCompanies,
+    EFormCompanies,
     EFormEnglishLevel,
     EFormMockInterviewType,
     EFormHelpRequestSubtype,
@@ -20,50 +18,48 @@ from common_db.enums.forms import (
 
 # ============================ Connects form schema ============================
 class FormFieldSocialSircleExpansion(BaseModel):
-    query_type: list[EFormSocialExpansionQueryType]
-
+    meeting_formats: list[EFormConnectsMeetingFormat]
+    topics: list[EFormConnectsSocialExpansionTopic] | None # TODO: Is it optional? Figma - optional
+    custom_themes: list[str] | None
+    details: str | None
+    
     @model_validator(mode='after')
     def check_nonempty(self):
-        if len(self.query_type) == 0:
-            raise ValueError("\"query_type\" list must be non-empty")
+        if len(self.meeting_formats) == 0:
+            raise ValueError("\"meeting_formats\" list must be non-empty")
+        if self.themes:
+            if len(self.themes) == 0:
+                raise ValueError("\"themes\" list must be non-empty")
+            if EFormConnectsSocialExpansionTopic.custom in self.themes:
+                if self.custom_themes is None:
+                    raise ValueError("\"custom_themes\" list must be setted, when \"custom\" topic added")
+                if len(self.custom_themes) == 0:
+                    raise ValueError("\"custom_themes\" list must be non-empty, when \"custom\" topic added")
         return self
+
 
 class FormFieldProfessionalNetworking(BaseModel):
-    query_type: list[EFormProfessionalNetworkingQueryType]
-    target_specialization: list[EFormProfessionalNetworkingSpecializationType]
+    topics: list[EFormProfessionalNetworkingTopic]
+    user_query: str | None
 
     @model_validator(mode='after')
     def check_nonempty(self):
-        if len(self.query_type) == 0:
-            raise ValueError("\"query_type\" list must be non-empty")
-        if len(self.target_specialization) == 0:
-            raise ValueError("\"target_specialization\" list must be non-empty")
-        return self
-    
-    
-class FormFieldExperienceExchange(BaseModel):
-    query_type: list[EFormExperienceExchangeQueryType]
-    
-    @model_validator(mode='after')
-    def check_nonempty(self):
-        if len(self.query_type) == 0:
-            raise ValueError("\"query_type\" list must be non-empty")
+        if len(self.topics) == 0:
+            raise ValueError("\"topics\" list must be non-empty")
         return self
 
   
 class FormConnects(BaseModel):
     social_circle_expansion: FormFieldSocialSircleExpansion | None = None
     professional_networking: FormFieldProfessionalNetworking | None = None
-    experience_exchange: FormFieldExperienceExchange | None = None
-    details: str | None = None
+    companies: EFormCompanies
     
     @model_validator(mode='after')
     def extended_model_validation(self):
         # Check one of fields nonempty
         validate_fields = (
             'social_circle_expansion',
-            'professional_networking',
-            'experience_exchange'
+            'professional_networking'
         )
 
         is_all_empty = True
