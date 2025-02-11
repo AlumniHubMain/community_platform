@@ -8,14 +8,15 @@ from common_db.enums.forms import (
     EFormProfessionalNetworkingTopic,
     EFormMentoringGrade,
     EFormMentoringHelpRequest, 
-    EFormMentoringSpecialization,
+    EFormSpecialization,
     EFormRefferalsCompanyType,
     EFormCompanies,
     EFormEnglishLevel,
     EFormMockInterviewType,
     EFormMockInterviewLangluages,
-    EFormHelpRequestSubtype,
-    EFormHelpRequestQueryArea,
+    EFormSkills,
+    EFormProjectProjectState,
+    EFormProjectUserRole,
 )
 
 
@@ -109,7 +110,7 @@ class FormMentoringHelpRequest(BaseModel):
 class FormMentoringMentor(BaseModel):
     companies: list[EFormCompanies]
     required_grade: list[EFormMentoringGrade]
-    specialization: list[EFormMentoringSpecialization]
+    specialization: list[EFormSpecialization]
     help_request: FormMentoringHelpRequest
     about: str
 
@@ -121,7 +122,7 @@ class FormMentoringMentor(BaseModel):
 
 class FormMentoringMentee(BaseModel):
     grade: list[EFormMentoringGrade]
-    mentor_specialization: list[EFormMentoringSpecialization]
+    mentor_specialization: list[EFormSpecialization]
     help_request: FormMentoringHelpRequest
     details: str
 
@@ -187,23 +188,24 @@ class FormMockInterview(BaseModel):
 
 # ==============================================================================
 
-# ========================= Help Requests form schema ==========================
+# ============================ Projects form schema ============================
 
-class FormHelpRequests(BaseModel):
-    subtype: EFormHelpRequestSubtype
-    query_area: list[EFormHelpRequestQueryArea]
-    query_area_details: str | None = None
-    query_text: str
-    file_link: str | None = None
-    
+class FormProjectsBase(BaseModel):
+    project_description: str
+    specialization: list[EFormSpecialization]
+    skills: list[EFormSkills]
     @model_validator(mode='after')
     def validate_depended_fields(self):
-        validate_non_empty_list(self, ["query_area"])        
-        if EFormHelpRequestQueryArea.custom in self.query_area and self.query_area_details is None:
-            raise ValueError("\"query_area_details\" must be non-empty when " + 
-                             f"\"{EFormHelpRequestQueryArea.custom.value}\"" + 
-                             " query area selected")
+        validate_non_empty_list(self, ["specialization", "skills"])        
         return self
+
+
+class FormProjectsFindHead(FormProjectsBase):
+    project_state: EFormProjectProjectState
+
+
+class FormProjectPetProject(FormProjectsBase):
+    role: EFormProjectUserRole
 
 # ==============================================================================
 
@@ -213,7 +215,9 @@ INTENT_TO_SCHEMA = {
     EFormIntentType.mentoring_mentee: FormMentoringMentee,
     EFormIntentType.referrals_recommendation: FormReferralsRecommendation,
     EFormIntentType.mock_interview: FormMockInterview,
-    EFormIntentType.help_requests: FormHelpRequests,
+    EFormIntentType.projects_find_cofounder: FormProjectsFindHead,
+    EFormIntentType.projects_find_contributor: FormProjectsFindHead,
+    EFormIntentType.projects_pet_project: FormProjectPetProject,
 }
 
 class FormBase(BaseSchema):

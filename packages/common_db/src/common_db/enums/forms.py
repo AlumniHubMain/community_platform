@@ -8,7 +8,46 @@ class EFormIntentType(Enum):
     mentoring_mentor = "mentoring_mentor"
     mentoring_mentee = "mentoring_mentee"
     mock_interview = "mock_interview"
-    help_requests = "help_requests"
+    projects_find_contributor = "projects_find_contributor"
+    projects_find_cofounder = "projects_find_cofounder"
+    projects_pet_project = "projects_pet_project"
+
+
+class EFormSpecialization(Enum):
+    """
+    Warning! __ separator must be user for construction of tree structure.
+    For example: 
+        development__data_science__deep_learning means this tree -> [development -> data science -> deep learning]
+    """
+    development__frontend__react = "development__frontend__react"
+    development__frontend__vue = "development__frontend__vue"
+    development__backend__cpp = "development__backend__cpp"
+    development__backend__python = "development__backend__python"
+    development__data_science__deep_learning = "development__data_science__deep_learning"
+    # TODO: Fill me
+
+
+class EFormSkills(Enum):
+    development__frontend = "development__frontend"
+    design_ui_ux = "design_ui_ux"
+    # TODO: Fill me
+
+
+class EFormCompanies(Enum):
+    any = "any"
+    vk = "vk"
+    yandex = "yandex"
+
+
+class EFormEnglishLevel(Enum):
+    not_required = "not_required"
+    A1 = "A1"
+    A2 = "A2"
+    B1 = "B1"
+    B2 = "B2"
+    C1 = "C1"
+    C2 = "C2"
+    native = "Native"
 
 
 class EFormConnectsMeetingFormat(Enum):
@@ -51,40 +90,9 @@ class EFormMentoringGrade(Enum):
     executive = "executive"
 
 
-class EFormMentoringSpecialization(Enum):
-    """
-    Warning! __ separator must be user for construction of tree structure.
-    For example: 
-        development__data_science__deep_learning means this tree -> [development -> data science -> deep learning]
-    """
-    development__frontend__react = "development__frontend__react"
-    development__frontend__vue = "development__frontend__vue"
-    development__backend__cpp = "development__backend__cpp"
-    development__backend__python = "development__backend__python"
-    development__data_science__deep_learning = "development__data_science__deep_learning"
-    # TODO: Fill me
-
-
 class EFormRefferalsCompanyType(Enum):
     dummy = "dummy"
     # TODO: Fill me
-
-
-class EFormCompanies(Enum):
-    any = "any"
-    vk = "vk"
-    yandex = "yandex"
-
-
-class EFormEnglishLevel(Enum):
-    not_required = "not_required"
-    A1 = "A1"
-    A2 = "A2"
-    B1 = "B1"
-    B2 = "B2"
-    C1 = "C1"
-    C2 = "C2"
-    native = "Native"
 
 
 class EFormMockInterviewType(Enum):
@@ -99,16 +107,16 @@ class EFormMockInterviewLangluages(Enum):
     custom = "custom"
 
 
-class EFormHelpRequestSubtype(Enum):
-    ask_question = "ask_question"
-    answer_question = "answer_question"
-    
+class EFormProjectProjectState(Enum):
+    idea = "idea"
+    prototype = "prototype"
+    mvp = "mvp"
+    scaling = "scaling"
 
-class EFormHelpRequestQueryArea(Enum):
-    management = "management"
-    product = "product"
-    # TODO: Fill me
-    custom = "custom"
+
+class EFormProjectUserRole(Enum):
+    contributor = "contributor"
+    cofounder = "cofounder"
 
 
 # PostgreSQL Enum types
