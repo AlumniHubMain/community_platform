@@ -5,7 +5,8 @@ from sqlalchemy import Enum as PGEnum
 class EFormIntentType(Enum):
     connects = "connects"
     referrals_recommendation = "referrals_recommendation"
-    mentoring = "mentoring"
+    mentoring_mentor = "mentoring_mentor"
+    mentoring_mentee = "mentoring_mentee"
     mock_interview = "mock_interview"
     help_requests = "help_requests"
 
@@ -34,11 +35,6 @@ class EFormProfessionalNetworkingTopic(Enum):
     # TODO: Fill me
 
 
-class EFormMentoringRole(Enum):
-    mentor = "mentor"
-    mentee = "mentee"
-
-
 class EFormMentoringHelpRequest(Enum):
     adaptation_after_relocate = "adaptation_after_relocate"
     process_and_teams_management = "process_and_teams_management"
@@ -46,7 +42,16 @@ class EFormMentoringHelpRequest(Enum):
     # TODO: Fill me
 
 
-class EFormMentoringSpecialozations(Enum):
+class EFormMentoringGrade(Enum):
+    junior = "junior"
+    middle = "middle"
+    senior = "senior"
+    lead = "lead"
+    head = "head"
+    executive = "executive"
+
+
+class EFormMentoringSpecialization(Enum):
     """
     Warning! __ separator must be user for construction of tree structure.
     For example: 

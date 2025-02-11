@@ -6,9 +6,9 @@ from common_db.enums.forms import (
     EFormConnectsMeetingFormat,
     EFormConnectsSocialExpansionTopic,
     EFormProfessionalNetworkingTopic,
-    EFormMentoringRole,
+    EFormMentoringGrade,
     EFormMentoringHelpRequest, 
-    EFormMentoringSpecialozations,
+    EFormMentoringSpecialization,
     EFormRefferalsCompanyType,
     EFormCompanies,
     EFormEnglishLevel,
@@ -17,11 +17,18 @@ from common_db.enums.forms import (
     EFormHelpRequestQueryArea,
 )
 
+
+def validate_non_empty_list(obj, fields):
+    for field_name in fields:
+        if len(obj.__getattribute__(field_name)) == 0:
+            raise ValueError(f"\"{field_name}\" list must be non-empty")
+
+
 # ============================ Connects form schema ============================
 class FormFieldSocialSircleExpansion(BaseModel):
     meeting_formats: list[EFormConnectsMeetingFormat]
     topics: list[EFormConnectsSocialExpansionTopic] | None # TODO: Is it optional? Figma - optional
-    custom_themes: list[str] | None
+    custom_topics: list[str] | None
     details: str | None
     
     @model_validator(mode='after')
@@ -33,9 +40,13 @@ class FormFieldSocialSircleExpansion(BaseModel):
                 raise ValueError("\"themes\" list must be non-empty")
             if EFormConnectsSocialExpansionTopic.custom in self.themes:
                 if self.custom_themes is None:
-                    raise ValueError("\"custom_themes\" list must be setted, when \"custom\" topic added")
+                    raise ValueError("\"custom_topics\" list must be setted, when " + 
+                                     f"\"{EFormConnectsSocialExpansionTopic.custom.value}\"" + 
+                                     " topic added")
                 if len(self.custom_themes) == 0:
-                    raise ValueError("\"custom_themes\" list must be non-empty, when \"custom\" topic added")
+                    raise ValueError("\"custom_topics\" list must be non-empty, when " + 
+                                     f"\"{EFormConnectsSocialExpansionTopic.custom.value}\"" + 
+                                     " topic added")
         return self
 
 
@@ -45,8 +56,7 @@ class FormFieldProfessionalNetworking(BaseModel):
 
     @model_validator(mode='after')
     def check_nonempty(self):
-        if len(self.topics) == 0:
-            raise ValueError("\"topics\" list must be non-empty")
+        validate_non_empty_list(self, ["topics"])
         return self
 
   
@@ -75,26 +85,49 @@ class FormConnects(BaseModel):
 # ==============================================================================
 
 # ============================ Mentoring form schema ===========================
-class FormMentoring(BaseModel):
-    role: EFormMentoringRole
-    help_request: list[EFormMentoringHelpRequest]
-    custom_query: str | None = None
-    specialization: list[EFormMentoringSpecialozations]
-    details: str | None = None
+
+class FormMentoringHelpRequest(BaseModel):
+    request: list[EFormMentoringHelpRequest]
+    custom_request: str | None = None
+    country: str | None = None # String or Enum?
 
     @model_validator(mode='after')
     def extended_model_validation(self):
-        # Check nonempty lists
-        if len(self.help_request) == 0:
-            raise ValueError("\"help_request\" list must be non-empty")
-        if len(self.specialization) == 0:
-            raise ValueError("\"specialization\" list must be non-empty")
-
+        validate_non_empty_list(self, ["request"])
         # Check dependencies between fields
-        if EFormMentoringHelpRequest.custom in self.help_request and self.custom_query is None:
-            raise ValueError("\"custom_query\" field must be non-empty when \"custom\" help request selected")
+        if EFormMentoringHelpRequest.custom in self.request and self.custom_request is None:
+            raise ValueError("\"custom_request\" field must be non-empty when " + 
+                             f"\"{EFormMentoringHelpRequest.custom.value}\"" + 
+                             " help request selected")
+        if EFormMentoringHelpRequest.adaptation_after_relocate in self.request and self.country is None:
+            raise ValueError("\"country\" field must be non-empty when " + 
+                             f"\"{EFormMentoringHelpRequest.adaptation_after_relocate.value}\"" + 
+                             " help request selected")
+        
+
+class FormMentoringMentor(BaseModel):
+    companies: list[EFormCompanies]
+    required_grade: list[EFormMentoringGrade]
+    specialization: list[EFormMentoringSpecialization]
+    help_request: FormMentoringHelpRequest
+    about: str
+
+    @model_validator(mode='after')
+    def extended_model_validation(self):
+        validate_non_empty_list(self, ["companies", "required_grade", "specialization"])
         return self
-    
+
+
+class FormMentoringMentee(BaseModel):
+    grade: list[EFormMentoringGrade]
+    mentor_specialization: list[EFormMentoringSpecialization]
+    help_request: FormMentoringHelpRequest
+    details: str
+
+    @model_validator(mode='after')
+    def extended_model_validation(self):
+        validate_non_empty_list(self, ["grade", "mentor_specialization"])
+        return self
 
 # ==============================================================================
 
@@ -110,8 +143,7 @@ class FormReferralsRecommendation(BaseModel):
     
     @model_validator(mode='after')
     def check_nonempty(self):
-        if len(self.required_companies) == 0:
-            raise ValueError("\"required_companies\" list must be non-empty")
+        validate_non_empty_list(self, ["required_companies"])
         return self
 
 
@@ -130,7 +162,7 @@ class FormMockInterview(BaseModel):
     @model_validator(mode='after')
     def validate_depended_fields(self):
         if not self.resume_from_profile and self.resume_link is None:
-            raise ValueError("Resume link must be filled when `resume_from_profile` option is enabled")
+            raise ValueError("Resume link must be filled when \"resume_from_profile\" option is enabled")
         return self
     
 # ==============================================================================
@@ -146,19 +178,19 @@ class FormHelpRequests(BaseModel):
     
     @model_validator(mode='after')
     def validate_depended_fields(self):
-        if len(self.query_area) == 0:
-            raise ValueError("\"query_area\" list must be non-empty")
-        
+        validate_non_empty_list(self, ["query_area"])        
         if EFormHelpRequestQueryArea.custom in self.query_area and self.query_area_details is None:
-            raise ValueError("\"query_area_details\" must be non-empty when \"custom\" query area selected")
-
+            raise ValueError("\"query_area_details\" must be non-empty when " + 
+                             f"\"{EFormHelpRequestQueryArea.custom.value}\"" + 
+                             " query area selected")
         return self
 
 # ==============================================================================
 
 INTENT_TO_SCHEMA = {
     EFormIntentType.connects: FormConnects,
-    EFormIntentType.mentoring: FormMentoring,
+    EFormIntentType.mentoring_mentor: FormMentoringMentor,
+    EFormIntentType.mentoring_mentee: FormMentoringMentee,
     EFormIntentType.referrals_recommendation: FormReferralsRecommendation,
     EFormIntentType.mock_interview: FormMockInterview,
     EFormIntentType.help_requests: FormHelpRequests,
