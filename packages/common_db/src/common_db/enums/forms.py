@@ -93,6 +93,12 @@ class EFormMockInterviewType(Enum):
     role_playing = "role_playing"
 
 
+class EFormMockInterviewLangluages(Enum):
+    english = "english"
+    russian = "russian"
+    custom = "custom"
+
+
 class EFormHelpRequestSubtype(Enum):
     ask_question = "ask_question"
     answer_question = "answer_question"

@@ -13,6 +13,7 @@ from common_db.enums.forms import (
     EFormCompanies,
     EFormEnglishLevel,
     EFormMockInterviewType,
+    EFormMockInterviewLangluages,
     EFormHelpRequestSubtype,
     EFormHelpRequestQueryArea,
 )
@@ -151,20 +152,39 @@ class FormReferralsRecommendation(BaseModel):
 
 # ========================= Mock interview form schema =========================
 
-class FormMockInterview(BaseModel):
-    interview_type: list[EFormMockInterviewType]
-    possible_english_interview: bool
-    resume_from_profile: bool
-    resume_link: str | None = None
-    job_link: str | None = None
-    comment: str | None = None
+class FromMockInterviewInterviewLangluage(BaseModel):
+    langs: list[EFormMockInterviewLangluages]
+    custom_langs: list[str] | None = None
     
     @model_validator(mode='after')
-    def validate_depended_fields(self):
-        if not self.resume_from_profile and self.resume_link is None:
-            raise ValueError("Resume link must be filled when \"resume_from_profile\" option is enabled")
+    def check_nonempty(self):
+        validate_non_empty_list(self, ["langs"])
+
+        if EFormMockInterviewLangluages.custom in self.langs:
+            if self.custom_langs is None:
+                raise ValueError("\"custom_langs\" list must be setted, when " + 
+                                 f"\"{EFormMockInterviewLangluages.custom.value}\"" + 
+                                 " langluage added")
+            if len(self.custom_langs) == 0:
+                raise ValueError("\"custom_langs\" list must be non-empty, when " + 
+                                 f"\"{EFormMockInterviewLangluages.custom.value}\"" + 
+                                 " langluage added")
         return self
+
+
+class FormMockInterview(BaseModel):
+    interview_type: list[EFormMockInterviewType]
+    job_link: str | None = None
+    langluage: FromMockInterviewInterviewLangluage
+    resume: str
+    details: str
+    public_interview: bool
     
+    @model_validator(mode='after')
+    def extended_valiation(self):
+        validate_non_empty_list(self, ["interview_type"])
+        return self
+
 # ==============================================================================
 
 # ========================= Help Requests form schema ==========================
