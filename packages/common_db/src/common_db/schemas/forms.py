@@ -10,7 +10,6 @@ from common_db.enums.forms import (
     EFormMentoringHelpRequest, 
     EFormSpecialization,
     EFormRefferalsCompanyType,
-    EFormCompanies,
     EFormEnglishLevel,
     EFormMockInterviewType,
     EFormMockInterviewLangluages,
@@ -64,7 +63,7 @@ class FormFieldProfessionalNetworking(BaseModel):
 class FormConnects(BaseModel):
     social_circle_expansion: FormFieldSocialSircleExpansion | None = None
     professional_networking: FormFieldProfessionalNetworking | None = None
-    companies: EFormCompanies
+    is_local_community: bool
     
     @model_validator(mode='after')
     def extended_model_validation(self):
@@ -107,7 +106,7 @@ class FormMentoringHelpRequest(BaseModel):
         
 
 class FormMentoringMentor(BaseModel):
-    companies: list[EFormCompanies]
+    is_local_community: bool
     required_grade: list[EFormMentoringGrade]
     specialization: list[EFormSpecialization]
     help_request: FormMentoringHelpRequest
@@ -115,7 +114,7 @@ class FormMentoringMentor(BaseModel):
 
     @model_validator(mode='after')
     def extended_model_validation(self):
-        validate_non_empty_list(self, ["companies", "required_grade", "specialization"])
+        validate_non_empty_list(self, ["required_grade", "specialization"])
         return self
 
 

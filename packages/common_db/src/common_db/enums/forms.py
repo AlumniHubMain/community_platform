@@ -33,12 +33,6 @@ class EFormSkills(Enum):
     # TODO: Fill me
 
 
-class EFormCompanies(Enum):
-    any = "any"
-    vk = "vk"
-    yandex = "yandex"
-
-
 class EFormEnglishLevel(Enum):
     not_required = "not_required"
     A1 = "A1"
