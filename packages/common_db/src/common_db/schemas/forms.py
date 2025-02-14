@@ -29,26 +29,25 @@ def validate_non_empty_list(obj, fields):
 # ============================ Connects form schema ============================
 class FormFieldSocialSircleExpansion(BaseModel):
     meeting_formats: list[EFormConnectsMeetingFormat]
-    topics: list[EFormConnectsSocialExpansionTopic] | None # TODO: Is it optional? Figma - optional
-    custom_topics: list[str] | None
-    details: str | None
+    topics: list[EFormConnectsSocialExpansionTopic]
+    custom_topics: list[str] | None = None
+    details: str | None = None
     
     @model_validator(mode='after')
     def check_nonempty(self):
         if len(self.meeting_formats) == 0:
             raise ValueError("\"meeting_formats\" list must be non-empty")
-        if self.themes:
-            if len(self.themes) == 0:
-                raise ValueError("\"themes\" list must be non-empty")
-            if EFormConnectsSocialExpansionTopic.custom in self.themes:
-                if self.custom_themes is None:
-                    raise ValueError("\"custom_topics\" list must be setted, when " + 
-                                     f"\"{EFormConnectsSocialExpansionTopic.custom.value}\"" + 
-                                     " topic added")
-                if len(self.custom_themes) == 0:
-                    raise ValueError("\"custom_topics\" list must be non-empty, when " + 
-                                     f"\"{EFormConnectsSocialExpansionTopic.custom.value}\"" + 
-                                     " topic added")
+        if len(self.topics) == 0:
+            raise ValueError("\"topics\" list must be non-empty")
+        if EFormConnectsSocialExpansionTopic.custom in self.topics:
+            if self.custom_topics is None:
+                raise ValueError("\"custom_topics\" list must be setted, when " + 
+                                    f"\"{EFormConnectsSocialExpansionTopic.custom.value}\"" + 
+                                    " topic added")
+            if len(self.custom_topics) == 0:
+                raise ValueError("\"custom_topics\" list must be non-empty, when " + 
+                                    f"\"{EFormConnectsSocialExpansionTopic.custom.value}\"" + 
+                                    " topic added")
         return self
 
 
@@ -136,17 +135,12 @@ class FormMentoringMentee(BaseModel):
 # ============================ Refferals form schema ===========================
 
 class FormReferralsRecommendation(BaseModel):
-    required_companies: list[EFormCompanies]
+    is_local_community: bool
     is_all_experts_type: bool
     is_need_call: bool
     required_english_level: EFormEnglishLevel
     job_link: str
     company_type: EFormRefferalsCompanyType
-    
-    @model_validator(mode='after')
-    def check_nonempty(self):
-        validate_non_empty_list(self, ["required_companies"])
-        return self
 
 
 # ==============================================================================
@@ -194,6 +188,7 @@ class FormProjectsBase(BaseModel):
     project_description: str
     specialization: list[EFormSpecialization]
     skills: list[EFormSkills]
+    
     @model_validator(mode='after')
     def validate_depended_fields(self):
         validate_non_empty_list(self, ["specialization", "skills"])        
@@ -209,16 +204,6 @@ class FormProjectPetProject(FormProjectsBase):
 
 # ==============================================================================
 
-INTENT_TO_SCHEMA = {
-    EFormIntentType.connects: FormConnects,
-    EFormIntentType.mentoring_mentor: FormMentoringMentor,
-    EFormIntentType.mentoring_mentee: FormMentoringMentee,
-    EFormIntentType.referrals_recommendation: FormReferralsRecommendation,
-    EFormIntentType.mock_interview: FormMockInterview,
-    EFormIntentType.projects_find_cofounder: FormProjectsFindHead,
-    EFormIntentType.projects_find_contributor: FormProjectsFindHead,
-    EFormIntentType.projects_pet_project: FormProjectPetProject,
-}
 
 class FormBase(BaseSchema):
     """Base schema for forms"""
@@ -226,6 +211,27 @@ class FormBase(BaseSchema):
     intent: EFormIntentType
     content: dict
     calendar: str
+    
+    @model_validator(mode='after')
+    def validate_schemas(self):
+        
+        REGISTERED_INTENT_SCHEMAS = {
+            EFormIntentType.connects: FormConnects,
+            EFormIntentType.mentoring_mentor: FormMentoringMentor,
+            EFormIntentType.mentoring_mentee: FormMentoringMentee,
+            EFormIntentType.referrals_recommendation: FormReferralsRecommendation,
+            EFormIntentType.mock_interview: FormMockInterview,
+            EFormIntentType.projects_find_cofounder: FormProjectsFindHead,
+            EFormIntentType.projects_find_contributor: FormProjectsFindHead,
+            EFormIntentType.projects_pet_project: FormProjectPetProject,
+        }
+        
+        if not (self.intent in REGISTERED_INTENT_SCHEMAS):
+            raise ValueError("Unregistred intent type")
+        
+        schema = REGISTERED_INTENT_SCHEMAS[self.intent]
+        _ = schema.model_validate(self.content, from_attributes=True)
+        return self
 
 
 class FormCreate(FormBase):
