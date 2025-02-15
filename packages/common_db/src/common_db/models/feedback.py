@@ -1,8 +1,9 @@
 
-from sqlalchemy import Index, PrimaryKeyConstraint, ForeignKey, Integer, Text
+from sqlalchemy import Index, PrimaryKeyConstraint, ForeignKey, Integer, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 from common_db.config import schema
 from common_db.models.base import ObjectTable
+from common_db.enums.feedbacks import EMeetingFeedbackBenefit, MeetingFeedbackBenefitPGEnum
 
 
 class ORMMeetingFeedback(ObjectTable):
@@ -22,8 +23,13 @@ class ORMMeetingFeedback(ObjectTable):
     meeting_id: Mapped[int] = mapped_column(Integer, 
                                             ForeignKey(f'{schema}.meetings.id', ondelete="CASCADE"),
                                             primary_key=True)
-    user_id: Mapped[int] = mapped_column(Integer, 
-                                         ForeignKey(f'{schema}.users.id', ondelete="CASCADE"),
-                                         primary_key=True)
-    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    assignee_id: Mapped[int] = mapped_column(Integer, 
+                                             ForeignKey(f'{schema}.users.id', ondelete="CASCADE"),
+                                             primary_key=True)
+    rate: Mapped[int] = mapped_column(Integer, nullable=False)
     text: Mapped[str | None] = mapped_column(Text)
+    goal_matching_rate: Mapped[int] = mapped_column(Integer, nullable=False)
+    assignee_preparation_rate: Mapped[int] = mapped_column(Integer, nullable=False)
+    meeting_benefits: Mapped[EMeetingFeedbackBenefit] = mapped_column(MeetingFeedbackBenefitPGEnum, nullable=False)
+    goal_matching_rate: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    goal_matching_rate: Mapped[bool] = mapped_column(Boolean, nullable=False)    
