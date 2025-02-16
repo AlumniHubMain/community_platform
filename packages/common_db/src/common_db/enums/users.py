@@ -248,6 +248,13 @@ class EVisibilitySettings(Enum):
     nobody = 'nobody'
 
 
+class EProfileType(Enum):
+    New = 'new'
+    MigratedWOIssues = 'migrated_wo_issues'
+    MigratedHasIssues = 'migrated_has_issues'
+    MigratedIssuesFixed = 'migrated_issues_fixed'
+
+
 InterestsPGEnum = PGEnum(EInterests, name='user_interests_enum', inherit_schema=True)
 ExpertiseAreaPGEnum = PGEnum(EExpertiseArea, name='user_expertise_enum', inherit_schema=True)
 SpecialisationPGEnum = PGEnum(ESpecialisation, name='user_specialisation_enum', inherit_schema=True)
@@ -259,3 +266,4 @@ LocationPGEnum = PGEnum(ELocation, name='user_location_enum', inherit_schema=Tru
 RequestsToCommunityPGEnum = PGEnum(ERequestsToCommunity, name='user_requests_to_community_enum', inherit_schema=True)
 WithWhomEnumPGEnum = PGEnum(EWithWhom, name='user_with_whom_enum', inherit_schema=True)
 VisibilitySettingsPGEnum = PGEnum(EVisibilitySettings, name='user_visibility_settings_enum', inherit_schema=True)
+ProfileTypePGEnum = PGEnum(EProfileType, name='user_profile_type_enum', inherit_schema=True)

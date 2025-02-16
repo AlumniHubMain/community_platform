@@ -13,6 +13,7 @@ from common_db.enums.users import (
     InterestsPGEnum,
     WithWhomEnumPGEnum,
     VisibilitySettingsPGEnum,
+    ProfileTypePGEnum,
     EInterests,
     EExpertiseArea,
     ESpecialisation,
@@ -24,6 +25,7 @@ from common_db.enums.users import (
     ECompanyServices,
     EWithWhom,
     EVisibilitySettings,
+    EProfileType,
 )
 from common_db.config import schema
 from common_db.models.base import ObjectTable
@@ -81,9 +83,9 @@ class ORMUserProfile(ObjectTable):
         default=EVisibilitySettings.anyone)
 
     # Relationship for user_meetings, linking the user to their meetings with roles and responses
-    meeting_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
-        "ORMMeetingResponse", back_populates="user", cascade="all, delete-orphan"
-    )
+    # meeting_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
+    #     "ORMMeetingResponse", back_populates="user", cascade="all, delete-orphan"
+    # )
 
     linkedin_profile: Mapped["ORMLinkedInProfile"] = relationship(back_populates="user", doc="Профиль linkedIn")
 
@@ -97,6 +99,7 @@ class ORMUserProfile(ObjectTable):
         uselist=False,  # one-to-one relationship
         cascade="all, delete-orphan"
     )
+    profile_type: Mapped[EProfileType] = mapped_column(ProfileTypePGEnum, default=EProfileType.New)
 
     __table_args__ = (Index('ix_users_telegram_id', 'telegram_id'),
                       {'schema': f"{schema}"}

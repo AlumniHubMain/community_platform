@@ -42,6 +42,8 @@ class UserProfile(BaseModel):
     who_sees_contacts: EVisibilitySettings
     who_sees_calendar: EVisibilitySettings
 
+    profile_type: EProfileType
+
 
 class SUserProfileUpdate(UserProfile):
     id: int

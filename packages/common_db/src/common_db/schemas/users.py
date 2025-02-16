@@ -10,6 +10,7 @@ from common_db.enums.users import (
     ELocation,
     ERequestsToCommunity,
     ECompanyServices,
+    EProfileType,
 )
 from common_db.schemas.base import TimestampedSchema
 from common_db.schemas.meetings import MeetingResponseRead
@@ -37,7 +38,8 @@ class UserProfile(TimestampedSchema):
     requests_to_community: list[ERequestsToCommunity] | None = None
     is_tg_bot_blocked: bool | None = None
     blocked_status_update_date: datetime | None = None
-    meeting_responses: list[MeetingResponseRead] | None = None
+#    meeting_responses: list[MeetingResponseRead] | None = None
+    profile_type: EProfileType | None = None
 
 
 class SUserProfileUpdate(UserProfile):
