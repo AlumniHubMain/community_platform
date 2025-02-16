@@ -47,15 +47,17 @@ class ORMMeeting(ObjectTable):
     status: Mapped[EMeetingStatus] = mapped_column(MeetingStatusPGEnum, nullable=False, default=EMeetingStatus.no_answer)
 
     # Relationship to user_meetings table via ORMUserMeeting
-    user_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
-        "ORMMeetingResponse", back_populates="meeting", cascade="all, delete-orphan"
-    )
+    # user_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
+    #     "ORMMeetingResponse", back_populates="meeting", cascade="all, delete-orphan"
+    # )
 
+
+class ORMMeetingResponse:
+    pass
+"""
+sqlalchemy.exc.InvalidRequestError: Mapper 'Mapper[ORMUserProfile(users)]' has no property 'meeting_responses'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
 
 class ORMMeetingResponse(ObjectTable):
-    """
-    User's responses to meetings.
-    """
 
     __tablename__ = 'meeting_responses'
     __table_args__ = (
@@ -78,3 +80,4 @@ class ORMMeetingResponse(ObjectTable):
     # Relationships for back-population
     user: Mapped["ORMUserProfile"] = relationship("ORMUserProfile", back_populates="meeting_responses")
     meeting: Mapped["ORMMeeting"] = relationship("ORMMeeting", back_populates="user_responses")
+"""

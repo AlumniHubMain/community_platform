@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: 6f34c3468b51
+Revision ID: 2a6447a937bd
 Revises: 
-Create Date: 2025-02-16 19:38:41.601625
+Create Date: 2025-02-16 19:59:24.836632
 
 """
 
@@ -18,7 +18,7 @@ from common_db.functions import search_users
 schema: str = db_settings.db.db_schema
 
 # revision identifiers, used by Alembic.
-revision: str = "6f34c3468b51"
+revision: str = "2a6447a937bd"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -638,6 +638,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         schema=f'{schema}',
     )
+    """
+    sqlalchemy.exc.InvalidRequestError: Mapper 'Mapper[ORMUserProfile(users)]' has no property 'meeting_responses'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+
     op.create_table(
         "meeting_responses",
         sa.Column("user_id", sa.Integer(), nullable=False),
@@ -684,6 +687,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("user_id"),
         schema=f'{schema}',
     )
+    """
     op.create_table(
         "linkedin_education",
         sa.Column("profile_id", sa.Integer(), nullable=False),
@@ -831,7 +835,6 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("organizer_id", "match_id", "id"),
         schema=f'{schema}',
     )
-
     op.create_index(
         "ix_meeting_status",
         "meetings",
@@ -915,7 +918,7 @@ def downgrade() -> None:
         schema=f'{schema}',
     )
     op.drop_table("linkedin_education", schema=f'{schema}')
-    op.drop_table("meeting_responses", schema=f'{schema}')
+#    op.drop_table("meeting_responses", schema=f'{schema}')
     op.drop_table("matching_results", schema=f'{schema}')
     op.drop_table("linkedin_profiles", schema=f'{schema}')
     op.drop_index(
