@@ -37,8 +37,7 @@ async def update_current_user_profile(
 @router.get(
     "/{user_id}",
     response_model=DTOUserProfileRead,
-    summary="Get user's profile",
-    dependencies=[Depends(auth.owner_or_admin)]
+    summary="Get user's profile"
 )
 async def get_profile(
         user_id: int,
@@ -49,7 +48,7 @@ async def get_profile(
 
 # ToDo: evseev.dmsr check user id before patch
 # https://app.clickup.com/t/86c11fz94
-@router.patch("/{user_id}", summary="Modify user's profile", dependencies=[Depends(auth.owner_or_admin)])
+@router.patch("/{user_id}", summary="Modify user's profile")
 async def update_profile(
         profile: DTOUserProfileUpdate,
         session: Annotated[AsyncSession, Depends(db_manager.get_session)]

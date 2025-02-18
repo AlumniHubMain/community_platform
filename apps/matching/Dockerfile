@@ -9,11 +9,22 @@ RUN apt-get update && apt-get install -y curl && \
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-COPY ./ /build/
+
+COPY ./packages/ /build/packages/
 
 WORKDIR /build/apps/matching/
-RUN uv sync --frozen --no-cache
-RUN uv pip install -e .
+
+# Почему-то ему здесь нужен README
+COPY ./apps/matching/pyproject.toml ./apps/matching/uv.lock ./apps/matching/README.md .
+
+RUN uv sync --frozen --no-install-project
+# configs for local development
+COPY ./config/ /build/config/
+COPY ./credentials/ /build/credentials/
+
+COPY ./apps/matching/ /build/apps/matching/
+
+RUN uv sync --frozen
 
 # Use the uvicorn from the virtual environment
 CMD ["/build/apps/matching/.venv/bin/uvicorn", "matching.main:app", "--host", "0.0.0.0", "--port", "8080"]

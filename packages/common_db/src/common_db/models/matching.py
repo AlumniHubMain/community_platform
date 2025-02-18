@@ -15,7 +15,6 @@ class ORMMatchingResult(ObjectTable):
     match_users_count: Mapped[int] = mapped_column(Integer, nullable=False)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey(f"{schema}.users.id"), nullable=False)
     form_id: Mapped[int] = mapped_column(Integer, nullable=True)  # Optional form ID
-    intent_id: Mapped[int] = mapped_column(Integer, ForeignKey(f"{schema}.meeting_intents.id"), nullable=False)
     error_code: Mapped[str | None] = mapped_column(String(50))
     error_details: Mapped[dict | None] = mapped_column(JSON)
     matching_result: Mapped[list[int]] = mapped_column(ARRAY(Integer))

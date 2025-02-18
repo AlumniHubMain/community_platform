@@ -10,9 +10,10 @@ from .users import (ORMUserProfile,
                     ORMRequestsCommunity,
                     ORMUserRequestsCommunity)
 from .meetings import ORMMeeting, ORMMeetingResponse
-from .meeting_intents import ORMMeetingIntent
 from .matching import ORMMatchingResult
 from .forms import ORMForm
+from .linkedin import ORMLinkedInProfile, ORMEducation, ORMWorkExperience, ORMLinkedInRawData
+from .linkedin_helpers import ORMLinkedInApiLimits
 
 __all__ = [
     "Base",
@@ -30,7 +31,11 @@ __all__ = [
     "ORMUserRequestsCommunity",
     "ORMMeeting",
     "ORMMeetingResponse",
-    "ORMMeetingIntent",
     "ORMMatchingResult",
     "ORMForm",
+    "ORMLinkedInProfile",
+    "ORMEducation",
+    "ORMWorkExperience",
+    "ORMLinkedInApiLimits",
+    "ORMLinkedInRawData"
 ]

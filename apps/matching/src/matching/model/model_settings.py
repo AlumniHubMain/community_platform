@@ -78,12 +78,57 @@ model_settings_preset_catboost = CatBoostModelSettings(
 )
 
 model_settings_preset_heuristic = HeuristicModelSettings(
-    rules=[],
-    filters=[],
-    diversifications=[],
+    rules=[
+        {
+            'name': 'location_matching',
+            'type': 'location',
+            'weight': 0.8,  # High weight since location is critical for offline meetings
+            'params': {
+                'city_penalty': 0.3,
+                'country_penalty': 0.1
+            }
+        },
+        {
+            'name': 'interests_matching',
+            'type': 'interests',
+            'weight': 0.6,  # Medium-high weight for interest alignment
+            'params': {
+                'base_score': 0.5  # Base score when no interests match
+            }
+        },
+        {
+            'name': 'expertise_matching',
+            'type': 'expertise',
+            'weight': 0.7,  # High weight for professional matching
+            'params': {
+                'base_score': 0.6  # Higher base score for expertise
+            }
+        },
+        {
+            'name': 'grade_matching',
+            'type': 'grade',
+            'weight': 0.5,  # Medium weight for grade/seniority
+            'params': {
+                'base_score': 0.7  # High base score since grade is less critical
+            }
+        },
+        {
+            'name': 'intent_specific',
+            'type': 'intent_specific',
+            'weight': 0.9,  # Highest weight since it combines multiple factors
+            'params': {
+                'non_mentor_penalty': 0.5,  # Penalty for non-senior mentors
+                'expertise_base_score': 0.4,  # Base score for expertise in mentoring
+                'interest_base_score': 0.3,  # Base score for interests in cooperative learning
+            }
+        }
+    ],
+    filters=[],  # Using rules instead of filters
+    diversifications=[],  # Can add diversification if needed
     exclude_users=[],
     exclude_companies=[],
     settings_name="heuristic",
+    model_type=ModelType.HEURISTIC
 )
 
 model_settings_presets = {

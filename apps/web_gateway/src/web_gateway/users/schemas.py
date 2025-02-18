@@ -2,7 +2,7 @@ from common_db.enums.users import *
 
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class UserProfile(BaseModel):
@@ -42,11 +42,12 @@ class UserProfile(BaseModel):
     who_sees_contacts: EVisibilitySettings
     who_sees_calendar: EVisibilitySettings
 
+    profile_type: EProfileType
+
 
 class SUserProfileUpdate(UserProfile):
     id: int
 
 
 class SUserProfileRead(SUserProfileUpdate):
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
