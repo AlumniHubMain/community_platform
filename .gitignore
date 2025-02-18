@@ -15,3 +15,5 @@ build/
 *.egg-info/
 *_pb2.py*
 *locdev*
+old_platform_migration/pythonProject/converted
+old_platform_migration/pythonProject/downloaded

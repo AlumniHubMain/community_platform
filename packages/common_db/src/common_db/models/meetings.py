@@ -47,19 +47,22 @@ class ORMMeeting(ObjectTable):
     status: Mapped[EMeetingStatus] = mapped_column(MeetingStatusPGEnum, nullable=False, default=EMeetingStatus.no_answer)
 
     # Relationship to user_meetings table via ORMUserMeeting
-    user_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
-        "ORMMeetingResponse", back_populates="meeting", cascade="all, delete-orphan"
-    )
+    # user_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
+    #     "ORMMeetingResponse", back_populates="meeting", cascade="all, delete-orphan"
+    # )
 
+
+class ORMMeetingResponse:
+    pass
+"""
+sqlalchemy.exc.InvalidRequestError: Mapper 'Mapper[ORMUserProfile(users)]' has no property 'meeting_responses'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
 
 class ORMMeetingResponse(ObjectTable):
-    """
-    User's responses to meetings.
-    """
 
     __tablename__ = 'meeting_responses'
     __table_args__ = (
-        PrimaryKeyConstraint('user_id', 'meeting_id'),
+        # Temporary removed
+        PrimaryKeyConstraint('user_id'), #, 'meeting_id'),
         {'schema': schema},
     )
     id = None  # no separate ids
@@ -67,8 +70,9 @@ class ORMMeetingResponse(ObjectTable):
     # Two foreign keys, one for users and one for meetings
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.users.id', ondelete="CASCADE"),
                                          primary_key=True)
-    meeting_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.meetings.id', ondelete="CASCADE"),
-                                            primary_key=True)
+    # Temporary removed
+    # meeting_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.meetings.id', ondelete="CASCADE"),
+    #                                         primary_key=True)
 
     role: Mapped[EMeetingUserRole] = mapped_column(MeetingUserRolePGEnum, nullable=False)
     response: Mapped[EMeetingResponseStatus] = mapped_column(MeetingResponseStatusPGEnum, nullable=False)
@@ -76,3 +80,4 @@ class ORMMeetingResponse(ObjectTable):
     # Relationships for back-population
     user: Mapped["ORMUserProfile"] = relationship("ORMUserProfile", back_populates="meeting_responses")
     meeting: Mapped["ORMMeeting"] = relationship("ORMMeeting", back_populates="user_responses")
+"""

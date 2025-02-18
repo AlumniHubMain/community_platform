@@ -2,15 +2,15 @@ from .schemas import EnumValues
 from .enum_manager import EnumManger
 from fastapi import APIRouter, HTTPException
 from common_db.enums.users import (
-    EInterests,
+    EInterestsArea,
     EExpertiseArea,
     ESpecialisation,
     EGrade,
     EIndustry,
-    ESkills,
+    ESkillsArea,
     ECompanyServices,
     ELocation,
-    ERequestsToCommunity,
+    ERequestsArea,
     EWithWhom,
     EVisibilitySettings
 )
@@ -18,15 +18,17 @@ from common_db.enums.users import (
 
 router = APIRouter(tags=["Enums"], prefix="/enums")
 path_to_type = {
-    'EInterests': EInterests,
+    'EIntentType': EIntentType,
+    'EMeetingFormat': EMeetingFormat,
+    'EInterestsArea': EInterestsArea,
     'EExpertiseArea': EExpertiseArea,
     'ESpecialisation': ESpecialisation,
     'EGrade': EGrade,
     'EIndustry': EIndustry,
-    'ESkills': ESkills,
+    'ESkillsArea': ESkillsArea,
     'ECompanyServices': ECompanyServices,
     'ELocation': ELocation,
-    'ERequestsToCommunity': ERequestsToCommunity,
+    'ERequestsArea': ERequestsArea,
     'EWithWhom': EWithWhom,
     'EVisibilitySettings': EVisibilitySettings,
 }

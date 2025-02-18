@@ -3,7 +3,7 @@ from sqlalchemy import Enum as PGEnum
 
 
 #ToDo(evseev.dmsr): Make correct list of interests
-class EInterests(Enum):
+class EInterestsArea(Enum):
     interest1 = 'interest1'
     interest2 = 'interest2'
 
@@ -214,7 +214,7 @@ class EIndustry(Enum):
 
 
 #ToDo(evseev.dmsr): Make correct list of skills
-class ESkills(Enum):
+class ESkillsArea(Enum):
     skill1 = 'skill1'
     skill2 = 'skill2'
 
@@ -232,7 +232,7 @@ class ELocation(Enum):
 
 
 #ToDo(evseev.dmsr): Make correct list of requests
-class ERequestsToCommunity(Enum):
+class ERequestsArea(Enum):
     friendship = 'friendship'
 
 
@@ -248,14 +248,23 @@ class EVisibilitySettings(Enum):
     nobody = 'nobody'
 
 
-InterestsPGEnum = PGEnum(EInterests, name='user_interests_enum', inherit_schema=True)
+InterestsAreaPGEnum = PGEnum(EInterestsArea, name='user_interests_enum', inherit_schema=True)
+class EProfileType(Enum):
+    New = 'new'
+    MigratedWOIssues = 'migrated_wo_issues'
+    MigratedHasIssues = 'migrated_has_issues'
+    MigratedIssuesFixed = 'migrated_issues_fixed'
+
+
+InterestsPGEnum = PGEnum(EInterestsArea, name='user_interests_enum', inherit_schema=True)
 ExpertiseAreaPGEnum = PGEnum(EExpertiseArea, name='user_expertise_enum', inherit_schema=True)
 SpecialisationPGEnum = PGEnum(ESpecialisation, name='user_specialisation_enum', inherit_schema=True)
 GradePGEnum = PGEnum(EGrade, name='user_grade_enum', inherit_schema=True)
 IndustryPGEnum = PGEnum(EIndustry, name='user_industry_enum', inherit_schema=True)
-SkillsPGEnum = PGEnum(ESkills, name='user_skills_enum', inherit_schema=True)
+SkillsAreaPGEnum = PGEnum(ESkillsArea, name='user_skills_enum', inherit_schema=True)
 CompanyServicesPGEnum = PGEnum(ECompanyServices, name='user_company_services_enum', inherit_schema=True)
 LocationPGEnum = PGEnum(ELocation, name='user_location_enum', inherit_schema=True)
-RequestsToCommunityPGEnum = PGEnum(ERequestsToCommunity, name='user_requests_to_community_enum', inherit_schema=True)
+RequestsAreaPGEnum = PGEnum(ERequestsArea, name='user_requests_to_community_enum', inherit_schema=True)
 WithWhomEnumPGEnum = PGEnum(EWithWhom, name='user_with_whom_enum', inherit_schema=True)
 VisibilitySettingsPGEnum = PGEnum(EVisibilitySettings, name='user_visibility_settings_enum', inherit_schema=True)
+ProfileTypePGEnum = PGEnum(EProfileType, name='user_profile_type_enum', inherit_schema=True)
