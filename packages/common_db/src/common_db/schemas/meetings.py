@@ -6,7 +6,7 @@ from common_db.schemas.base import BaseSchema, TimestampedSchema
 
 class MeetingResponseRead(BaseSchema):
     user_id: int
-    meeting_id: int
+#    meeting_id: int
     role: EMeetingUserRole
     response: EMeetingResponseStatus | None = None
     created_at: datetime

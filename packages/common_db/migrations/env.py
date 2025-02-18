@@ -4,6 +4,11 @@ import alembic
 from alembic import context
 
 from common_db.config import db_settings
+
+# Dirty hack. ToDo(Demontego): Move schema into common_db
+import sys, os
+sys.path.append('../../vacancies/app/db')
+from vacancy_schema import Vacancy
 from common_db.models import *
 
 # this is the Alembic Config object, which provides
@@ -29,7 +34,7 @@ config.set_main_option(
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-target_metadata = Base.metadata
+target_metadata = [Base.metadata, Vacancy.metadata]
 
 
 def include_name(name, type_, parent_names):
@@ -74,7 +79,6 @@ def run_migrations_online() -> None:
     with connectable.connect() as connection:
         # Create schema before running migrations
         create_schema_if_not_exists(connection)
-        
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
