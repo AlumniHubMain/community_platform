@@ -1,6 +1,18 @@
 from sqlalchemy import String, Integer, JSON, ForeignKey, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 from .base import ObjectTable, schema
+from forms import EFormIntentType
+
+
+SUPPORTED_INTENTS: set[EFormIntentType] = {
+    EFormIntentType.connects,
+    EFormIntentType.mentoring_mentee,
+    EFormIntentType.mentoring_mentor,
+    EFormIntentType.mock_interview,
+    EFormIntentType.projects_find_cofounder,
+    EFormIntentType.projects_find_contributor,
+    EFormIntentType.projects_pet_project,
+}
 
 
 class ORMMatchingResult(ObjectTable):
