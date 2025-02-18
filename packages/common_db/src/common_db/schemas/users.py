@@ -9,7 +9,6 @@ from common_db.enums.users import (
     EInterestsArea,
     EWithWhom,
     EVisibilitySettings,
-    ECompanyServices,
     EProfileType,
 )
 
@@ -119,7 +118,7 @@ class DTOUserProfile(BaseModel):
     who_sees_calendar: EVisibilitySettings | None = None
     available_meetings_pendings_count: int | None = None
     available_meetings_confirmations_count: int | None = None
-#    meeting_responses: list[MeetingResponseRead] | None = None
+    meeting_responses: list[MeetingResponseRead] | None = None
     profile_type: EProfileType | None = None
 
 

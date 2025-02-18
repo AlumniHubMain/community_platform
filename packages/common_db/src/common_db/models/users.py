@@ -4,7 +4,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from common_db.enums.users import (
     ExpertiseAreaPGEnum,
     GradePGEnum,
-    CompanyServicesPGEnum,
     IndustryPGEnum,
     SkillsAreaPGEnum,
     RequestsAreaPGEnum,
@@ -18,7 +17,6 @@ from common_db.enums.users import (
     EIndustry,
     ESkillsArea,
     ERequestsArea,
-    ECompanyServices,
     EWithWhom,
     EVisibilitySettings,
     EProfileType,
@@ -111,8 +109,6 @@ class ORMUserProfile(ObjectTable):
     # meeting_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
     #     "ORMMeetingResponse", back_populates="user", cascade="all, delete-orphan"
     # )
-
-    linkedin_profile: Mapped["ORMLinkedInProfile"] = relationship(back_populates="user", doc="Профиль linkedIn")
 
     available_meetings_pendings_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
     available_meetings_confirmations_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)

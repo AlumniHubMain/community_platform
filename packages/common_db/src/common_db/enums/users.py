@@ -256,7 +256,7 @@ class EProfileType(Enum):
     MigratedIssuesFixed = 'migrated_issues_fixed'
 
 
-InterestsPGEnum = PGEnum(EInterests, name='user_interests_enum', inherit_schema=True)
+InterestsPGEnum = PGEnum(EInterestsArea, name='user_interests_enum', inherit_schema=True)
 ExpertiseAreaPGEnum = PGEnum(EExpertiseArea, name='user_expertise_enum', inherit_schema=True)
 SpecialisationPGEnum = PGEnum(ESpecialisation, name='user_specialisation_enum', inherit_schema=True)
 GradePGEnum = PGEnum(EGrade, name='user_grade_enum', inherit_schema=True)
