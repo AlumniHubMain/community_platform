@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from common_db.db_abstract import db_manager
-from common_db.schemas.forms import FormBase, FormRead
-from common_db.enums.forms import EFormQueryType
+from common_db.schemas.forms import FormCreate, FormRead
+from common_db.enums.forms import EFormIntentType
 from typing import Annotated
 from .forms_manager import FormsManager
 
@@ -13,7 +13,7 @@ router = APIRouter(tags=["Forms"], prefix="/forms")
 
 @router.post("", response_model=FormRead, summary="Create a new form")
 async def create_form(
-        form: FormBase,
+        form: FormCreate,
         session: Annotated[AsyncSession, Depends(db_manager.get_session)]
 ) -> FormRead:
     """
@@ -27,10 +27,10 @@ async def create_form(
 @router.get("", response_model=FormRead, summary="Get actual form for user and intent type")
 async def get_user_form(
         user_id: int,
-        query_type: EFormQueryType,
+        intent_type: EFormIntentType,
         session: Annotated[AsyncSession, Depends(db_manager.get_session)]
 ) -> FormRead:
     """
     Get the last created form for user and selected intent type.    
     """
-    return await FormsManager.get_user_form(session, user_id, query_type)
+    return await FormsManager.get_user_form(session, user_id, intent_type)

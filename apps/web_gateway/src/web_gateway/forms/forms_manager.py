@@ -1,4 +1,5 @@
-from common_db.schemas.forms import FormBase, FormRead, EFormQueryType
+from common_db.schemas.forms import FormCreate, FormRead, EFormIntentType
+from common_db.enums.forms import EFormIntentType
 from common_db.models import ORMForm, ORMUserProfile
 from fastapi import HTTPException
 
@@ -22,7 +23,7 @@ class FormsManager:
     
     @classmethod
     async def get_user_form(
-        cls, session: AsyncSession, user_id: int, query_type: EFormQueryType
+        cls, session: AsyncSession, user_id: int, intent_type: EFormIntentType
     ) -> FormRead:
 
         await cls.check_user_exists(session, user_id)
@@ -31,7 +32,7 @@ class FormsManager:
         result = await session.execute(
             select(ORMForm)
             .where(ORMForm.user_id == user_id)
-            .where(ORMForm.query_type == query_type)
+            .where(ORMForm.intent == intent_type)
             .order_by(desc("created_at"))
             .limit(1)
         )
@@ -42,11 +43,9 @@ class FormsManager:
 
     @classmethod
     async def create_form(
-        cls, session: AsyncSession, form: FormBase
-    ) -> FormRead:
-        
+        cls, session: AsyncSession, form: FormCreate
+    ) -> FormRead:    
         await cls.check_user_exists(session, form.user_id)
-        
         form_orm = ORMForm(
             **form.model_dump(exclude_unset=True, exclude_none=True)
         )
