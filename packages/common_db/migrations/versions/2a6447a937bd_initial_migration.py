@@ -383,7 +383,6 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("content", sa.JSON(), nullable=False),
-        sa.Column("calendar", sa.String(length=200), nullable=False),
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column(
             "created_at",

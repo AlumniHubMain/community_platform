@@ -209,7 +209,6 @@ class FormBase(BaseSchema):
     user_id: int
     intent: EFormIntentType
     content: dict
-    calendar: str
     
     @model_validator(mode='after')
     def validate_schemas(self):
