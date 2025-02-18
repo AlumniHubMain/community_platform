@@ -1,5 +1,4 @@
-from pydantic import BaseModel, SecretStr
-from pydantic_core import ValidationError
+from pydantic import BaseModel, SecretStr, ValidationError
 
 from config_library import BaseConfig, FieldType
 

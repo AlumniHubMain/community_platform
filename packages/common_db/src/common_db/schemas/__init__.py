@@ -33,6 +33,7 @@ from .forms import (
     FormCreate,
     FormRead,
 )
+from .users import DTOSearchUser, SUserProfileRead
 
 __all__ = [
     "BaseSchema",
@@ -69,5 +70,8 @@ __all__ = [
     "FormBase",
     "FormCreate",
     "FormRead",
-    "DTOSearchUser"
+    "FormFilter",
+    "FormList",
+    "DTOSearchUser",
+    "SUserProfileRead"
 ]

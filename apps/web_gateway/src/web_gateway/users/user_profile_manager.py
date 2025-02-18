@@ -56,7 +56,6 @@ class UserProfileManager(UserManager):
         pended_count: int = len([1 for response in responses
                                  if (
                                              response.response != EMeetingResponseStatus.declined and response.user_id == user_id)])
-
         confirmation_limit = settings.limits.max_user_confirmed_meetings_count
         pending_limit = settings.limits.max_user_pended_meetings_count
 
