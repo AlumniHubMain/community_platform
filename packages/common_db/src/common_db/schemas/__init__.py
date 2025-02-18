@@ -1,8 +1,24 @@
 from .base import BaseSchema, TimestampedSchema, convert_enum_value
-from .users import UserProfile, SUserProfileRead, SUserProfileUpdate, DTOSearchUser
+from .users import (
+    SUserProfileRead,
+    DTOUserProfile,
+    DTOUserProfileRead,
+    DTOUserProfileUpdate,
+    DTOSpecialisation,
+    DTOInterest,
+    DTOSkill,
+    DTOIndustry,
+    DTORequestsCommunity,
+    DTOSpecialisationRead,
+    DTOInterestRead,
+    DTOSkillRead,
+    DTORequestsCommunityRead,
+    DTOSearchUser,
+    DTOAllProperties)
 from .linkedin import LinkedInProfileRead
+from .meeting_intents import MeetingIntent, SMeetingIntentRead
 from .meetings import (
-    MeetingResponse, 
+    MeetingResponse,
     MeetingRead,
     MeetingRequestCreate,
     MeetingRequestUpdate,
@@ -22,6 +38,7 @@ __all__ = [
     "BaseSchema",
     "TimestampedSchema",
     "UserProfile",
+    "MeetingIntent",
     "MeetingResponse",
     "MeetingRead",
     "MeetingRequestCreate",
@@ -32,6 +49,21 @@ __all__ = [
     "MeetingList",
     "MeetingsUserLimits",
     "SUserProfileRead",
+    "SMeetingIntentRead",
+    "DTOUserProfile",
+    "DTOUserProfileUpdate",
+    "DTOUserProfileRead",
+    "DTOSpecialisation",
+    "DTOInterest",
+    "DTOSkill",
+    "DTOIndustry",
+    "DTORequestsCommunity",
+    "DTOSpecialisationRead",
+    "DTOInterestRead",
+    "DTOSkillRead",
+    "DTORequestsCommunityRead",
+    "DTOSearchUser",
+    "DTOAllProperties"
     "SUserProfileUpdate",
     "LinkedInProfileRead",
     "FormBase",

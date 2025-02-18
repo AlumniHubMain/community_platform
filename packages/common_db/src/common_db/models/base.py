@@ -5,9 +5,10 @@ from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 
 from common_db.config import schema
 
+
 class Base(DeclarativeBase):
     """
-    Базовая модель таблицы. Тут прописываем свойства, общие для всех таблиц.
+    The basic model of the table. Here we prescribe the properties common to all tables.
     """
 
     __abstract__ = True
@@ -16,7 +17,7 @@ class Base(DeclarativeBase):
 
 class ObjectTable(Base):
     """
-    Модель таблицы (шаблон) для объектов.
+    A table model (template) for objects.
     """
 
     __abstract__ = True
@@ -30,3 +31,14 @@ class ObjectTable(Base):
         server_default=text("TIMEZONE('utc', now())"),
         onupdate=text("TIMEZONE('utc', now())"),
     )
+
+
+class PropertyTable(ObjectTable):
+    """
+    A table model (template) for the properties (characteristics) of objects.
+    """
+    __abstract__ = True
+
+    label: Mapped[str]
+    description: Mapped[str | None]
+    is_custom: Mapped[bool] = mapped_column(default=False)
