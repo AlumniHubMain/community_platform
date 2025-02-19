@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from common_db.enums.users import (
     EExpertiseArea,
     EGrade,
@@ -29,8 +29,7 @@ class DTOSpecialisation(BaseModel):
 class DTOSpecialisationRead(DTOSpecialisation):
     id: int | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DTOUserSpecialisation(BaseModel):
@@ -42,8 +41,7 @@ class DTOUserSpecialisation(BaseModel):
 class DTOUserSpecialisationRead(DTOUserSpecialisation):
     specialisation: DTOSpecialisationRead
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DTOInterest(BaseModel):
@@ -56,15 +54,13 @@ class DTOInterest(BaseModel):
 class DTOInterestRead(DTOInterest):
     id: int | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DTOIndustry(BaseModel):
     label: EIndustry | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DTOSkill(BaseModel):
@@ -77,8 +73,7 @@ class DTOSkill(BaseModel):
 class DTOSkillRead(DTOSkill):
     id: int | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DTORequestsCommunity(BaseModel):
@@ -91,8 +86,7 @@ class DTORequestsCommunity(BaseModel):
 class DTORequestsCommunityRead(DTORequestsCommunity):
     id: int | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DTOUserProfile(BaseModel):
@@ -154,8 +148,7 @@ class SUserProfileRead(DTOUserProfile):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm(cls, profile: "ORMUserProfile") -> "SUserProfileRead":
@@ -225,8 +218,7 @@ class DTOUserProfileRead(DTOUserProfileUpdate):
     skills: list[DTOSkillRead] | None = None
     requests_to_community: list[DTORequestsCommunityRead] | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     def to_old_schema(self) -> SUserProfileRead:
         old_schema: SUserProfileRead = SUserProfileRead(**self.model_dump(
