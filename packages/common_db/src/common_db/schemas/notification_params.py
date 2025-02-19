@@ -4,12 +4,12 @@ from ..enums.notifications import ENotificationType
 
 
 class DTOEmptyParams(BaseModel):
-    """The empty scheme for notifications without parameters"""
+    """The empty schema for notifications without parameters"""
     pass
 
 
 class DTOMeetingInvitationParams(BaseModel):
-    """The scheme of meeting invitation"""
+    """The schema of meeting invitation"""
     inviter_id: int
     invited_id: int
     meeting_id: int

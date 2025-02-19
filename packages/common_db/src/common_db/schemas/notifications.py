@@ -10,7 +10,7 @@ from ..enums.notifications import ENotificationType
 
 
 class DTOGeneralNotification(BaseModel):
-    """General notification scheme.
+    """General notification schema.
 
     This model validates that the provided parameters (params) match the expected schema
     for the given notification_type. The validation rules are:
@@ -69,6 +69,6 @@ class DTONotifiedUserProfile(BaseModel):
 
 
 class DTOUserNotification(DTOGeneralNotification):
-    """The scheme of the prepared notification"""
+    """The schema of the prepared notification"""
     user: DTONotifiedUserProfile
     timestamp: datetime = datetime.now(UTC)
