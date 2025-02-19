@@ -176,9 +176,13 @@ class LinkedInProfileAPI(LinkedInProfileBase):
             'linkedInUrl', 'firstName', 'lastName', 'headline',
             'location', 'summary', 'photoUrl', 'backgroundUrl',
             'openToWork', 'premium', 'pronoun', 'showVerificationBadge',
-            'followerCount', 'skills', 'languages'
+            'followerCount'
         ]:
             values[field] = person.get(field)
+            
+        # Применяем casefold к skills и languages
+        values['skills'] = [skill.casefold() for skill in person.get('skills', []) if skill]
+        values['languages'] = [lang.casefold() for lang in person.get('languages', []) if lang]
 
         # Преобразуем даты
         values['creationDate'] = cls._convert_api_date(person.get('creationDate'))
