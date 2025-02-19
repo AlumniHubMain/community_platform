@@ -14,6 +14,8 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.36",
     "alembic>=1.13.1",
     "psycopg2-binary>=2.9.9",  # For running migrations
+    "pydantic_extra_types>=0.1.0",
+    "pycountry>=23.1.14",
 ]
 
 [project.scripts]

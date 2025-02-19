@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import DateTime, Integer, ForeignKey, Index, PrimaryKeyConstraint, Text
+from sqlalchemy import DateTime, Integer, ForeignKey, Index, PrimaryKeyConstraint, Text, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from common_db.enums.meetings import (
     EMeetingStatus,
@@ -24,60 +24,88 @@ class ORMMeeting(ObjectTable):
     __table_args__ = (
         Index('ix_meeting_status', 'status'),
         Index('ix_meeting_time', 'scheduled_time'),
+        PrimaryKeyConstraint('id', 'organizer_id', 'match_id'),
         {'schema': schema},
     )
 
-    # Remove id from base class since we're defining our own primary key
-    id = None  
-
     # Define composite primary key
-    organizer_id: Mapped[int] = mapped_column(Integer, 
-                                            ForeignKey(f'{schema}.users.id', ondelete="CASCADE"),
-                                            primary_key=True)
-    match_id: Mapped[int | None] = mapped_column(Integer, 
-                                               ForeignKey(f'{schema}.matching_results.id', ondelete="CASCADE"),
-                                               primary_key=True,
-                                               nullable=True)
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    organizer_id: Mapped[int] = mapped_column(
+        Integer, 
+        ForeignKey(f'{schema}.users.id', ondelete="CASCADE"),
+        primary_key=True
+    )
+    match_id: Mapped[int | None] = mapped_column(
+        Integer, 
+        ForeignKey(f'{schema}.matching_results.id', ondelete="CASCADE"),
+        primary_key=True,
+        nullable=True
+    )
 
     # Meeting-specific fields
     scheduled_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     location: Mapped[EMeetingLocation] = mapped_column(MeetingLocationPGEnum, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
-    status: Mapped[EMeetingStatus] = mapped_column(MeetingStatusPGEnum, nullable=False, default=EMeetingStatus.no_answer)
+    status: Mapped[EMeetingStatus] = mapped_column(
+        MeetingStatusPGEnum, 
+        nullable=False, 
+        default=EMeetingStatus.no_answer
+    )
 
     # Relationship to user_meetings table via ORMUserMeeting
-    # user_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
-    #     "ORMMeetingResponse", back_populates="meeting", cascade="all, delete-orphan"
-    # )
+    user_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
+        "ORMMeetingResponse", 
+        back_populates="meeting", 
+        cascade="all, delete-orphan"
+    )
 
-
-class ORMMeetingResponse:
-    pass
-"""
-sqlalchemy.exc.InvalidRequestError: Mapper 'Mapper[ORMUserProfile(users)]' has no property 'meeting_responses'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
 
 class ORMMeetingResponse(ObjectTable):
-
+    """
+    Meeting responses table.
+    """
     __tablename__ = 'meeting_responses'
     __table_args__ = (
-        # Temporary removed
-        PrimaryKeyConstraint('user_id'), #, 'meeting_id'),
-        {'schema': schema},
+        PrimaryKeyConstraint('user_id', 'meeting_id', 'meeting_organizer_id', 'meeting_match_id'),
+        ForeignKeyConstraint(
+            ['meeting_id', 'meeting_organizer_id', 'meeting_match_id'],
+            [f'{schema}.meetings.id', f'{schema}.meetings.organizer_id', f'{schema}.meetings.match_id'],
+            ondelete="CASCADE",
+            name='fk_meeting_response_meeting'
+        ),
+        {'schema': schema}
     )
-    id = None  # no separate ids
 
-    # Two foreign keys, one for users and one for meetings
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.users.id', ondelete="CASCADE"),
-                                         primary_key=True)
-    # Temporary removed
-    # meeting_id: Mapped[int] = mapped_column(Integer, ForeignKey(f'{schema}.meetings.id', ondelete="CASCADE"),
-    #                                         primary_key=True)
+    # Remove id from base class since we're defining composite primary key
+    id = None
+
+    # Foreign keys as composite primary key
+    user_id: Mapped[int] = mapped_column(
+        Integer, 
+        ForeignKey(f'{schema}.users.id', ondelete="CASCADE"),
+        primary_key=True
+    )
+    meeting_id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True
+    )
+    meeting_organizer_id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True
+    )
+    meeting_match_id: Mapped[int | None] = mapped_column(
+        Integer,
+        primary_key=True,
+        nullable=True
+    )
 
     role: Mapped[EMeetingUserRole] = mapped_column(MeetingUserRolePGEnum, nullable=False)
-    response: Mapped[EMeetingResponseStatus] = mapped_column(MeetingResponseStatusPGEnum, nullable=False)
+    response: Mapped[EMeetingResponseStatus] = mapped_column(
+        MeetingResponseStatusPGEnum, 
+        nullable=False,
+        default=EMeetingResponseStatus.no_answer
+    )
 
-    # Relationships for back-population
+    # Relationships
     user: Mapped["ORMUserProfile"] = relationship("ORMUserProfile", back_populates="meeting_responses")
     meeting: Mapped["ORMMeeting"] = relationship("ORMMeeting", back_populates="user_responses")
-"""

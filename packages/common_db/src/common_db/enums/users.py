@@ -205,6 +205,9 @@ class EGrade(Enum):
     senior = 'senior'
     middle = 'middle'
     junior = 'junior'
+    lead = 'lead'
+    head = 'head'
+    executive = 'executive'
 
 
 #ToDo(evseev.dmsr): Make correct list of industries

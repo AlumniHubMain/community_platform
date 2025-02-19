@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, field_validator, EmailStr
+from pydantic import BaseModel, field_validator, EmailStr, ConfigDict
 from pydantic_extra_types.country import CountryAlpha2, CountryAlpha3
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
@@ -36,8 +36,7 @@ class DTOTgBotUserRead(DTOTgBotUserUpdate):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     def appeal(self) -> str:
         return self.name if self.name else self.telegram_name

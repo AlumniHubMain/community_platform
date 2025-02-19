@@ -10,7 +10,10 @@ from common_db.schemas.linkedin_helpers import EducationAPIResponse, WorkExperie
 
 class LinkedInProfileBase(BaseModel):
     """Базовый класс для LinkedIn профиля с общими полями"""
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True
+    )
 
     # Basic Info
     public_identifier: str | None = None
