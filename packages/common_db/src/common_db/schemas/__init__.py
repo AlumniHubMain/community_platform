@@ -28,17 +28,25 @@ from .meetings import (
     MeetingList,
     MeetingsUserLimits,
 )
+from .notification_params import (
+    type_params,
+    DTOEmptyParams,
+    DTOMeetingInvitationParams
+)
+from .notifications import (
+    DTOGeneralNotification,
+    DTONotifiedUserProfile,
+    DTOUserNotification
+)
 from .forms import (
     FormBase,
     FormCreate,
     FormRead,
 )
-from .users import DTOSearchUser, SUserProfileRead
 
 __all__ = [
     "BaseSchema",
     "TimestampedSchema",
-    "UserProfile",
     "MeetingIntent",
     "MeetingResponse",
     "MeetingRead",
@@ -73,5 +81,11 @@ __all__ = [
     "FormFilter",
     "FormList",
     "DTOSearchUser",
-    "SUserProfileRead"
+    "SUserProfileRead",
+    "type_params",
+    "DTOEmptyParams",
+    "DTOMeetingInvitationParams",
+    "DTOGeneralNotification",
+    "DTONotifiedUserProfile",
+    "DTOUserNotification"
 ]
