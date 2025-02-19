@@ -27,8 +27,8 @@ class DTOGeneralNotification(BaseModel):
         timestamp: Optional timestamp of the notification
     """
     notification_type: ENotificationType
-    params: BaseModel | None
-    timestamp: datetime | None
+    params: BaseModel | None = None
+    timestamp: datetime | None = None
 
     @model_validator(mode='after')
     def check_params(self) -> Self:
