@@ -1,4 +1,6 @@
 {
     "meetings_notification_target": "pubsub",
-    "meetings_google_pubsub_notification_topic": "meetings_notifications"
+    "meetings_google_pubsub_notification_topic": "meetings_notifications",
+    "matching_requests_google_pubsub_topic": "topic",
+    "matching_requests_google_pubsub_project_id": 1
 }
