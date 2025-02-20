@@ -1,4 +1,3 @@
-
 from sqlalchemy import Index, PrimaryKeyConstraint, ForeignKey, Integer, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 from common_db.config import schema
@@ -7,7 +6,7 @@ from common_db.enums.forms import (
     EFormIntentType,
     FormIntentTypePGEnum,
 )
-    
+
 
 class ORMForm(ObjectTable):
     """

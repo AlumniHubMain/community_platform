@@ -17,6 +17,7 @@ dependencies = [
     "pyjwt>=2.10.1",
     "pillow>=11.0.0",
     "uvicorn>=0.34.0",
+    "aiogram>=3.17.0",
 ]
 crypto = [
     "PyJWT==2.10.1",

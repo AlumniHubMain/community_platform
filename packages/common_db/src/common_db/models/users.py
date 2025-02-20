@@ -58,13 +58,15 @@ class ORMUserProfile(ObjectTable):
     specialisations: Mapped[list["ORMSpecialisation"]] = relationship(
         "ORMSpecialisation",
         secondary=f"{schema}.users_specialisations",
-        back_populates="users"
+        back_populates="users",
+        overlaps="user_specialisations"
     )
 
     user_specialisations: Mapped[list["ORMUserSpecialisation"]] = relationship(
         "ORMUserSpecialisation",
         back_populates="user",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        overlaps="specialisations"
     )
 
     interests: Mapped[list["ORMInterest"]] = relationship(
@@ -85,7 +87,7 @@ class ORMUserProfile(ObjectTable):
         back_populates="users"
     )
 
-    requests_to_community: Mapped[list["ORMRequestsCommunity"]] = relationship(
+    requests_community: Mapped[list["ORMRequestsCommunity"]] = relationship(
         "ORMRequestsCommunity",
         secondary=f"{schema}.users_requests_to_community",
         back_populates="users"
@@ -106,9 +108,9 @@ class ORMUserProfile(ObjectTable):
         default=EVisibilitySettings.anyone)
 
     # Relationship for user_meetings, linking the user to their meetings with roles and responses
-    # meeting_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
-    #     "ORMMeetingResponse", back_populates="user", cascade="all, delete-orphan"
-    # )
+    meeting_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
+        "ORMMeetingResponse", back_populates="user", cascade="all, delete-orphan"
+    )
 
     available_meetings_pendings_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
     available_meetings_confirmations_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
@@ -122,9 +124,13 @@ class ORMUserProfile(ObjectTable):
     )
     profile_type: Mapped[EProfileType] = mapped_column(ProfileTypePGEnum, default=EProfileType.New)
 
-    __table_args__ = (Index('ix_users_telegram_id', 'telegram_id'),
-                      {'schema': f"{schema}"}
-                      )
+    __table_args__ = (
+        Index('ix_users_telegram_id', 'telegram_id'),
+        {
+            'schema': f"{schema}",
+            'extend_existing': True
+        }
+    )
 
 
 class ORMSpecialisation(PropertyTable):
@@ -139,13 +145,15 @@ class ORMSpecialisation(PropertyTable):
     users: Mapped[list["ORMUserProfile"]] = relationship(
         "ORMUserProfile",
         secondary=f"{schema}.users_specialisations",
-        back_populates="specialisations"
+        back_populates="specialisations",
+        overlaps="user_specialisations"
     )
 
     user_specialisations: Mapped[list["ORMUserSpecialisation"]] = relationship(
         "ORMUserSpecialisation",
         back_populates="specialisation",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        overlaps="users,specialisations"
     )
 
 
@@ -163,10 +171,16 @@ class ORMUserSpecialisation(Base):
 
     grade: Mapped[EGrade | None] = mapped_column(GradePGEnum)
 
-    user: Mapped["ORMUserProfile"] = relationship("ORMUserProfile", back_populates="user_specialisations")
+    user: Mapped["ORMUserProfile"] = relationship(
+        "ORMUserProfile", 
+        back_populates="user_specialisations",
+        overlaps="specialisations,users"
+    )
+    
     specialisation: Mapped["ORMSpecialisation"] = relationship(
         "ORMSpecialisation",
-        back_populates="user_specialisations"
+        back_populates="user_specialisations",
+        overlaps="specialisations,users"
     )
 
 

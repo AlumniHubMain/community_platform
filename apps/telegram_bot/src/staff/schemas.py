@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import EmailStr
+from pydantic import EmailStr, ConfigDict
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
 from tg_bot.src.user.schemas import DTOTgBotUser
@@ -21,8 +21,7 @@ class DTOTgBotStaffRead(DTOTgBotStaffUpdate):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     def appeal(self) -> str:
         return self.name if self.name else self.telegram_name

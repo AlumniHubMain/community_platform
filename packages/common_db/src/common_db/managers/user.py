@@ -83,7 +83,7 @@ class UserManager:
                 selectinload(ORMUserProfile.industries),
                 selectinload(ORMUserProfile.skills),
                 selectinload(ORMUserProfile.requests_to_community),
-                # selectinload(ORMUserProfile.meeting_responses),
+                selectinload(ORMUserProfile.meeting_responses),
                 selectinload(ORMUserProfile.user_specialisations)
                 .joinedload(ORMUserSpecialisation.specialisation)
             )
@@ -183,7 +183,7 @@ class UserManager:
                 selectinload(ORMUserProfile.industries),
                 selectinload(ORMUserProfile.skills),
                 selectinload(ORMUserProfile.requests_to_community),
-                # selectinload(ORMUserProfile.meeting_responses),
+                selectinload(ORMUserProfile.meeting_responses),
                 selectinload(ORMUserProfile.user_specialisations)
                 .joinedload(ORMUserSpecialisation.specialisation)
             )

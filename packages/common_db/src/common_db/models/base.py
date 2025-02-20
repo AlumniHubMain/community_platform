@@ -12,7 +12,10 @@ class Base(DeclarativeBase):
     """
 
     __abstract__ = True
-    __table_args__ = {"schema": f"{schema}"}
+    __table_args__ = {
+        "schema": f"{schema}",
+        "extend_existing": True
+    }
 
 
 class ObjectTable(Base):
