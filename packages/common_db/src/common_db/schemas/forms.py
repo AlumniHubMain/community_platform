@@ -243,7 +243,6 @@ class FormRead(FormBase, TimestampedSchema):
     id: int
     intent: EFormIntentType
     content: dict
-    calendar: str
     description: str | None = None
     
     # Add helper properties for the predictor
