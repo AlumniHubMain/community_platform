@@ -16,6 +16,8 @@ dependencies = [
     "psycopg2-binary>=2.9.9",  # For running migrations
     "pydantic_extra_types>=0.1.0",
     "pycountry>=23.1.14",
+    "tzdata>=2025.1",
+    "pydantic[email]>=2.10.6",
 ]
 
 [project.scripts]

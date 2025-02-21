@@ -4,14 +4,16 @@ from common_db.schemas.matching import SUPPORTED_INTENTS, MatchingResultRead, Ma
 from common_db.models import ORMForm, ORMUserProfile, ORMMatchingResult
 from message_broker.factory import BrokerFactory, BrokerType
 from message_broker.broker import MessageBroker
-from fastapi import HTTPException, HTMLResponse
+from web_gateway.settings import settings
+
+from fastapi import HTTPException
+from fastapi.responses import HTMLResponse
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import desc
-import datetime
 
-from settings import settings
+import datetime
 
 
 class FormsManager:

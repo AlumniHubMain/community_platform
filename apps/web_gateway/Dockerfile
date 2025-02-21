@@ -6,7 +6,7 @@ COPY ./packages /build/packages/
 
 WORKDIR /build/apps/web_gateway/
 
-COPY ./apps/web_gateway/pyproject.toml ./apps/web_gateway/uv.lock .
+COPY ./apps/web_gateway/pyproject.toml ./apps/web_gateway/uv.lock ./
 RUN uv sync --frozen --no-install-project
 
 # configs for local development
