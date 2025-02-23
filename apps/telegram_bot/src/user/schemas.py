@@ -1,11 +1,11 @@
-from datetime import datetime
-
-from pydantic import BaseModel, field_validator, EmailStr, ConfigDict
+from pydantic import field_validator, EmailStr
 from pydantic_extra_types.country import CountryAlpha2, CountryAlpha3
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
+from common_db.schemas.base import BaseSchema, TimestampedSchema
 
-class DTOTgBotUser(BaseModel):
+
+class DTOTgBotUser(BaseSchema):
     telegram_name: str | None = None
     telegram_id: int | None = None
 
@@ -23,7 +23,7 @@ class DTOTgBotUserUpdate(DTOTgBotUser):
     id: int
 
 
-class DTOTgBotUserRead(DTOTgBotUserUpdate):
+class DTOTgBotUserRead(DTOTgBotUserUpdate, TimestampedSchema):
     name: str | None = None
     surname: str | None = None
     city_live: str | None
@@ -33,10 +33,6 @@ class DTOTgBotUserRead(DTOTgBotUserUpdate):
     linkedin_link: str | None
     requests_to_society: list[str] | None = None
     professional_interests: list[str] | None = None
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
 
     def appeal(self) -> str:
         return self.name if self.name else self.telegram_name
