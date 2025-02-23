@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Tuple, List
+from typing import Callable
 from sqlalchemy.ext.asyncio import AsyncSession
 from common_db.models import ORMMatchingResult
 from common_db.enums.forms import EFormIntentType
@@ -20,7 +20,7 @@ async def process_matching_request(  # pylint: disable=too-many-arguments
     model_settings_preset: str,
     n: int = 5,
     use_limits: bool = True,
-) -> Tuple[int, List[int]]:
+) -> tuple[int, list[int]]:
     """Common matching logic used by both endpoints"""
     async with db_session_callable() as session:
         try:

@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Any
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 # TODO: добавить логгер, который договорились использовать
@@ -41,8 +40,8 @@ class LinkedInProfileBase(BaseModel):
     education: list[EducationAPIResponse] | None = None  # из schools.educationHistory
     skills: list[str] | None = None
     languages: list[str] | None = None
-    recommendations: dict[str, Any] | None = None  # весь объект recommendations как есть
-    certifications: dict[str, Any] | None = None  # весь объект certifications как есть
+    recommendations: dict | None = None  # весь объект recommendations как есть
+    certifications: dict | None = None  # весь объект certifications как есть
 
     # TODO: Возможно вынести в головную таблицу User для оптимизации запросов
     # Инфа о текущем месте работы, вынесено из experience history (последняя запись с откр. датой завершения работы)

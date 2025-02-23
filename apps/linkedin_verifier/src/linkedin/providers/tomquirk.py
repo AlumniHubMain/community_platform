@@ -1,4 +1,3 @@
-from typing import Dict, Any
 from linkedin_api import Linkedin
 from linkedin_api.client import ChallengeException, UnauthorizedException
 from loguru import logger
@@ -27,7 +26,7 @@ class LinkedInTomquirkRepository(LinkedInRepository):
         )
     
     @classmethod
-    async def get_profile(cls, username: str, use_mock: bool = False) -> Dict[str, Any]:
+    async def get_profile(cls, username: str, use_mock: bool = False) -> dict:
         try:
             api = cls._get_api()
             return api.get_profile(username)
