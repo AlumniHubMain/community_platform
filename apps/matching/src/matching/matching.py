@@ -19,6 +19,7 @@ async def process_matching_request(  # pylint: disable=too-many-arguments
     form_id: int,
     model_settings_preset: str,
     n: int = 5,
+    use_limits: bool = True,
 ) -> Tuple[int, List[int]]:
     """Common matching logic used by both endpoints"""
     async with db_session_callable() as session:
@@ -63,11 +64,14 @@ async def process_matching_request(  # pylint: disable=too-many-arguments
             )
 
             # Filter predictions based on user limits
-            filtered_predictions = await LimitsManager.filter_users_by_limits(
-                session,
-                predictions,
-                limit_settings
-            )
+            if use_limits:
+                filtered_predictions = await LimitsManager.filter_users_by_limits(
+                    session,
+                    predictions,
+                    limit_settings
+                )
+            else:
+                filtered_predictions = predictions
 
             # Save results with filtered predictions
             matching_result = ORMMatchingResult(

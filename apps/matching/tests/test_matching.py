@@ -429,6 +429,7 @@ async def test_process_matching_basic(mock_session, mock_data_loader, mock_model
         form_id=1,
         model_settings_preset="heuristic",
         n=2,
+        use_limits=False,
     )
 
     assert match_id > 0
@@ -465,6 +466,7 @@ async def test_process_matching_with_filters(mock_session, mock_data_loader):
             form_id=1,
             model_settings_preset="heuristic",
             n=5,
+            use_limits=False,
         )
 
         assert 3 not in predictions  # User 3 should be filtered out (marketing expertise)
@@ -495,6 +497,7 @@ async def test_process_matching_with_diversification(
         form_id=1,
         model_settings_preset="heuristic",
         n=3,
+        use_limits=False,
     )
 
     assert len(predictions) <= 3
