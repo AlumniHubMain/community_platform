@@ -1,6 +1,5 @@
 import asyncio
 from loguru import logger
-from typing import List
 import csv
 from pathlib import Path
 
@@ -9,7 +8,7 @@ from src.linkedin.helpers import validate_linkedin_username, InvalidLinkedInUser
 from config import settings
 
 
-def read_linkedin_profiles_from_csv(csv_path: str | Path) -> List[str]:
+def read_linkedin_profiles_from_csv(csv_path: str | Path) -> list[str]:
     """
     Читает LinkedIn профили из CSV файла.
     
@@ -17,7 +16,7 @@ def read_linkedin_profiles_from_csv(csv_path: str | Path) -> List[str]:
         csv_path: Путь к CSV файлу
         
     Returns:
-        List[str]: Список LinkedIn URL/username'ов
+        list[str]: Список LinkedIn URL/username'ов
         
     Raises:
         FileNotFoundError: Если файл не найден
@@ -57,7 +56,7 @@ def read_linkedin_profiles_from_csv(csv_path: str | Path) -> List[str]:
         raise
 
 
-async def parse_linkedin_profiles(usernames: List[str], target_company_label: str):
+async def parse_linkedin_profiles(usernames: list[str], target_company_label: str):
     """
     Парсинг списка LinkedIn профилей
     

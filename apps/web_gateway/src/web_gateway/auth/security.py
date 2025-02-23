@@ -3,7 +3,6 @@ from web_gateway.settings import settings
 from typing import Annotated
 
 from pydantic import BaseModel
-from typing import Optional
 from fastapi import Depends, HTTPException, Cookie
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
@@ -78,9 +77,9 @@ class TelegramWidgetData(BaseModel):
     id: int
     first_name: str
     hash: str
-    username: Optional[str] = None
-    photo_url: Optional[str] = None
-    auth_date: Optional[datetime] = None
+    username: str | None = None
+    photo_url: str | None = None
+    auth_date: datetime | None = None
 
 
 def validate_telegram_widget(data) -> TelegramWidgetData | bool:

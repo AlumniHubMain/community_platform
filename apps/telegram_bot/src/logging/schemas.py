@@ -1,9 +1,10 @@
 from datetime import datetime, UTC
-from pydantic import BaseModel
+
+from common_db.schemas.base import BaseSchema
 from .models import TgBotEventType
 
 
-class DTOTgBotLoggingEvents(BaseModel):
+class DTOTgBotLoggingEvents(BaseSchema):
     telegram_name: str | None = None
     telegram_id: int
     event_type: TgBotEventType
@@ -14,16 +15,13 @@ class DTOTgBotLoggingEvents(BaseModel):
     chat_id: int
 
 
-class DTOUpdateBlockedStatus(BaseModel):
+class DTOUpdateBlockedStatus(BaseSchema):
     telegram_id: int
     is_blocked: bool
     status_update_date: datetime = datetime.now(UTC)
 
 
-class DTOCheckUserBlockedBot(BaseModel):
+class DTOCheckUserBlockedBot(BaseSchema):
     telegram_id: int
     is_tg_bot_blocked: bool
     blocked_status_update_date: datetime | None = None
-
-    class Config:
-        from_attributes = True

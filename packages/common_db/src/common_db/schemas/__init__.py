@@ -16,7 +16,6 @@ from .users import (
     DTOSearchUser,
     DTOAllProperties)
 from .linkedin import LinkedInProfileRead
-from .meeting_intents import MeetingIntent, SMeetingIntentRead
 from .meetings import (
     MeetingResponse,
     MeetingRead,
@@ -33,13 +32,11 @@ from .forms import (
     FormCreate,
     FormRead,
 )
-from .users import DTOSearchUser, SUserProfileRead
 
 __all__ = [
     "BaseSchema",
     "TimestampedSchema",
     "UserProfile",
-    "MeetingIntent",
     "MeetingResponse",
     "MeetingRead",
     "MeetingRequestCreate",
@@ -50,7 +47,6 @@ __all__ = [
     "MeetingList",
     "MeetingsUserLimits",
     "SUserProfileRead",
-    "SMeetingIntentRead",
     "DTOUserProfile",
     "DTOUserProfileUpdate",
     "DTOUserProfileRead",

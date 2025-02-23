@@ -9,10 +9,12 @@ from common_db.schemas.meetings import (
     MeetingRequestCreate,
     MeetingRequestUpdate,
     MeetingList,
-    MeetingsUserLimits,
     MeetingFilter,
+    MeetingsUserLimits,
 )
-from web_gateway.limits.limits_manager import LimitsManager
+from common_db.managers import LimitsManager
+
+from web_gateway.settings import settings
 
 
 router = APIRouter(tags=["Meetings"], prefix="/meetings")
@@ -92,4 +94,4 @@ async def update_user_meeting_response(
 
 @router.get("/limits/user", response_model=MeetingsUserLimits, summary="Get user limits for meetings")
 async def get_meetings_user_limits(user_id: int, session: AsyncSession = session_dependency) -> MeetingsUserLimits:
-    return await LimitsManager.get_user_meetings_limits(session, user_id)
+    return await LimitsManager.get_user_meetings_limits(session, user_id, settings.limits)
