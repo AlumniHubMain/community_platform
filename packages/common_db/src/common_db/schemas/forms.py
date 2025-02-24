@@ -207,7 +207,6 @@ class FormProjectPetProject(FormProjectsBase):
 
 class FormBase(BaseSchema):
     """Base schema for forms"""
-    user_id: int
     intent: EFormIntentType
     content: dict
     
@@ -233,12 +232,16 @@ class FormBase(BaseSchema):
         return self
 
 
-class FormCreate(FormBase):
+class UserForm(FormBase):
+    """Form assigned to user"""
+    user_id: int
+
+class FormCreate(UserForm):
     """Schema for creating a form"""
     pass
 
 
-class FormRead(FormBase, TimestampedSchema):
+class FormRead(UserForm, TimestampedSchema):
     """Schema for reading a form"""
     id: int
     intent: EFormIntentType
