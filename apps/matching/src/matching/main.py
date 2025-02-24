@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from common_db.db_abstract import db_manager
-
+from common_db.schemas.matching import MatchingRequest
 from matching.transport import CloudStorageAdapter, PSClient
 from matching.matching import process_matching_request
 from matching.services import psclient
@@ -48,25 +48,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-class MatchingRequest(BaseModel):
-    user_id: int
-    form_id: int
-    model_settings_preset: str
-    n: int
-
-    @classmethod
-    def from_pubsub_message(cls, message: dict) -> "MatchingRequest":
-        if not message.get("data"):
-            raise HTTPException(status_code=400, detail="No data in message")
-
-        try:
-            decoded_data = base64.b64decode(message["data"]).decode("utf-8")
-            data = json.loads(decoded_data)
-            return cls(**data)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid message format: {str(e)}") from e
 
 
 @app.post("/pubsub/push")

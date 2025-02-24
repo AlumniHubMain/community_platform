@@ -9,14 +9,17 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "asyncpg>=0.30.0",
-    "common-db",
     "event-emitter",
+    "common-db",
+    "message-broker",
+    "config-library",
     "fastapi>=0.115.6",
     "gcloud-aio-storage>=9.3.0",
     "python-multipart>=0.0.20",
     "pyjwt>=2.10.1",
     "pillow>=11.0.0",
     "uvicorn>=0.34.0",
+    "aiogram>=3.17.0",
 ]
 crypto = [
     "PyJWT==2.10.1",
@@ -32,7 +35,8 @@ build-backend = "hatchling.build"
 [tool.uv.sources]
 common-db = { path = "../../packages/common_db" }
 event-emitter = { path = "../../packages/event_emitter" }
-
+message-broker = { path = "../../packages/message_broker" }
+config-library = { path = "../../packages/config_library" }
 
 [dependency-groups]
 dev = [

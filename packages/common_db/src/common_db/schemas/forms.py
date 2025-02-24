@@ -17,6 +17,7 @@ from common_db.enums.forms import (
     EFormProjectProjectState,
     EFormProjectUserRole,
 )
+from common_db.enums.users import EGrade
 
 
 def validate_non_empty_list(obj, fields):
@@ -206,10 +207,8 @@ class FormProjectPetProject(FormProjectsBase):
 
 class FormBase(BaseSchema):
     """Base schema for forms"""
-    user_id: int
     intent: EFormIntentType
     content: dict
-    calendar: str
     
     @model_validator(mode='after')
     def validate_schemas(self):
@@ -233,11 +232,38 @@ class FormBase(BaseSchema):
         return self
 
 
-class FormCreate(FormBase):
+class UserForm(FormBase):
+    """Form assigned to user"""
+    user_id: int
+
+class FormCreate(UserForm):
     """Schema for creating a form"""
     pass
 
 
-class FormRead(FormBase, TimestampedSchema):
+class FormRead(UserForm, TimestampedSchema):
     """Schema for reading a form"""
     id: int
+    intent: EFormIntentType
+    content: dict
+    description: str | None = None
+    
+    # Add helper properties for the predictor
+    @property
+    def meeting_format(self) -> str | None:
+        """Extract meeting format from content based on intent type"""
+        if self.intent == EFormIntentType.connects.value:
+            if 'social_circle_expansion' in self.content:
+                formats = self.content['social_circle_expansion'].get('meeting_formats', [])
+                return formats[0] if formats else None
+        return self.content.get('meeting_format', 'any')
+
+    @property
+    def specialization(self) -> list[str]:
+        """Get specialization from content"""
+        return self.content.get('specialization', [])
+
+    @property
+    def required_grade(self) -> list[str]:
+        """Get required grade from content"""
+        return self.content.get('required_grade', [])

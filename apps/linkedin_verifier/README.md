@@ -23,6 +23,18 @@
    - Пакетная валидация профилей
    - Сохранение результатов в БД (без user_id_fk)
 
+3. **Миграция исторических данных** (`migrate_profiles.py`)
+   - Выгрузка данных из БД в JSON файлы
+   - Импорт данных из JSON в новую БД
+   - Поддержка разных схем БД
+   - Bulk insert с обработкой конфликтов
+   - Приведение skills и languages к нижнему регистру
+
+> **Важно**: Перед импортом данных необходимо очистить целевые таблицы через `TRUNCATE TABLE` с опцией `RESTART IDENTITY`, чтобы избежать конфликтов с sequence для id. Например:
+> ```sql
+> TRUNCATE TABLE linkedin_profiles, linkedin_education, linkedin_experience RESTART IDENTITY CASCADE;
+> ```
+
 ## Структура базы данных
 
 ### linkedin_profiles
@@ -223,3 +235,6 @@
 class LinkedInParserType(str, Enum):
     SCRAPIN = "scrapin"
     TOMQUIRK = "tomquirk"
+
+
+TODO: при миграции данных последовательности перв. ключей обновить - иначе конфликты при записи новых данных

@@ -13,33 +13,52 @@ from common_db.schemas import (
     SUserProfileRead,
     LinkedInProfileRead,
     FormRead,
+    DTOUserProfile,
 )
 
 
 class DataLoader:
     @classmethod
     async def get_user_profile(cls, session, user_id: int) -> SUserProfileRead:
-        """Get user profile by ID with meeting responses"""
+        """Get user profile by ID with all needed relationships"""
         stmt = (
             select(ORMUserProfile)
             .where(ORMUserProfile.id == user_id)
-            .options(selectinload(ORMUserProfile.meeting_responses).selectinload(ORMMeetingResponse.meeting))
+            .options(
+                selectinload(ORMUserProfile.meeting_responses).selectinload(ORMMeetingResponse.meeting),
+                selectinload(ORMUserProfile.linkedin_profile),
+                selectinload(ORMUserProfile.specialisations),
+                selectinload(ORMUserProfile.skills),
+                selectinload(ORMUserProfile.user_specialisations),
+                selectinload(ORMUserProfile.industries),
+                selectinload(ORMUserProfile.interests)
+            )
         )
         result = await session.execute(stmt)
         profile = result.scalar_one_or_none()
         if profile is None:
             raise HTTPException(status_code=404, detail="Profile not found")
-        return SUserProfileRead.model_validate(profile)
+
+        # Use the new from_orm method for ORM instances, or model_validate for mock data
+        if hasattr(profile, '__table__'):  # Check if it's an ORM instance
+            return SUserProfileRead.from_orm(profile)
+        return SUserProfileRead.model_validate(profile)  # For mock data
 
     @classmethod
     async def get_all_user_profiles(cls, session: AsyncSession) -> list[SUserProfileRead]:
-        """Get all user profiles with meeting responses"""
+        """Get all user profiles with all needed relationships"""
         stmt = select(ORMUserProfile).options(
-            selectinload(ORMUserProfile.meeting_responses).selectinload(ORMMeetingResponse.meeting)
+            selectinload(ORMUserProfile.meeting_responses).selectinload(ORMMeetingResponse.meeting),
+            selectinload(ORMUserProfile.linkedin_profile),
+            selectinload(ORMUserProfile.specialisations),
+            selectinload(ORMUserProfile.skills),
+            selectinload(ORMUserProfile.user_specialisations)
         )
         result = await session.execute(stmt)
         profiles = result.scalars().all()
-        return [SUserProfileRead.model_validate(p) for p in profiles]
+        
+        # Convert all profiles with additional data
+        return [await cls.get_user_profile(session, p.id) for p in profiles]
 
     @classmethod
     async def get_linkedin_profile(cls, session: AsyncSession, user_id: int) -> LinkedInProfileRead:

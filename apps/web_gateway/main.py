@@ -27,13 +27,13 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print(f"Service started")
+    print("Service started")
     yield
 
 
-production_env = settings.environment == 'production'
-docs_path = None if production_env else '/docs'
-redoc_path = None if production_env else '/redoc'
+production_env = settings.environment == "production"
+docs_path = None if production_env else "/docs"
+redoc_path = None if production_env else "/redoc"
 app = FastAPI(title="Community platform", lifespan=lifespan, docs_url=docs_path, redoc_url=redoc_path)
 
 
@@ -54,12 +54,10 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(forms_router)
-#ToDo(WowNemir): enable auth dependencies
-app.include_router(users_router)#, dependencies=[Depends(authorize)])
-app.include_router(mds_router)#, dependencies=[Depends(authorize)])
-app.include_router(meetings_router)#, dependencies=[Depends(authorize)])
-app.include_router(enum_router)#, dependencies=[Depends(authorize)])
-app.include_router(feedbacks_router)#, dependencies=[Depends(authorize)]
+app.include_router(users_router, dependencies=[Depends(authorize)])
+app.include_router(mds_router, dependencies=[Depends(authorize)])
+app.include_router(meetings_router, dependencies=[Depends(authorize)])
+app.include_router(enum_router, dependencies=[Depends(authorize)])
 
 
 @app.get("/", response_class=HTMLResponse)

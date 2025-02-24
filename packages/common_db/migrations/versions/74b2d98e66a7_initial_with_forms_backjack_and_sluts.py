@@ -1,8 +1,8 @@
-"""Initial migration
+"""initial_with_forms_backjack_and_sluts
 
-Revision ID: 2a6447a937bd
+Revision ID: 74b2d98e66a7
 Revises: 
-Create Date: 2025-02-16 19:59:24.836632
+Create Date: 2025-02-19 18:43:53.283939
 
 """
 
@@ -17,7 +17,7 @@ from common_db.config import db_settings
 schema: str = db_settings.db.db_schema
 
 # revision identifiers, used by Alembic.
-revision: str = "2a6447a937bd"
+revision: str = "74b2d98e66a7"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -89,7 +89,7 @@ def upgrade() -> None:
         schema=f"{schema}",
     )
     op.create_index(
-        op.f("ix_alh_community_platform_linkedin_api_limits_provider_type"),
+        op.f(f"ix_{schema}_linkedin_api_limits_provider_type"),
         "linkedin_api_limits",
         ["provider_type"],
         unique=False,
@@ -119,7 +119,7 @@ def upgrade() -> None:
         schema=f"{schema}",
     )
     op.create_index(
-        op.f("ix_alh_community_platform_linkedin_raw_data_parsed_date"),
+        op.f(f"ix_{schema}_linkedin_raw_data_parsed_date"),
         "linkedin_raw_data",
         ["parsed_date"],
         unique=False,
@@ -127,7 +127,7 @@ def upgrade() -> None:
     )
     op.create_index(
         op.f(
-            "ix_alh_community_platform_linkedin_raw_data_target_linkedin_url"
+            f"ix_{schema}_linkedin_raw_data_target_linkedin_url"
         ),
         "linkedin_raw_data",
         ["target_linkedin_url"],
@@ -383,7 +383,6 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("content", sa.JSON(), nullable=False),
-        sa.Column("calendar", sa.String(length=200), nullable=False),
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column(
             "created_at",
@@ -399,7 +398,7 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["alh_community_platform.users.id"],
+            [f"{schema}.users.id"],
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("user_id", "id"),
@@ -485,7 +484,7 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["users_id_fk"],
-            ["alh_community_platform.users.id"],
+            [f"{schema}.users.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("users_id_fk"),
@@ -517,7 +516,7 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["alh_community_platform.users.id"],
+            [f"{schema}.users.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
         schema=f"{schema}",
@@ -551,13 +550,13 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["alh_community_platform.users.id"],
+            [f"{schema}.users.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
         schema=f"{schema}",
     )
     op.create_index(
-        op.f("ix_alh_community_platform_users_industries_user_id"),
+        op.f(f"ix_{schema}_users_industries_user_id"),
         "users_industries",
         ["user_id"],
         unique=False,
@@ -569,24 +568,24 @@ def upgrade() -> None:
         sa.Column("interest_id", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
             ["interest_id"],
-            ["alh_community_platform.interests.id"],
+            [f"{schema}.interests.id"],
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["alh_community_platform.users.id"],
+            [f"{schema}.users.id"],
         ),
         sa.PrimaryKeyConstraint("user_id", "interest_id"),
         schema=f"{schema}",
     )
     op.create_index(
-        op.f("ix_alh_community_platform_users_interests_interest_id"),
+        op.f(f"ix_{schema}_users_interests_interest_id"),
         "users_interests",
         ["interest_id"],
         unique=False,
         schema=f"{schema}",
     )
     op.create_index(
-        op.f("ix_alh_community_platform_users_interests_user_id"),
+        op.f(f"ix_{schema}_users_interests_user_id"),
         "users_interests",
         ["user_id"],
         unique=False,
@@ -598,18 +597,18 @@ def upgrade() -> None:
         sa.Column("requests_id", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
             ["requests_id"],
-            ["alh_community_platform.requests_to_community.id"],
+            [f"{schema}.requests_to_community.id"],
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["alh_community_platform.users.id"],
+            [f"{schema}.users.id"],
         ),
         sa.PrimaryKeyConstraint("user_id", "requests_id"),
         schema=f"{schema}",
     )
     op.create_index(
         op.f(
-            "ix_alh_community_platform_users_requests_to_community_requests_id"
+            f"ix_{schema}_users_requests_to_community_requests_id"
         ),
         "users_requests_to_community",
         ["requests_id"],
@@ -617,7 +616,7 @@ def upgrade() -> None:
         schema=f"{schema}",
     )
     op.create_index(
-        op.f("ix_alh_community_platform_users_requests_to_community_user_id"),
+        op.f(f"ix_{schema}_users_requests_to_community_user_id"),
         "users_requests_to_community",
         ["user_id"],
         unique=False,
@@ -629,24 +628,24 @@ def upgrade() -> None:
         sa.Column("skill_id", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
             ["skill_id"],
-            ["alh_community_platform.skills.id"],
+            [f"{schema}.skills.id"],
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["alh_community_platform.users.id"],
+            [f"{schema}.users.id"],
         ),
         sa.PrimaryKeyConstraint("user_id", "skill_id"),
         schema=f"{schema}",
     )
     op.create_index(
-        op.f("ix_alh_community_platform_users_skills_skill_id"),
+        op.f(f"ix_{schema}_users_skills_skill_id"),
         "users_skills",
         ["skill_id"],
         unique=False,
         schema=f"{schema}",
     )
     op.create_index(
-        op.f("ix_alh_community_platform_users_skills_user_id"),
+        op.f(f"ix_{schema}_users_skills_user_id"),
         "users_skills",
         ["user_id"],
         unique=False,
@@ -662,6 +661,9 @@ def upgrade() -> None:
                 "senior",
                 "middle",
                 "junior",
+                "lead",
+                "head",
+                "executive",
                 name="user_grade_enum",
                 schema=f"{schema}",
                 inherit_schema=True,
@@ -670,18 +672,18 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["specialisation_id"],
-            ["alh_community_platform.specialisations.id"],
+            [f"{schema}.specialisations.id"],
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["alh_community_platform.users.id"],
+            [f"{schema}.users.id"],
         ),
         sa.PrimaryKeyConstraint("user_id", "specialisation_id"),
         schema=f"{schema}",
     )
     op.create_index(
         op.f(
-            "ix_alh_community_platform_users_specialisations_specialisation_id"
+            f"ix_{schema}_users_specialisations_specialisation_id"
         ),
         "users_specialisations",
         ["specialisation_id"],
@@ -689,7 +691,7 @@ def upgrade() -> None:
         schema=f"{schema}",
     )
     op.create_index(
-        op.f("ix_alh_community_platform_users_specialisations_user_id"),
+        op.f(f"ix_{schema}_users_specialisations_user_id"),
         "users_specialisations",
         ["user_id"],
         unique=False,
@@ -721,7 +723,7 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["profile_id"],
-            ["alh_community_platform.linkedin_profiles.id"],
+            [f"{schema}.linkedin_profiles.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
@@ -730,7 +732,7 @@ def upgrade() -> None:
         schema=f"{schema}",
     )
     op.create_index(
-        op.f("ix_alh_community_platform_linkedin_education_profile_id"),
+        op.f(f"ix_{schema}_linkedin_education_profile_id"),
         "linkedin_education",
         ["profile_id"],
         unique=False,
@@ -766,7 +768,7 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["profile_id"],
-            ["alh_community_platform.linkedin_profiles.id"],
+            [f"{schema}.linkedin_profiles.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
@@ -778,7 +780,7 @@ def upgrade() -> None:
         schema=f"{schema}",
     )
     op.create_index(
-        op.f("ix_alh_community_platform_linkedin_experience_profile_id"),
+        op.f(f"ix_{schema}_linkedin_experience_profile_id"),
         "linkedin_experience",
         ["profile_id"],
         unique=False,
@@ -786,9 +788,9 @@ def upgrade() -> None:
     )
     op.create_table(
         "meetings",
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("organizer_id", sa.Integer(), nullable=False),
         sa.Column("match_id", sa.Integer(), nullable=True),
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column(
             "scheduled_time", sa.DateTime(timezone=True), nullable=False
         ),
@@ -831,15 +833,15 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["match_id"],
-            ["alh_community_platform.matching_results.id"],
+            [f"{schema}.matching_results.id"],
             ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
             ["organizer_id"],
-            ["alh_community_platform.users.id"],
+            [f"{schema}.users.id"],
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("organizer_id", "match_id", "id"),
+        sa.PrimaryKeyConstraint("id", "organizer_id", "match_id"),
         schema=f"{schema}",
     )
     op.create_index(
@@ -856,11 +858,107 @@ def upgrade() -> None:
         unique=False,
         schema=f"{schema}",
     )
+    op.create_table(
+        "meeting_responses",
+        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column("meeting_id", sa.Integer(), nullable=False),
+        sa.Column("meeting_organizer_id", sa.Integer(), nullable=False),
+        sa.Column("meeting_match_id", sa.Integer(), nullable=True),
+        sa.Column(
+            "role",
+            sa.Enum(
+                "organizer",
+                "attendee",
+                name="meeting_user_role_enum",
+                schema=f"{schema}",
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "response",
+            sa.Enum(
+                "no_answer",
+                "confirmed",
+                "declined",
+                name="meeting_response_status_enum",
+                schema=f"{schema}",
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.text("TIMEZONE('utc', now())"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.text("TIMEZONE('utc', now())"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["meeting_id", "meeting_organizer_id", "meeting_match_id"],
+            [
+                f"{schema}.meetings.id",
+                f"{schema}.meetings.organizer_id",
+                f"{schema}.meetings.match_id",
+            ],
+            name="fk_meeting_response_meeting",
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["user_id"],
+            [f"{schema}.users.id"],
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint(
+            "user_id", "meeting_id", "meeting_organizer_id", "meeting_match_id"
+        ),
+        schema=f"{schema}",
+    )
+    op.create_table(
+        "vacancies",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column(
+            "first_timestamp", sa.DateTime(timezone=True), nullable=False
+        ),
+        sa.Column("time_reachable", sa.DateTime(timezone=True), nullable=True),
+        sa.Column(
+            "last_timestamp", sa.DateTime(timezone=True), nullable=False
+        ),
+        sa.Column("url", sa.String(length=255), nullable=False),
+        sa.Column("full_text", sa.Text(), nullable=True),
+        sa.Column("company", sa.String(length=255), nullable=True),
+        sa.Column("title", sa.String(length=255), nullable=True),
+        sa.Column("description", sa.Text(), nullable=True),
+        sa.Column("skills", sa.ARRAY(sa.Text()), nullable=True),
+        sa.Column("required_experience", sa.String(length=255), nullable=True),
+        sa.Column("location", sa.String(length=255), nullable=True),
+        sa.Column("level", sa.String(length=255), nullable=True),
+        sa.Column("salary", sa.String(length=255), nullable=True),
+        sa.Column("responsibilities", sa.ARRAY(sa.Text()), nullable=True),
+        sa.Column("benefits", sa.ARRAY(sa.Text()), nullable=True),
+        sa.Column("additional_advantages", sa.ARRAY(sa.Text()), nullable=True),
+        sa.Column("remote_type", sa.String(length=255), nullable=True),
+        sa.Column("department", sa.String(length=255), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_vacancies_id"), "vacancies", ["id"], unique=False)
+    op.create_index(
+        op.f("ix_vacancies_url"), "vacancies", ["url"], unique=True
+    )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f("ix_vacancies_url"), table_name="vacancies")
+    op.drop_index(op.f("ix_vacancies_id"), table_name="vacancies")
+    op.drop_table("vacancies")
+    op.drop_table("meeting_responses", schema=f"{schema}")
     op.drop_index(
         "ix_meeting_time",
         table_name="meetings",
@@ -873,49 +971,49 @@ def downgrade() -> None:
     )
     op.drop_table("meetings", schema=f"{schema}")
     op.drop_index(
-        op.f("ix_alh_community_platform_linkedin_experience_profile_id"),
+        op.f(f"ix_{schema}_linkedin_experience_profile_id"),
         table_name="linkedin_experience",
         schema=f"{schema}",
     )
     op.drop_table("linkedin_experience", schema=f"{schema}")
     op.drop_index(
-        op.f("ix_alh_community_platform_linkedin_education_profile_id"),
+        op.f(f"ix_{schema}_linkedin_education_profile_id"),
         table_name="linkedin_education",
         schema=f"{schema}",
     )
     op.drop_table("linkedin_education", schema=f"{schema}")
     op.drop_index(
-        op.f("ix_alh_community_platform_users_specialisations_user_id"),
+        op.f(f"ix_{schema}_users_specialisations_user_id"),
         table_name="users_specialisations",
         schema=f"{schema}",
     )
     op.drop_index(
         op.f(
-            "ix_alh_community_platform_users_specialisations_specialisation_id"
+            f"ix_{schema}_users_specialisations_specialisation_id"
         ),
         table_name="users_specialisations",
         schema=f"{schema}",
     )
     op.drop_table("users_specialisations", schema=f"{schema}")
     op.drop_index(
-        op.f("ix_alh_community_platform_users_skills_user_id"),
+        op.f(f"ix_{schema}_users_skills_user_id"),
         table_name="users_skills",
         schema=f"{schema}",
     )
     op.drop_index(
-        op.f("ix_alh_community_platform_users_skills_skill_id"),
+        op.f(f"ix_{schema}_users_skills_skill_id"),
         table_name="users_skills",
         schema=f"{schema}",
     )
     op.drop_table("users_skills", schema=f"{schema}")
     op.drop_index(
-        op.f("ix_alh_community_platform_users_requests_to_community_user_id"),
+        op.f(f"ix_{schema}_users_requests_to_community_user_id"),
         table_name="users_requests_to_community",
         schema=f"{schema}",
     )
     op.drop_index(
         op.f(
-            "ix_alh_community_platform_users_requests_to_community_requests_id"
+            f"ix_{schema}_users_requests_to_community_requests_id"
         ),
         table_name="users_requests_to_community",
         schema=f"{schema}",
@@ -924,18 +1022,18 @@ def downgrade() -> None:
         "users_requests_to_community", schema=f"{schema}"
     )
     op.drop_index(
-        op.f("ix_alh_community_platform_users_interests_user_id"),
+        op.f(f"ix_{schema}_users_interests_user_id"),
         table_name="users_interests",
         schema=f"{schema}",
     )
     op.drop_index(
-        op.f("ix_alh_community_platform_users_interests_interest_id"),
+        op.f(f"ix_{schema}_users_interests_interest_id"),
         table_name="users_interests",
         schema=f"{schema}",
     )
     op.drop_table("users_interests", schema=f"{schema}")
     op.drop_index(
-        op.f("ix_alh_community_platform_users_industries_user_id"),
+        op.f(f"ix_{schema}_users_industries_user_id"),
         table_name="users_industries",
         schema=f"{schema}",
     )
@@ -957,19 +1055,19 @@ def downgrade() -> None:
     op.drop_table("requests_to_community", schema=f"{schema}")
     op.drop_index(
         op.f(
-            "ix_alh_community_platform_linkedin_raw_data_target_linkedin_url"
+            f"ix_{schema}_linkedin_raw_data_target_linkedin_url"
         ),
         table_name="linkedin_raw_data",
         schema=f"{schema}",
     )
     op.drop_index(
-        op.f("ix_alh_community_platform_linkedin_raw_data_parsed_date"),
+        op.f(f"ix_{schema}_linkedin_raw_data_parsed_date"),
         table_name="linkedin_raw_data",
         schema=f"{schema}",
     )
     op.drop_table("linkedin_raw_data", schema=f"{schema}")
     op.drop_index(
-        op.f("ix_alh_community_platform_linkedin_api_limits_provider_type"),
+        op.f(f"ix_{schema}_linkedin_api_limits_provider_type"),
         table_name="linkedin_api_limits",
         schema=f"{schema}",
     )
@@ -985,18 +1083,4 @@ def downgrade() -> None:
     )
     op.drop_table("linkedin_api_limits", schema=f"{schema}")
     op.drop_table("interests", schema=f"{schema}")
-
-    # -------------drop types-------------
-    op.execute(f"DROP TYPE {schema}.user_interests_enum")
-    op.execute(f"DROP TYPE {schema}.user_requests_to_community_enum")
-    op.execute(f"DROP TYPE {schema}.user_skills_enum")
-    op.execute(f"DROP TYPE {schema}.user_expertise_enum")
-    op.execute(f"DROP TYPE {schema}.user_with_whom_enum")
-    op.execute(f"DROP TYPE {schema}.user_visibility_settings_enum")
-    op.execute(f"DROP TYPE {schema}.user_profile_type_enum")
-    op.execute(f"DROP TYPE {schema}.form_intent_type_enum")
-    op.execute(f"DROP TYPE {schema}.user_industry_enum")
-    op.execute(f"DROP TYPE {schema}.user_grade_enum")
-    op.execute(f"DROP TYPE {schema}.meeting_location_enum")
-    op.execute(f"DROP TYPE {schema}.meeting_status_enum")
     # ### end Alembic commands ###

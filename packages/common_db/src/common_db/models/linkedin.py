@@ -1,6 +1,5 @@
 from datetime import datetime
-from typing import Any
-from sqlalchemy import JSON, ForeignKey, Text, DateTime, UniqueConstraint
+from sqlalchemy import ForeignKey, Text, DateTime, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,7 +19,7 @@ class ORMLinkedInRawData(Base):
     )
     
     # Сырые данные от API
-    raw_data: Mapped[dict[str, Any]] = mapped_column(
+    raw_data: Mapped[dict] = mapped_column(
         JSONB,
         doc="Raw API response data"
     )
@@ -82,11 +81,11 @@ class ORMLinkedInProfile(Base):
         JSONB(none_as_null=True),
         doc="Languages"
     )
-    recommendations: Mapped[dict[str, Any] | None] = mapped_column(
+    recommendations: Mapped[dict | None] = mapped_column(
         JSONB(none_as_null=True),
         doc="Recommendations"
     )
-    certifications: Mapped[dict[str, Any] | None] = mapped_column(
+    certifications: Mapped[dict | None] = mapped_column(
         JSONB(none_as_null=True),
         doc="Certifications"
     )

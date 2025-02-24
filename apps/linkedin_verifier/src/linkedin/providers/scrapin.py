@@ -1,6 +1,5 @@
 import aiohttp
 from loguru import logger
-from typing import Dict, Any, List
 
 from ..base import LinkedInRepository
 from .mock_data import MOCK_PROFILE_RESPONSE
@@ -23,7 +22,7 @@ class LinkedInScrapinRepository(LinkedInRepository):
         self.provider_id = LinkedInProvider.SCRAPIN
 
     @classmethod
-    async def _make_request(cls, linkedin_url: str) -> Dict[str, Any]:
+    async def _make_request(cls, linkedin_url: str) -> dict:
         """Выполняет запрос к Scrapin.io API"""
         try:
             params = {
@@ -66,7 +65,7 @@ class LinkedInScrapinRepository(LinkedInRepository):
             raise ScrapinAPIError(f"Network error: {e}")
 
     @classmethod
-    async def get_profile(cls, username: str, use_mock: bool = False) -> Dict[str, Any]:
+    async def get_profile(cls, username: str, use_mock: bool = False) -> dict:
         """Get LinkedIn profile data by username"""
         if use_mock:
             return MOCK_PROFILE_RESPONSE.copy()
@@ -75,6 +74,6 @@ class LinkedInScrapinRepository(LinkedInRepository):
         return await cls._make_request(linkedin_url)
 
     @classmethod
-    async def get_connections(cls, username: str) -> List[Dict[str, Any]]:
+    async def get_connections(cls, username: str) -> list[dict]:
         logger.warning("Scrapin.io API doesn't support getting connections")
         return []
