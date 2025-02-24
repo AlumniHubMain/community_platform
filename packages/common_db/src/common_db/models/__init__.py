@@ -17,6 +17,7 @@ from .users import (
     ORMUserRequestsCommunity
 )
 from .meetings import ORMMeeting, ORMMeetingResponse
+from .feedback import ORMMeetingFeedback
 from .forms import ORMForm
 
 # Make sure all models are imported before configuring

@@ -8,7 +8,7 @@ FEEDBACK_MAXIMUM_RATE = 5
 
 
 class MeetingFeedbackBase(BaseSchema):
-    assignee_id: int
+    to_user_id: int
     meeting_id: int
     rate: int
     text: str | None = None
@@ -40,4 +40,4 @@ class MeetingFeedbackCreate(MeetingFeedbackBase):
 
 class MeetingFeedbackRead(MeetingFeedbackBase, TimestampedSchema):
     """Schema for reading a meeting feedback"""
-    pass
+    from_user_id: int
