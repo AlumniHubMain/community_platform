@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from common_db.enums.users import (
     EExpertiseArea,
     EGrade,
@@ -10,14 +10,16 @@ from common_db.enums.users import (
     EWithWhom,
     EVisibilitySettings,
     EProfileType,
+    ELocation,
 )
-
+from common_db.schemas.forms import EFormSpecialization, EFormSkills
+from common_db.schemas.base import BaseSchema, TimestampedSchema
 from common_db.schemas.meetings import MeetingResponseRead
 from pydantic_extra_types.country import CountryAlpha2, CountryAlpha3
 from pydantic_extra_types.timezone_name import TimeZoneName
 
 
-class DTOSpecialisation(BaseModel):
+class DTOSpecialisation(BaseSchema):
     label: str | None = None
     description: str | None = None
     is_custom: bool | None = None
@@ -27,11 +29,8 @@ class DTOSpecialisation(BaseModel):
 class DTOSpecialisationRead(DTOSpecialisation):
     id: int | None = None
 
-    class Config:
-        from_attributes = True
 
-
-class DTOUserSpecialisation(BaseModel):
+class DTOUserSpecialisation(BaseSchema):
     user_id: int = None
     specialisation_id: int
     grade: EGrade | None = None
@@ -40,11 +39,8 @@ class DTOUserSpecialisation(BaseModel):
 class DTOUserSpecialisationRead(DTOUserSpecialisation):
     specialisation: DTOSpecialisationRead
 
-    class Config:
-        from_attributes = True
 
-
-class DTOInterest(BaseModel):
+class DTOInterest(BaseSchema):
     label: str | None = None
     description: str | None = None
     is_custom: bool | None = None
@@ -54,18 +50,11 @@ class DTOInterest(BaseModel):
 class DTOInterestRead(DTOInterest):
     id: int | None = None
 
-    class Config:
-        from_attributes = True
-
-
-class DTOIndustry(BaseModel):
+class DTOIndustry(BaseSchema):
     label: EIndustry | None = None
 
-    class Config:
-        from_attributes = True
 
-
-class DTOSkill(BaseModel):
+class DTOSkill(BaseSchema):
     label: str | None = None
     description: str | None = None
     is_custom: bool | None = None
@@ -75,11 +64,8 @@ class DTOSkill(BaseModel):
 class DTOSkillRead(DTOSkill):
     id: int | None = None
 
-    class Config:
-        from_attributes = True
 
-
-class DTORequestsCommunity(BaseModel):
+class DTORequestsCommunity(BaseSchema):
     label: str | None = None
     description: str | None = None
     is_custom: bool | None = None
@@ -89,11 +75,8 @@ class DTORequestsCommunity(BaseModel):
 class DTORequestsCommunityRead(DTORequestsCommunity):
     id: int | None = None
 
-    class Config:
-        from_attributes = True
 
-
-class DTOUserProfile(BaseModel):
+class DTOUserProfile(BaseSchema):
     name: str
     surname: str
     email: EmailStr
@@ -126,12 +109,82 @@ class DTOUserProfileUpdate(DTOUserProfile):
     id: int
 
 
-class SUserProfileRead(DTOUserProfile):
+class SUserProfileRead(DTOUserProfile, TimestampedSchema):
+    expertise_area: list[str] | None = None
+    industries: list[str] | None = None
+    grade: str | None = None
+    location: str | None = None
     specialisations: list[str] | None = None
-    interests: list[str] | None = None
-    industry: list[str] | None = None
     skills: list[str] | None = None
+    languages: list[str] | None = None
+    current_position_title: str | None = None
+    is_currently_employed: bool = False
+    linkedin_profile: dict | None = None
+    
+    # Additional fields
+    interests: list[str] | None = None
     requests_to_community: list[str] | None = None
+    requests_community: list[str] | None = None
+
+    @classmethod
+    def from_orm(cls, profile: "ORMUserProfile") -> "SUserProfileRead":
+        """Create SUserProfileRead from ORM model"""
+        return cls(
+            id=profile.id,
+            name=profile.name,
+            surname=profile.surname,
+            email=profile.email,
+            expertise_area=[
+                spec.expertise_area.value 
+                for spec in profile.specialisations 
+                if spec.expertise_area
+            ] if profile.specialisations else None,
+            industries=[
+                ind.label.value 
+                for ind in profile.industries 
+                if ind.label
+            ] if profile.industries else None,
+            grade=profile.grade.value if hasattr(profile.grade, 'value') else profile.grade,
+            location=profile.location.value if hasattr(profile.location, 'value') else profile.location,
+            specialisations=[
+                spec.label 
+                for spec in profile.specialisations 
+                if spec.label
+            ] if profile.specialisations else None,
+            skills=[
+                skill.label 
+                for skill in profile.skills 
+                if skill.label
+            ] if profile.skills else None,
+            languages=(
+                profile.linkedin_profile.languages 
+                if profile.linkedin_profile and profile.linkedin_profile.languages 
+                else None
+            ),
+            current_position_title=(
+                profile.linkedin_profile.current_position_title 
+                if profile.linkedin_profile 
+                else None
+            ),
+            is_currently_employed=(
+                profile.linkedin_profile.is_currently_employed 
+                if profile.linkedin_profile 
+                else False
+            ),
+            linkedin_profile=({
+                "skills": profile.linkedin_profile.skills,
+                "languages": profile.linkedin_profile.languages,
+                "follower_count": profile.linkedin_profile.follower_count,
+                "summary": profile.linkedin_profile.summary,
+                "work_experience": [
+                    exp.model_dump() 
+                    for exp in profile.linkedin_profile.work_experience 
+                    if exp is not None
+                ]
+            } if profile.linkedin_profile else None),
+            created_at=profile.created_at,
+            updated_at=profile.updated_at
+        )
 
 
 class DTOUserProfileRead(DTOUserProfileUpdate):
@@ -140,9 +193,6 @@ class DTOUserProfileRead(DTOUserProfileUpdate):
     industry: list[DTOIndustry] | None = None
     skills: list[DTOSkillRead] | None = None
     requests_to_community: list[DTORequestsCommunityRead] | None = None
-
-    class Config:
-        from_attributes = True
 
     def to_old_schema(self) -> SUserProfileRead:
         old_schema: SUserProfileRead = SUserProfileRead(**self.model_dump(
@@ -154,7 +204,7 @@ class DTOUserProfileRead(DTOUserProfileUpdate):
                 'requests_to_community'
             }
         ))
-        old_schema.specialisation = [x.specialisation.label for x in self.specialisations] \
+        old_schema.specialisations = [x.specialisation.label for x in self.specialisations] \
             if self.specialisations else None
         old_schema.expertise_area = list({x.specialisation.expertise_area.name for x in self.specialisations}) \
             if self.specialisations else None
@@ -166,7 +216,7 @@ class DTOUserProfileRead(DTOUserProfileUpdate):
         return old_schema
 
 
-class DTOSearchUser(BaseModel):
+class DTOSearchUser(BaseSchema):
     name: str | None = None
     surname: str | None = None
     country: str | None = None
@@ -177,7 +227,7 @@ class DTOSearchUser(BaseModel):
     limit: int | None = 30
 
 
-class DTOAllProperties(BaseModel):
+class DTOAllProperties(BaseSchema):
     specialisations: list[DTOSpecialisationRead] | None = None
     interests: list[DTOInterestRead] | None = None
     skills: list[DTOSkillRead] | None = None

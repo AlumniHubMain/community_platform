@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from common_db.db_abstract import db_manager
 
-from web_gateway.users.user_profile_manager import UserProfileManager
+from common_db.managers import UserManager
 from web_gateway.settings import settings
 from .security import (
     create_access_token,
@@ -57,7 +57,7 @@ async def login_page(request: Request):
 
 
 async def token_response(session: AsyncSession, telegram_id, response: Response):
-    user_id = await UserProfileManager.get_user_id_by_telegram_id(session, telegram_id)
+    user_id = await UserManager.get_user_id_by_telegram_id(session, telegram_id)
 
     if not user_id:
         raise HTTPException(status=404)

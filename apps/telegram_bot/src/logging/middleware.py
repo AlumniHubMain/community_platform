@@ -1,7 +1,7 @@
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
 
-from typing import Callable, Dict, Any, Awaitable
+from typing import Callable, Awaitable
 
 from .crud_manager import LoggingManager
 from .models import TgBotEventType
@@ -15,10 +15,10 @@ class LoggingCommands(BaseMiddleware):
 
     async def __call__(
             self,
-            handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+            handler: Callable[[Message, dict], Awaitable],
             event: Message,
-            data: Dict[str, Any]
-    ) -> Any:
+            data: dict
+    ):
         # event handling (message)
         result = await handler(event, data)
 

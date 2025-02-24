@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import List, Annotated
+from typing import Annotated
 
 from linkedin_verifier.app.db.base import get_async_session
 from linkedin_verifier.app.schemas.linkedin import ProfileResponse, LimitsResponse
@@ -32,7 +32,7 @@ async def get_linkedin_service(
         )
 
 
-@router.get("/limits", response_model=List[LimitsResponse])
+@router.get("/limits", response_model=list[LimitsResponse])
 async def get_limits(
         session: Annotated[AsyncSession, Depends(get_async_session)]
 ):

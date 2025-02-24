@@ -1,7 +1,6 @@
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
-from typing import Dict
 from google.oauth2 import service_account
 from loguru import logger
 
@@ -73,7 +72,7 @@ class Settings(BaseSettings):
         )
 
     @property
-    def api_keys(self) -> Dict[LinkedInProvider, SecretStr]:
+    def api_keys(self) -> dict[LinkedInProvider, SecretStr]:
         """Маппинг provider_id -> api_key с использованием SecretStr"""
         return {
             LinkedInProvider.SCRAPIN: self.scrapin_api_key,
