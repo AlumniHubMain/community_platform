@@ -5,7 +5,6 @@ import sys
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
@@ -18,7 +17,7 @@ class Generator:
     name: str
 
     """Templates for paths that will be output, relative to ``output_path``."""
-    outputs: List[str]
+    outputs: list[str]
 
     """Where to write output files."""
     output_path: Path
@@ -33,11 +32,11 @@ class Output:
 
 @dataclass
 class Files:
-    inputs: List[Path]
-    outputs: List[Output]
+    inputs: list[Path]
+    outputs: list[Output]
 
 
-def _get_package_name(path: Path) -> Optional[Path]:
+def _get_package_name(path: Path) -> Path | None:
     with open(path, 'r') as f:
         for line in f:
             if not line.startswith("package"):
@@ -61,7 +60,7 @@ def _get_package_name(path: Path) -> Optional[Path]:
 class UvProtoPlugin(BuildHookInterface):
     PLUGIN_NAME = "protobuf"
 
-    def initialize(self, version: str, build_data: Dict[str, Any]) -> None:
+    def initialize(self, version: str, build_data: dict) -> None:
         if not self._files.outputs:
             # nothing to do
             return
@@ -90,7 +89,7 @@ class UvProtoPlugin(BuildHookInterface):
 
         build_data["artifacts"] += [p.output.as_posix() for p in self._files.outputs]
 
-    def clean(self, versions: List[str]) -> None:
+    def clean(self, versions: list[str]) -> None:
         if not self._files.outputs:
             # nothing to do
             return
@@ -117,11 +116,11 @@ class UvProtoPlugin(BuildHookInterface):
         return "."
 
     @cached_property
-    def _proto_paths(self) -> List[str]:
+    def _proto_paths(self) -> list[str]:
         return self.config.get("proto_paths", [self._default_proto_path])
 
     @cached_property
-    def _generators(self) -> List[Generator]:
+    def _generators(self) -> list[Generator]:
         gen_grpc = self.config.get("with_gen_grpc", True)
         gen_pyi = self.config.get("with_gen_pyi", True)
 

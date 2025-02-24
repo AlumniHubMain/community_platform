@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Dict, Any
 from loguru import logger
 from sqlalchemy import select, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -199,7 +198,7 @@ class LinkedInDBManager:
             await session.commit()
 
     @staticmethod
-    async def save_raw_data(linkedin_url: str, raw_data: Dict[str, Any]) -> None:
+    async def save_raw_data(linkedin_url: str, raw_data: dict) -> None:
         """Сохраняет сырые данные профиля в отдельной транзакции
         
         Args:

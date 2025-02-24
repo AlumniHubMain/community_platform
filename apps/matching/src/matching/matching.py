@@ -1,9 +1,10 @@
 import logging
-from typing import Callable, Tuple, List
+from typing import Callable
 from sqlalchemy.ext.asyncio import AsyncSession
 from common_db.models import ORMMatchingResult
 from common_db.enums.forms import EFormIntentType
-from common_db.schemas import FormRead, SUserProfileRead
+from common_db.schemas import FormRead, SUserProfileRead, MeetingsUserLimits
+from common_db.managers.limits import LimitsManager
 from matching.data_loader import DataLoader
 from matching.model import Model
 from matching.model.model_settings import model_settings_presets, ModelType
@@ -18,7 +19,8 @@ async def process_matching_request(  # pylint: disable=too-many-arguments
     form_id: int,
     model_settings_preset: str,
     n: int = 5,
-) -> Tuple[int, List[int]]:
+    use_limits: bool = True,
+) -> tuple[int, list[int]]:
     """Common matching logic used by both endpoints"""
     async with db_session_callable() as session:
         try:
@@ -55,13 +57,29 @@ async def process_matching_request(  # pylint: disable=too-many-arguments
             # Make predictions
             predictions = matcher.predict(all_users, form, linkedin_profiles, user_id, n)
 
-            # Save results
+            # TODO: get from settings
+            limit_settings = MeetingsUserLimits(
+                max_user_confirmed_meetings_count=5,
+                max_user_pended_meetings_count=10,
+            )
+
+            # Filter predictions based on user limits
+            if use_limits:
+                filtered_predictions = await LimitsManager.filter_users_by_limits(
+                    session,
+                    predictions,
+                    limit_settings
+                )
+            else:
+                filtered_predictions = predictions
+
+            # Save results with filtered predictions
             matching_result = ORMMatchingResult(
                 model_settings_preset=model_settings_preset,
                 match_users_count=n,
                 user_id=user_id,
                 form_id=form_id,
-                matching_result=predictions,
+                matching_result=filtered_predictions,
             )
             session.add(matching_result)
             await session.commit()
@@ -69,12 +87,14 @@ async def process_matching_request(  # pylint: disable=too-many-arguments
 
             if logger:
                 logger.info(
-                    "Matching results saved for user_id: %d, form_id: %d",
+                    "Matching results saved for user_id: %d, form_id: %d, filtered from %d to %d matches",
                     user_id,
                     form_id,
+                    len(predictions),
+                    len(filtered_predictions)
                 )
 
-            return matching_result.id, predictions
+            return matching_result.id, filtered_predictions
 
         except Exception as e:
             # Save error result

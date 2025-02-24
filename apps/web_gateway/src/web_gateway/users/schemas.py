@@ -1,37 +1,35 @@
 from common_db.enums.users import *
 
-from typing import List
-
 from pydantic import BaseModel, ConfigDict
 
-
+# TODO: use from common_db.schemas.users
 class UserProfile(BaseModel):
     name: str
     surname: str
     email: str
 
-    avatars: List[str] | None
+    avatars: list[str] | None
 
     about: str | None
-    interests: List[EInterests] | None
+    interests: list[EInterests] | None
 
     linkedin_link: str | None
     telegram_name: str | None
     telegram_id: int | None
 
     # ToDo(evseev.dmsr) Validate specialisation as subpart of expertise
-    expertise_area: List[EExpertiseArea] | None
-    specialisation: List[ESpecialisation] | None
+    expertise_area: list[EExpertiseArea] | None
+    specialisation: list[ESpecialisation] | None
     grade: EGrade | None
-    industry: List[EIndustry] | None
-    skills: List[ESkills] | None
+    industry: list[EIndustry] | None
+    skills: list[ESkills] | None
 
     current_company: str | None
-    company_services: List[ECompanyServices] | None
+    company_services: list[ECompanyServices] | None
 
     location: ELocation | None
     referral: bool | None
-    requests_to_community: List[ERequestsToCommunity]
+    requests_to_community: list[ERequestsToCommunity]
     
     available_meetings_pendings_count: int | None
     available_meetings_confirmations_count: int | None

@@ -13,13 +13,13 @@ from common_db.enums.users import (
     ELocation,
 )
 from common_db.schemas.forms import EFormSpecialization, EFormSkills
-
+from common_db.schemas.base import BaseSchema, TimestampedSchema
 from common_db.schemas.meetings import MeetingResponseRead
 from pydantic_extra_types.country import CountryAlpha2, CountryAlpha3
 from pydantic_extra_types.timezone_name import TimeZoneName
 
 
-class DTOSpecialisation(BaseModel):
+class DTOSpecialisation(BaseSchema):
     label: str | None = None
     description: str | None = None
     is_custom: bool | None = None
@@ -29,10 +29,8 @@ class DTOSpecialisation(BaseModel):
 class DTOSpecialisationRead(DTOSpecialisation):
     id: int | None = None
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class DTOUserSpecialisation(BaseModel):
+class DTOUserSpecialisation(BaseSchema):
     user_id: int = None
     specialisation_id: int
     grade: EGrade | None = None
@@ -41,10 +39,8 @@ class DTOUserSpecialisation(BaseModel):
 class DTOUserSpecialisationRead(DTOUserSpecialisation):
     specialisation: DTOSpecialisationRead
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class DTOInterest(BaseModel):
+class DTOInterest(BaseSchema):
     label: str | None = None
     description: str | None = None
     is_custom: bool | None = None
@@ -54,16 +50,11 @@ class DTOInterest(BaseModel):
 class DTOInterestRead(DTOInterest):
     id: int | None = None
 
-    model_config = ConfigDict(from_attributes=True)
-
-
-class DTOIndustry(BaseModel):
+class DTOIndustry(BaseSchema):
     label: EIndustry | None = None
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class DTOSkill(BaseModel):
+class DTOSkill(BaseSchema):
     label: str | None = None
     description: str | None = None
     is_custom: bool | None = None
@@ -73,10 +64,8 @@ class DTOSkill(BaseModel):
 class DTOSkillRead(DTOSkill):
     id: int | None = None
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class DTORequestsCommunity(BaseModel):
+class DTORequestsCommunity(BaseSchema):
     label: str | None = None
     description: str | None = None
     is_custom: bool | None = None
@@ -86,10 +75,8 @@ class DTORequestsCommunity(BaseModel):
 class DTORequestsCommunityRead(DTORequestsCommunity):
     id: int | None = None
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class DTOUserProfile(BaseModel):
+class DTOUserProfile(BaseSchema):
     name: str
     surname: str
     email: EmailStr
@@ -122,14 +109,7 @@ class DTOUserProfileUpdate(DTOUserProfile):
     id: int
 
 
-class SUserProfileRead(DTOUserProfile):
-    id: int
-    # Base fields from DTOUserProfile
-    name: str
-    surname: str
-    email: str
-    
-    # Fields needed by predictor - match ORM model names
+class SUserProfileRead(DTOUserProfile, TimestampedSchema):
     expertise_area: list[str] | None = None
     industries: list[str] | None = None
     grade: str | None = None
@@ -145,10 +125,6 @@ class SUserProfileRead(DTOUserProfile):
     interests: list[str] | None = None
     requests_to_community: list[str] | None = None
     requests_community: list[str] | None = None
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm(cls, profile: "ORMUserProfile") -> "SUserProfileRead":
@@ -218,8 +194,6 @@ class DTOUserProfileRead(DTOUserProfileUpdate):
     skills: list[DTOSkillRead] | None = None
     requests_to_community: list[DTORequestsCommunityRead] | None = None
 
-    model_config = ConfigDict(from_attributes=True)
-
     def to_old_schema(self) -> SUserProfileRead:
         old_schema: SUserProfileRead = SUserProfileRead(**self.model_dump(
             exclude={
@@ -242,7 +216,7 @@ class DTOUserProfileRead(DTOUserProfileUpdate):
         return old_schema
 
 
-class DTOSearchUser(BaseModel):
+class DTOSearchUser(BaseSchema):
     name: str | None = None
     surname: str | None = None
     country: str | None = None
@@ -253,7 +227,7 @@ class DTOSearchUser(BaseModel):
     limit: int | None = 30
 
 
-class DTOAllProperties(BaseModel):
+class DTOAllProperties(BaseSchema):
     specialisations: list[DTOSpecialisationRead] | None = None
     interests: list[DTOInterestRead] | None = None
     skills: list[DTOSkillRead] | None = None

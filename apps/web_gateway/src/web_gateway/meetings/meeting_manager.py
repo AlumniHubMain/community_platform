@@ -10,15 +10,15 @@ from event_emitter import EmitterFactory, IProtoEmitter
 from common_db.models import ORMMeeting, ORMMeetingResponse, ORMUserProfile
 from common_db.enums.meetings import EMeetingResponseStatus, EMeetingStatus, EMeetingUserRole
 from web_gateway.settings import settings
-from web_gateway.limits.limits_manager import LimitsManager, MeetingsUserLimits
 from .notification_event_builder import NotificationEventBuilder
+from common_db.managers import LimitsManager
 from common_db.schemas.meetings import (
     MeetingRequestRead,
     MeetingRequestCreate,
     MeetingRequestUpdate,
     MeetingList,
-    MeetingsUserLimits,
     MeetingFilter,
+    MeetingsUserLimits,
 )
 
 def to_iterable(object):
@@ -63,7 +63,7 @@ class MeetingManager:
         meeting_users = [organizer]
 
         # Check organizer limits
-        organizer_limits = await LimitsManager.get_user_meetings_limits(session, request.organizer_id)
+        organizer_limits = await LimitsManager.get_user_meetings_limits(session, request.organizer_id, settings.limits)
         await cls.check_pendings_limit(request.organizer_id, organizer_limits)
         await cls.check_confirmations_limit(request.organizer_id, organizer_limits)
         
@@ -78,7 +78,7 @@ class MeetingManager:
     
         # Check attendees pending limits
         for user_id in request.attendees_id:
-            attendee_limits = await LimitsManager.get_user_meetings_limits(session, user_id)
+            attendee_limits = await LimitsManager.get_user_meetings_limits(session, user_id, settings.limits)
             await cls.check_pendings_limit(user_id, attendee_limits)
 
         # Create meeting
@@ -107,7 +107,7 @@ class MeetingManager:
         print("Num of responses:", len(meeting.user_responses))
         
         for user_orm in meeting_users:
-            await LimitsManager.update_user_limits(session, user_orm.id)
+            await LimitsManager.update_user_limits(session, user_orm.id, settings.limits)
         
         await session.commit()
         
@@ -228,7 +228,7 @@ class MeetingManager:
             return MeetingRequestRead.model_validate(meeting, from_attributes=True)
         
         # Check limits
-        user_limits = await LimitsManager.get_user_meetings_limits(session, user_id)
+        user_limits = await LimitsManager.get_user_meetings_limits(session, user_id, settings.limits)
         if user_response.response == EMeetingResponseStatus.declined:
             # If status will change form declined to other
             await cls.check_pendings_limit(user_id, user_limits)
@@ -256,7 +256,7 @@ class MeetingManager:
                 meeting.status = EMeetingStatus.confirmed
 
         # Update the user's limits
-        await LimitsManager.update_user_limits(session, user_id)
+        await LimitsManager.update_user_limits(session, user_id, settings.limits)
 
         await session.commit()
         

@@ -253,7 +253,7 @@ class FormRead(FormBase, TimestampedSchema):
             if 'social_circle_expansion' in self.content:
                 formats = self.content['social_circle_expansion'].get('meeting_formats', [])
                 return formats[0] if formats else None
-        return self.content.get('meeting_format')
+        return self.content.get('meeting_format', 'any')
 
     @property
     def specialization(self) -> list[str]:

@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-from typing import Optional
 
 from langchain_core.prompts import PromptTemplate
 from langchain_google_vertexai import ChatVertexAI
@@ -88,7 +87,7 @@ class VacancyExtractorGenerator:
             """,
         )
 
-    async def get_page_content(self, url: str) -> Optional[str]:
+    async def get_page_content(self, url: str) -> str | None:
         """Fetch HTML content from the given URL."""
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
@@ -112,7 +111,7 @@ class VacancyExtractorGenerator:
                 await browser.close()
             return html_content
 
-    async def generate_extractor(self, url: str) -> Optional[str]:
+    async def generate_extractor(self, url: str) -> str | None:
         """Generate vacancy extractor class for the given URL."""
         html_content = await self.get_page_content(url)
         if not html_content:
