@@ -17,27 +17,22 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Set working directory
-WORKDIR /build/apps/notifications/
+WORKDIR /build/notifications/
 
 # Copy shared packages and configurations
 COPY packages/ /build/packages/
 COPY config/ /build/config/
-COPY credentials/ /build/credentials/
 
 # Copy project files
-COPY pyproject.toml uv.lock /build/apps/notifications/
-COPY src/ /build/apps/notifications/src/
+COPY apps/notifications/pyproject.toml apps/notifications/uv.lock apps/notifications/README.md /build/notifications/
+COPY src/ /build/notifications/src/
 
 # Install dependencies with frozen lock file
 RUN uv sync --frozen
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/build/apps/notifications/src
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
 # Run the service using uvicorn
-CMD ["/build/apps/notifications/.venv/bin/uvicorn", "notifications.main:app", "--host", "0.0.0.0", "--port", "8080"] 
+CMD ["/build/notifications/.venv/bin/uvicorn", "notifications.main:app", "--host", "0.0.0.0", "--port", "8080"]

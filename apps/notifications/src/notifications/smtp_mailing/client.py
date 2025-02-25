@@ -2,7 +2,7 @@ import os
 import aiosmtplib
 from email.mime.multipart import MIMEMultipart
 
-from src.notifications.config import settings
+from notifications.config import settings
 
 
 class AsyncSmtpClient:

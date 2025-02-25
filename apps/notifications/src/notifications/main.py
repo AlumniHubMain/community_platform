@@ -5,10 +5,10 @@ from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 from loguru import logger
 
-from config import settings
-from loader import broker
-from logic.incoming_message import message_handler
-from utils.logging import setup_logger, setup_logging_middleware, setup_exception_handlers
+from notifications.config import settings
+from notifications.loader import broker
+from notifications.logic.incoming_message import message_handler
+from notifications.utils.logging import setup_logger, setup_logging_middleware, setup_exception_handlers
 
 # Setup logger
 setup_logger()
