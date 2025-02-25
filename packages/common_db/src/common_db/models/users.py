@@ -87,7 +87,7 @@ class ORMUserProfile(ObjectTable):
         back_populates="users"
     )
 
-    requests_community: Mapped[list["ORMRequestsCommunity"]] = relationship(
+    requests_to_community: Mapped[list["ORMRequestsCommunity"]] = relationship(
         "ORMRequestsCommunity",
         secondary=f"{schema}.users_requests_to_community",
         back_populates="users"
@@ -266,7 +266,7 @@ class ORMRequestsCommunity(PropertyTable):
     users: Mapped[list["ORMUserProfile"]] = relationship(
         "ORMUserProfile",
         secondary=f"{schema}.users_requests_to_community",
-        back_populates="requests_community"
+        back_populates="requests_to_community"
     )
 
 
