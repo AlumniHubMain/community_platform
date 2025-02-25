@@ -6,6 +6,7 @@ from sqlalchemy import select, update, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from ..db_abstract import db_manager
 from ..enums import EMeetingResponseStatus
 from ..models import (
     ORMUserProfile,
@@ -39,8 +40,8 @@ class UserManager:
     @classmethod
     async def check_user(
             cls,
-            session: AsyncSession,
-            user_id: int
+            user_id: int,
+            session: AsyncSession = db_manager.get_session()
     ) -> JSONResponse:
         """
         Check user by id.
@@ -67,8 +68,8 @@ class UserManager:
     @classmethod
     async def get_user_by_id(
             cls,
-            session: AsyncSession,
-            user_id: int
+            user_id: int,
+            session: AsyncSession = db_manager.get_session()
     ) -> DTOUserProfileRead:
         """
         Get user by id.
@@ -105,8 +106,8 @@ class UserManager:
     @classmethod
     async def create_user(
             cls,
-            session: AsyncSession,
-            user_data: DTOUserProfile
+            user_data: DTOUserProfile,
+            session: AsyncSession = db_manager.get_session()
     ) -> JSONResponse:
         """
         Create a new user in the database.
@@ -134,8 +135,8 @@ class UserManager:
     @classmethod
     async def update_user(
             cls,
-            session: AsyncSession,
-            user_data: DTOUserProfileUpdate
+            user_data: DTOUserProfileUpdate,
+            session: AsyncSession = db_manager.get_session()
     ) -> JSONResponse:
         """
         Update existing user in the database.
@@ -147,7 +148,7 @@ class UserManager:
         Returns:
             JSONResponse: response with status and updated user id
         """
-        await cls.check_user(session, user_data.id)
+        await cls.check_user(session=session, user_id=user_data.id)
 
         await session.execute(update(ORMUserProfile)
                               .where(ORMUserProfile.id == user_data.id)
@@ -167,8 +168,8 @@ class UserManager:
     @classmethod
     async def get_user_by_tg_id(
             cls,
-            session: AsyncSession,
-            user_tg_id: int
+            user_tg_id: int,
+            session: AsyncSession = db_manager.get_session()
     ) -> DTOUserProfileRead:
         """
         Get user by id.
@@ -205,7 +206,7 @@ class UserManager:
     @classmethod
     async def get_all_specialisations(
             cls,
-            session: AsyncSession
+            session: AsyncSession = db_manager.get_session()
     ) -> list[DTOSpecialisationRead]:
         """
         Get all non-custom specialisations from the database.
@@ -224,7 +225,7 @@ class UserManager:
     @classmethod
     async def get_all_specialisations_label(
             cls,
-            session: AsyncSession
+            session: AsyncSession = db_manager.get_session()
     ) -> list[str]:
         """
         Get all labels of non-custom specialisations from the database.
@@ -243,7 +244,7 @@ class UserManager:
     @classmethod
     async def get_all_interests(
             cls,
-            session: AsyncSession
+            session: AsyncSession = db_manager.get_session()
     ) -> list[DTOInterestRead]:
         """
         Get all non-custom interests from the database.
@@ -262,7 +263,7 @@ class UserManager:
     @classmethod
     async def get_all_interests_label(
             cls,
-            session: AsyncSession
+            session: AsyncSession = db_manager.get_session()
     ) -> list[str]:
         """
         Get all labels of non-custom interests from the database.
@@ -281,7 +282,7 @@ class UserManager:
     @classmethod
     async def get_all_skills(
             cls,
-            session: AsyncSession
+            session: AsyncSession = db_manager.get_session()
     ) -> list[DTOSkillRead]:
         """
         Get all non-custom skills from the database.
@@ -300,7 +301,7 @@ class UserManager:
     @classmethod
     async def get_all_skills_label(
             cls,
-            session: AsyncSession
+            session: AsyncSession = db_manager.get_session()
     ) -> list[str]:
         """
         Get all labels of non-custom skills from the database.
@@ -319,7 +320,7 @@ class UserManager:
     @classmethod
     async def get_all_requests_to_community(
             cls,
-            session: AsyncSession
+            session: AsyncSession = db_manager.get_session()
     ) -> list[DTORequestsCommunityRead]:
         """
         Get all non-custom requests to community from the database.
@@ -338,7 +339,7 @@ class UserManager:
     @classmethod
     async def get_all_requests_to_community_label(
             cls,
-            session: AsyncSession
+            session: AsyncSession = db_manager.get_session()
     ) -> list[str]:
         """
         Get all labels of non-custom requests to community from the database.
@@ -358,8 +359,8 @@ class UserManager:
     async def search_users(
             cls,
             user_id: int,
-            session: AsyncSession,
-            search_params: DTOSearchUser
+            search_params: DTOSearchUser,
+            session: AsyncSession = db_manager.get_session()
     ) -> list[DTOUserProfileRead]:
         """
             Search for users by the specified parameters.
@@ -467,8 +468,8 @@ class UserManager:
 
         # Meetings with user response in (no_answer, confirmed)
         pended_count: int = len([1 for response in responses
-                                 if (
-                                             response.response != EMeetingResponseStatus.declined and response.user_id == user_id)])
+                                 if (response.response != EMeetingResponseStatus.declined
+                                     and response.user_id == user_id)])
         confirmation_limit = limit_settings.max_user_confirmed_meetings_count
         pending_limit = limit_settings.max_user_pended_meetings_count
 
