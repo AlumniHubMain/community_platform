@@ -1,5 +1,70 @@
 # LinkedIn Profile Validator Service
 
+## Запуск сервиса с использованием Docker
+
+### Сборка Docker-образа
+
+```bash
+# Из корня проекта
+docker build -t linkedin-verifier:latest -f apps/linkedin_verifier/Dockerfile .
+```
+
+### Запуск контейнера
+
+```bash
+# Запуск с переменными окружения из .env файла
+docker run -p 8000:8000 --env-file apps/linkedin_verifier/.env linkedin-verifier:latest
+
+# Или с явным указанием переменных окружения
+docker run -p 8000:8000 \
+  -e DB_HOST=your-db-host \
+  -e DB_PORT=5432 \
+  -e DB_NAME=linkedin \
+  -e DB_USER=user \
+  -e DB_PASS=password \
+  -e SCRAPIN_API_KEY=your-key-here \
+  linkedin-verifier:latest
+```
+
+### Запуск с видимыми логами
+
+```bash
+# Запуск в интерактивном режиме (логи видны в консоли)
+docker run -it -p 8000:8000 --env-file apps/linkedin_verifier/.env linkedin-verifier:latest
+
+# Запуск в фоновом режиме с именем контейнера
+docker run -d --name linkedin-verifier-container -p 8000:8000 --env-file apps/linkedin_verifier/.env linkedin-verifier:latest
+
+# Просмотр логов запущенного контейнера
+docker logs -f linkedin-verifier-container
+
+# Просмотр логов с временными метками
+docker logs -f --timestamps linkedin-verifier-container
+```
+
+### Остановка контейнера
+
+```bash
+# Если контейнер запущен с именем
+docker stop linkedin-verifier-container
+
+# Если контейнер запущен без имени, сначала узнайте его ID
+docker ps
+docker stop <container_id>
+
+# Принудительная остановка (если обычная не срабатывает)
+docker kill linkedin-verifier-container
+```
+
+### Проверка работоспособности
+
+```bash
+# Проверка статуса сервиса
+curl http://localhost:8000/api/v1/linkedin/health
+```
+
+## Описание сервиса
+
 Микросервис для валидации профилей LinkedIn. Проверяет опыт работы в целевых компаниях и сохраняет данные профилей.
 Пока версия для ручной заливки профилей членов сообщества. Для pubsub готова на ~95%, еще нужно uv toml настроить, 
 пока не успел,
@@ -132,16 +197,12 @@
    - Логирование всех этапов обработки
    - Обработка ошибок API и сети
 
-
-
-
 ## TODO:
 
 ### 1. Валидация опыта работы
 
 **Валидация верификации - валидация опыта работы в легетимных компаниях**
 - Продуктовая логика - изучить, реализовать
-
 
 ### 2. Интеграция
 
@@ -174,9 +235,6 @@
 - UV: toml, lock
 - Тесты
 - Вырезать fastapi
-
-
-
 
 ## Архитектура сервиса
 
