@@ -69,7 +69,7 @@ async def parse_linkedin_profiles(usernames: list[str], target_company_label: st
     """
     try:
         # Ограничиваем список первыми 50 профилями
-        usernames = usernames[0:1]  # первые 700 уже ебанули из Олиного списка
+        usernames = usernames[701:702]  # первые 700 уже ебанули из Олиного списка
         logger.info(f"Starting parsing {len(usernames)} profiles using {settings.linkedin_provider} provider")
 
         # Создаем семафор для ограничения одновременных подключений к БД
@@ -79,7 +79,7 @@ async def parse_linkedin_profiles(usernames: list[str], target_company_label: st
         async def process_profile(raw_username: str):
             async with semaphore:  # Ограничиваем количество одновременных операций
                 try:
-                    username = validate_linkedin_username(raw_username)
+                    username = await validate_linkedin_username(raw_username)
                     return await LinkedInService.validate_profile(
                         username=username,
                         target_company_label=target_company_label,

@@ -12,7 +12,7 @@ class InvalidLinkedInUsernameError(LinkedInValidationError):
     """Ошибка валидации username LinkedIn."""
 
 
-def validate_linkedin_username(raw_input: str | None) -> str:
+async def validate_linkedin_username(raw_input: str | None) -> str:
     """
     Т.к. данные в базе профилей Сообществ грязные, то нужно их почистить перед использованием.
     Извлекает username из LinkedIn URL или возвращает сам username.
