@@ -18,8 +18,6 @@ from common_db.enums.users import (
 
 router = APIRouter(tags=["Enums"], prefix="/enums")
 path_to_type = {
-    'EIntentType': EIntentType,
-    'EMeetingFormat': EMeetingFormat,
     'EInterestsArea': EInterestsArea,
     'EExpertiseArea': EExpertiseArea,
     'ESpecialisation': ESpecialisation,
