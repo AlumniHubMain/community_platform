@@ -12,10 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from web_gateway import auth
 from .properties_router import router as properties_router
 
-
 router = APIRouter(tags=["Client profiles"], prefix="/user")
 router.include_router(properties_router)
-
 
 
 @router.get("/me", response_model=DTOUserProfileRead)
@@ -31,7 +29,7 @@ async def update_current_user_profile(
         profile: DTOUserProfileUpdate,
         session: Annotated[AsyncSession, Depends(db_manager.get_session)],
 ) -> JSONResponse:
-    return await UserManager.update_user(session, profile)
+    return await UserManager.update_user(session=session, user_data=profile)
 
 
 @router.get(

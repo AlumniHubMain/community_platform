@@ -50,6 +50,7 @@ class DTOInterest(BaseSchema):
 class DTOInterestRead(DTOInterest):
     id: int | None = None
 
+
 class DTOIndustry(BaseSchema):
     label: EIndustry | None = None
 
@@ -120,7 +121,7 @@ class SUserProfileRead(DTOUserProfile, TimestampedSchema):
     current_position_title: str | None = None
     is_currently_employed: bool = False
     linkedin_profile: dict | None = None
-    
+
     # Additional fields
     interests: list[str] | None = None
     requests_to_community: list[str] | None = None
@@ -135,53 +136,53 @@ class SUserProfileRead(DTOUserProfile, TimestampedSchema):
             surname=profile.surname,
             email=profile.email,
             expertise_area=[
-                spec.expertise_area.value 
-                for spec in profile.specialisations 
+                spec.expertise_area.value
+                for spec in profile.specialisations
                 if spec.expertise_area
             ] if profile.specialisations else None,
             industries=[
-                ind.label.value 
-                for ind in profile.industries 
+                ind.label.value
+                for ind in profile.industries
                 if ind.label
             ] if profile.industries else None,
             grade=profile.grade.value if hasattr(profile.grade, 'value') else profile.grade,
             location=profile.location.value if hasattr(profile.location, 'value') else profile.location,
             specialisations=[
-                spec.label 
-                for spec in profile.specialisations 
+                spec.label
+                for spec in profile.specialisations
                 if spec.label
             ] if profile.specialisations else None,
             skills=[
-                skill.label 
-                for skill in profile.skills 
+                skill.label
+                for skill in profile.skills
                 if skill.label
             ] if profile.skills else None,
             languages=(
-                profile.linkedin_profile.languages 
-                if profile.linkedin_profile and profile.linkedin_profile.languages 
+                profile.linkedin_profile.languages
+                if profile.linkedin_profile and profile.linkedin_profile.languages
                 else None
             ),
             current_position_title=(
-                profile.linkedin_profile.current_position_title 
-                if profile.linkedin_profile 
+                profile.linkedin_profile.current_position_title
+                if profile.linkedin_profile
                 else None
             ),
             is_currently_employed=(
-                profile.linkedin_profile.is_currently_employed 
-                if profile.linkedin_profile 
+                profile.linkedin_profile.is_currently_employed
+                if profile.linkedin_profile
                 else False
             ),
             linkedin_profile=({
-                "skills": profile.linkedin_profile.skills,
-                "languages": profile.linkedin_profile.languages,
-                "follower_count": profile.linkedin_profile.follower_count,
-                "summary": profile.linkedin_profile.summary,
-                "work_experience": [
-                    exp.model_dump() 
-                    for exp in profile.linkedin_profile.work_experience 
-                    if exp is not None
-                ]
-            } if profile.linkedin_profile else None),
+                                  "skills": profile.linkedin_profile.skills,
+                                  "languages": profile.linkedin_profile.languages,
+                                  "follower_count": profile.linkedin_profile.follower_count,
+                                  "summary": profile.linkedin_profile.summary,
+                                  "work_experience": [
+                                      exp.model_dump()
+                                      for exp in profile.linkedin_profile.work_experience
+                                      if exp is not None
+                                  ]
+                              } if profile.linkedin_profile else None),
             created_at=profile.created_at,
             updated_at=profile.updated_at
         )
