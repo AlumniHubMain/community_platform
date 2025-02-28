@@ -6,9 +6,11 @@ import logging
 import os
 import sys
 from contextlib import asynccontextmanager
+from typing import List, Dict, Any
 
 from fastapi import FastAPI, HTTPException, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from src.pubsub.handlers import handle_profile_task
 from src.linkedin.helpers import validate_linkedin_username
@@ -142,55 +144,101 @@ async def pubsub_push(request: Request) -> dict[str, str]:
         raise HTTPException(status_code=500, detail="Processing failed")  # nack с повтором
 
 
-@app.post("/tasks/create", response_model=dict[str, str])
-async def create_task(task: LinkedInProfileTask = Body(...)) -> dict[str, str]:
+# Определим модель ответа для большей ясности
+class TasksCreateResponse(BaseModel):
+    status: str
+    successful: List[str]
+    failed: Dict[str, str]
+    message: str
+
+@app.post("/tasks/create", response_model=TasksCreateResponse)
+async def create_tasks(tasks: List[LinkedInProfileTask] = Body(...)) -> TasksCreateResponse:
     """
-    Создает задание на проверку LinkedIn профиля через Pub/Sub.
+    Создает задания на проверку LinkedIn профилей через Pub/Sub.
 
     Args:
-        task: Параметры задания:
-            username: LinkedIn username для проверки (можно и в "грязном" виде, есть предвалидатор -
-            TODO: решить, где его использовать: на этапе создания задания или на этапе парсинга.
-             Пока что в обоих местах.
+        tasks: Список параметров заданий:
+            username: LinkedIn username для проверки
             target_company_label: название компании для проверки
 
     Returns:
-        HTTP 200: Задание успешно создано и опубликовано
-        HTTP 400: Неверные параметры запроса
-        HTTP 500: Ошибка при публикации в Pub/Sub
+        HTTP 200: Информация о созданных заданиях
+            status: Статус операции
+            successful: Список успешно созданных заданий (usernames)
+            failed: Словарь неудачных заданий с причинами ошибок
+            message: Общее сообщение о результате
 
     Example:
-        {
-            "username": "pavellukyanov",
-            "target_company_label": "Yandex"
-        }
+        [
+            {
+                "username": "pavellukyanov",
+                "target_company_label": "Yandex"
+            },
+            {
+                "username": "johndoe",
+                "target_company_label": "Google"
+            }
+        ]
     """
-    try:
-        logger.info(f"Start: processing create pubsub-task for user: {task.username}")
-        
-        task = LinkedInProfileTask.model_validate(task)
-        task.username = await validate_linkedin_username(task.username)
-        logger.info(f"Validated username: {task.username}")
-
-        # Публикуем в Pub/Sub через наш брокер
-        await broker.publish(
-            settings.pubsub_linkedin_tasks_topic,  # Топик для заданий
-            task
-        )
-
-        logger.info(f"End: published task to topic: {settings.pubsub_linkedin_tasks_topic}")
-        return {
-            "status": "ok",
-            "message": f"Pubsub-task created for profile: {task.username}, "
-                       f"topic: {settings.pubsub_linkedin_tasks_topic}"
-        }
-
-    except Exception as e:
-        logger.error(f"Error creating pubsub-task: {e}")
+    successful = []
+    failed = {}
+    
+    logger.info(f"Start: processing batch of {len(tasks)} pubsub-tasks")
+    
+    for task in tasks:
+        try:
+            # Валидация и нормализация username
+            try:
+                username = await validate_linkedin_username(task.username)
+                task.username = username
+            except Exception as e:
+                failed[task.username] = f"Invalid username: {str(e)}"
+                continue
+                
+            # Публикуем в Pub/Sub через наш брокер
+            await broker.publish(
+                settings.pubsub_linkedin_tasks_topic,  # Топик для заданий
+                task
+            )
+            
+            successful.append(task.username)
+            logger.info(f"Published task for user: {task.username} to topic: {settings.pubsub_linkedin_tasks_topic}")
+            
+        except Exception as e:
+            error_msg = f"Failed to create task: {str(e)}"
+            failed[task.username] = error_msg
+            logger.error(f"Error creating pubsub-task for {task.username}: {e}")
+    
+    # Формируем итоговое сообщение
+    total = len(tasks)
+    success_count = len(successful)
+    fail_count = len(failed)
+    
+    message = f"Processed {total} tasks: {success_count} successful, {fail_count} failed"
+    logger.info(f"End: {message}")
+    
+    # Определяем общий статус операции
+    status = "ok" if success_count > 0 else "error"
+    
+    # Если все задания завершились с ошибкой, возвращаем 500
+    if status == "error":
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to create pubsub-task: {str(e)}"
+            detail={
+                "status": "error",
+                "successful": successful,
+                "failed": failed,
+                "message": message
+            }
         )
+    
+    # Возвращаем результат
+    return TasksCreateResponse(
+        status=status,
+        successful=successful,
+        failed=failed,
+        message=message
+    )
 
 
 if __name__ == "__main__":

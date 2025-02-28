@@ -93,7 +93,7 @@ async def parse_linkedin_profiles(usernames: list[str], target_company_label: st
     """
     try:
         # Ограничиваем список первыми 50 профилями
-        usernames = usernames[5:135]  # первые  701:702 700 уже ебанули из Олиного списка
+        # usernames = usernames[5:135]  # первые  701:702 700 уже ебанули из Олиного списка
         logger.info(f"Starting parsing {len(usernames)} profiles using {settings.linkedin_provider} provider")
 
         # Создаем семафор для ограничения одновременных подключений к БД
