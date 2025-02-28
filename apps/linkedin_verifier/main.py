@@ -13,6 +13,7 @@ from src.pubsub.handlers import handle_profile_task
 from src.linkedin.helpers import validate_linkedin_username
 from common_db.schemas.linkedin import LinkedInProfileTask
 from loader import broker
+from config import settings
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -91,8 +92,10 @@ async def pubsub_push(request: Request) -> dict[str, str]:
             - 5xx для серверных ошибок (с повтором)
     """
     try:
+        logger.info("--> Staring process task", request)
         envelope = await request.json()
         message = envelope.get("message")
+        logger.info("Processing profile for user: %s", message)
         if not message.get("data"):
             raise HTTPException(status_code=400, detail="No data in message")
         try:
@@ -102,7 +105,8 @@ async def pubsub_push(request: Request) -> dict[str, str]:
             raise HTTPException(status_code=400, detail=f"Invalid message format: {str(e)}") from e
 
 
-        task = LinkedInProfileTask.model_validate_json(data)
+        task = LinkedInProfileTask.model_validate(data)
+        # task = LinkedInProfileTask.model_validate(message)
 
         logger.info("Processing profile for user: %s", task.username)
         await handle_profile_task(task)
@@ -110,6 +114,7 @@ async def pubsub_push(request: Request) -> dict[str, str]:
         return {"status": "ok"}  # 200 = ack
 
     except (ValueError, json.JSONDecodeError) as e:
+        logger.error("Error processing message: %s", str(e))
         raise HTTPException(status_code=400, detail=str(e))  # nack без повтора
 
     except Exception as e:
@@ -141,35 +146,35 @@ async def create_task(task: LinkedInProfileTask) -> dict[str, str]:
         }
     """
     try:
+        logger.info("Start processing create pubsub-task for user: %s", task.username)
         # data = await request.json()
         task = LinkedInProfileTask.model_validate(task)
         task.username = await validate_linkedin_username(task.username)
 
         # Публикуем в Pub/Sub через наш брокер
         await broker.publish(
-            "linkedin-tasks",  # Топик для заданий
-            {
-                "username": task.username,
-                "target_company_label": task.target_company_label
-            }
+            settings.pubsub_linkedin_tasks_topic,  # Топик для заданий
+            task
         )
 
+        logger.info("End processing (success) create pubsub-task for user: %s", task.username)
         return {
             "status": "ok",
-            "message": f"Task created for profile: {task.username}"
+            "message": f"Pubsub-task created for profile: {task.username}, "
+                       f"topic: {settings.pubsub_linkedin_tasks_topic}"
         }
 
     except Exception as e:
-        logger.error(f"Error creating task: {e}")
+        logger.error(f"Error creating pubsub-task: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to create task: {str(e)}"
+            detail=f"Failed to create pubsub-task: {str(e)}"
         )
 
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     uvicorn.run(
         app,
         host="0.0.0.0",

@@ -24,65 +24,71 @@ async def handle_profile_task(task: LinkedInProfileTask) -> None:
         # Парсим профиль через LinkedIn API
         profile = await LinkedInService.validate_profile(
             username=task.username,
-            target_company_label=task.target_company_label
+            target_company_label=task.target_company_label,
+            use_mock=True  # TODO: delete in dev!
         )
 
-        logger.info(f"Successfully parsed profile {task.username}")
+        logger.info(f"Successfully parsed and saved profile {task.username}")
 
-        # Публикуем успешный результат в очередь
-        await broker.publish(
-            "linkedin-results",
-            {
-                "username": task.username,
-                "status": "success",
-                "profile_id": profile.id
-            }
-        )
+        logger.info(f"Starting create tasks in pubsub for parsing result for profile {task.username}"
+                    f"// todo: to realize this //")
+
+
+        # TODO: Add logic for notifications to curators, users via notifications-service
+        # # Публикуем успешный результат в очередь
+        # await broker.publish(
+        #     "linkedin-results",
+        #     {
+        #         "username": task.username,
+        #         "status": "success",
+        #         "profile_id": profile.id
+        #     }
+        # )
 
     except BadRequestError as e:
         logger.error(f"Bad request error for {task.username}: {e}")
-        await broker.publish("linkedin-errors", {
-            "username": task.username,
-            "error": str(e),
-            "type": "bad_request",
-            "status_code": 400,
-            "retry": False,
-            "reason": "Неверные параметры запроса"
-        })
+        # await broker.publish("linkedin-errors", {
+        #     "username": task.username,
+        #     "error": str(e),
+        #     "type": "bad_request",
+        #     "status_code": 400,
+        #     "retry": False,
+        #     "reason": "Неверные параметры запроса"
+        # })
         raise  # -> HTTP 400, не повторяем
 
     except CredentialsError as e:
         logger.error(f"Authentication error: {e}")
-        await broker.publish("linkedin-errors", {
-            "username": task.username,
-            "error": str(e),
-            "type": "credentials",
-            "status_code": 401,
-            "retry": True,
-            "reason": "Проблемы с API ключом"
-        })
+        # await broker.publish("linkedin-errors", {
+        #     "username": task.username,
+        #     "error": str(e),
+        #     "type": "credentials",
+        #     "status_code": 401,
+        #     "retry": True,
+        #     "reason": "Проблемы с API ключом"
+        # })
         raise  # -> HTTP 401, повторим после обновления ключа
 
     except PaymentRequiredError as e:
         logger.error(f"No credits left: {e}")
-        await broker.publish("linkedin-errors", {
-            "username": task.username,
-            "error": str(e),
-            "type": "payment_required",
-            "status_code": 402,
-            "retry": True,
-            "reason": "Закончились credits в API"
-        })
+        # await broker.publish("linkedin-errors", {
+        #     "username": task.username,
+        #     "error": str(e),
+        #     "type": "payment_required",
+        #     "status_code": 402,
+        #     "retry": True,
+        #     "reason": "Закончились credits в API"
+        # })
         raise  # -> HTTP 402, повторим после пополнения
 
     except Exception as e:
         logger.exception(f"Unexpected error for {task.username}: {e}")
-        await broker.publish("linkedin-errors", {
-            "username": task.username,
-            "error": str(e),
-            "type": "unexpected_error",
-            "status_code": 500,
-            "retry": True,
-            "reason": "Неожиданная ошибка"
-        })
+        # await broker.publish("linkedin-errors", {
+        #     "username": task.username,
+        #     "error": str(e),
+        #     "type": "unexpected_error",
+        #     "status_code": 500,
+        #     "retry": True,
+        #     "reason": "Неожиданная ошибка"
+        # })
         raise  # -> HTTP 500, повторим позже
