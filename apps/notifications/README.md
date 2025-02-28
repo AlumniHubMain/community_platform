@@ -29,7 +29,7 @@ uv run pytest --cov=notifications tests/
 ## Docker
 ### Build
 ```bash
-docker build -t notifications .
+docker build -f apps/notifications/Dockerfile -t notifications-service .
 ```
 
 ### Run

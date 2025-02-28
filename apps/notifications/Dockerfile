@@ -2,16 +2,10 @@
 FROM python:3.13-slim
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Rust
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
-    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc && \
-    . "$HOME/.cargo/env"
-ENV PATH="/root/.cargo/bin:${PATH}"
+RUN apt-get update &&  \
+    apt-get install -y build-essential && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy UV binary from official image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -21,11 +15,11 @@ WORKDIR /build/notifications/
 
 # Copy shared packages and configurations
 COPY packages/ /build/packages/
-COPY config/ /build/config/
+COPY config/ /build/notifications/config/
 
 # Copy project files
 COPY apps/notifications/pyproject.toml apps/notifications/uv.lock apps/notifications/README.md /build/notifications/
-COPY src/ /build/notifications/src/
+COPY apps/notifications/src/ /build/notifications/src/
 
 # Install dependencies with frozen lock file
 RUN uv sync --frozen

@@ -6,7 +6,7 @@ from common_db.managers.user import UserManager
 from common_db.schemas import DTOGeneralNotification, DTOUserNotification, DTONotifiedUserProfile
 from notifications.config import settings
 from notifications.loader import broker
-from smtp_mailing.client import email_client
+from notifications.smtp_mailing.client import email_client
 
 
 class NotificationSender:

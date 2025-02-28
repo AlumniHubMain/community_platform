@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     ps_notification_tg_topic: str
     ps_notification_tg_sub_name: str
 
-    model_config = SettingsConfigDict(env_file=os.environ.get('DOTENV', '.env'), env_file_encoding='utf8')
+    model_config = SettingsConfigDict(env_file=os.environ.get('DOTENV', 'src/notifications/.env'), env_file_encoding='utf8')
 
     @property
     def ps_credentials(self) -> service_account.Credentials:
