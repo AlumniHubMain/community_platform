@@ -19,6 +19,7 @@ dependencies = [
     "pydantic[email]>=2.10.6",
     "pycountry>=23.1.14",
     "tzdata>=2025.1",
+    "pydantic[email]>=2.10.6",
 ]
 
 [project.scripts]
