@@ -26,9 +26,10 @@ COPY apps/linkedin_verifier/ /build/apps/linkedin_verifier/
 # Устанавливаем зависимости с помощью uv sync
 RUN uv sync --frozen
 
-# # Устанавливаем переменные окружения
-# ENV PYTHONDONTWRITEBYTECODE=1 \
-#     PYTHONUNBUFFERED=1
+# Устанавливаем переменные окружения
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    LOG_LEVEL=INFO
 
 # Открываем порт 8000 для доступа к API
 EXPOSE 8000

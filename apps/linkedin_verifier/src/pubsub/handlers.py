@@ -25,7 +25,7 @@ async def handle_profile_task(task: LinkedInProfileTask) -> None:
         profile = await LinkedInService.validate_profile(
             username=task.username,
             target_company_label=task.target_company_label,
-            use_mock=True  # TODO: delete in dev!
+            # use_mock=True  # TODO: delete in dev!
         )
 
         logger.info(f"Successfully parsed and saved profile {task.username}")
