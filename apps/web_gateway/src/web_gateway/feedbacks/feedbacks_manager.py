@@ -63,12 +63,7 @@ class FeedbacksManager:
         result = await session.execute(
             select(ORMMeetingFeedback)
             .where(ORMMeetingFeedback.meeting_id == meeting_id)
-            .where(
-                or_(
-                    ORMMeetingFeedback.from_user_id == user_id,
-                    ORMMeetingFeedback.to_user_id == user_id
-                )
-            )
+            .where(ORMMeetingFeedback.from_user_id == user_id)
             .limit(1)
         )
         feedback_orm = result.scalar_one_or_none()

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from common_db.db_abstract import db_manager
 from common_db.schemas.feedbacks import MeetingFeedbackCreate, MeetingFeedbackRead
-from common_db.managers.feedbacks import FeedbacksManager
+from .feedbacks_manager import FeedbacksManager
 
 from typing import Annotated
 from web_gateway import auth
@@ -26,13 +26,13 @@ async def create_meeting_feedback(
         return await FeedbacksManager.create_meeting_feedback(session, user_id, meeting_id, feedback)
 
 
-@router.get("/meeting/{meeting_id}", response_model=MeetingFeedbackRead, summary="Get meeting feedback by meeting id")
+@router.get("/meeting/{meeting_id}", response_model=MeetingFeedbackRead, summary="Get users's meeting feedback by meeting id")
 async def get_meeting_feedback(
         meeting_id: int,
         user_id: Annotated[int, Depends(auth.current_user_id)],
         session: Annotated[AsyncSession, Depends(db_manager.get_session)]
 ) -> MeetingFeedbackRead:
     """
-    Get the last created form for user and selected intent type.    
+    Get user's feedback about meeting  
     """
     return await FeedbacksManager.get_meeting_feedback(session, meeting_id, user_id)

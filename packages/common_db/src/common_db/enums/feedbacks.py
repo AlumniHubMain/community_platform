@@ -4,7 +4,7 @@ from sqlalchemy import Enum as PGEnum
 
 class EMeetingFeedbackBenefit(Enum):
     useful = "useful"
-    pointless = "poitless"
+    pointless = "pointless"
     partial = "partial"
 
 

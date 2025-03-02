@@ -22,6 +22,7 @@ class ORMMeeting(ObjectTable):
 
     __tablename__ = 'meetings'
     __table_args__ = (
+        Index('ix_meeting_id', 'id'),
         Index('ix_meeting_status', 'status'),
         Index('ix_meeting_time', 'scheduled_time'),
         PrimaryKeyConstraint('id', 'organizer_id', 'match_id'),
