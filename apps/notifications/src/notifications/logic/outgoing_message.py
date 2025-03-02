@@ -23,7 +23,8 @@ class NotificationSender:
         """Sending telegram notifications to Pub/Sub"""
         # проверяем заблокировал ли человек бота
         if notification.user.is_tg_bot_blocked:
-            return "Пользователь заблокировал бота"
+            logger.warning(f'User with user_id={notification.user_id} has blocked the bot')
+            return '0'
         # TODO: обработка случая блокировки человеком бота
 
         return await broker.publish(settings.ps_notification_tg_topic, notification)
@@ -39,7 +40,7 @@ class NotificationSender:
                                                       **html_kwargs)
         else:
             return await email_client.send_text_email(recipient=notification.user.email,
-                                                      subject=notification.params.subject,
+                                                      subject=None,
                                                       body=notification.params.text)
 
     @staticmethod
@@ -58,7 +59,7 @@ class NotificationSender:
 
         if notification.user.is_tg_notify:
             info: str = await cls.__send_tg_notification(notification)
-            logger.info(f'в pubsub отправлено сообщение # {info}')
+            logger.info(f'Message #{info} has been sent to pubsub topic notification tg')
         if notification.user.is_email_notify:
             html_kwargs = await cls.__get_html_kwargs(notification)
             await cls.__send_email_notification(notification, html_kwargs)
@@ -71,7 +72,7 @@ class NotificationSender:
         if notification.notification_type.value.casefold().startswith('user'):
             # getting notified user
             notified_user: DTONotifiedUserProfile = DTONotifiedUserProfile(
-                **(await UserManager.get_user_by_id(user_id=notification.params.user_id)).model_dump())
+                **(await UserManager.get_user_by_id(user_id=notification.user_id)).model_dump())
 
             # preparing notification
             prepared_notification = DTOUserNotification(**notification.model_dump(), user=notified_user)

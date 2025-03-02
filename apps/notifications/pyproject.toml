@@ -22,8 +22,8 @@ build-backend = "hatchling.build"
 notifications-service = "notifications.main:app"
 
 [tool.uv.sources]
-common-db = { path = "../packages/common_db" }
-message-broker = { path = "../packages/message_broker" }
+common-db = { path = "../../packages/common_db" }
+message-broker = { path = "../../packages/message_broker" }
 
 [tool.uv]
 dev-dependencies = [
