@@ -22,11 +22,13 @@ class DTOGeneralNotification(BaseModel):
 
     Attributes:
         notification_type: Type of notification from ENotificationType enum
+        user_id: User ID associated with the recipient of the notification
         params: Pydantic model containing notification parameters. Must match the schema
                defined in type_params for the given notification_type
         timestamp: Optional timestamp of the notification
     """
     notification_type: ENotificationType
+    user_id: int | None = None
     params: BaseModel | None = None
     timestamp: datetime | None = None
 
@@ -40,6 +42,9 @@ class DTOGeneralNotification(BaseModel):
             raise ValueError(
                 f'There is no key "{self.notification_type}" in the dictionary "notification_params.type_params". '
                 f'Check that you entered the notification type correctly or add it to the dictionary.')
+        if self.notification_type.value.casefold().startswith('user'):
+            if self.user_id is None:
+                raise ValueError(f'In the case of notification_type startswith "user", the user_id cannot be None.')
         if params_schema is DTOEmptyParams:
             self.params = None
             return self
@@ -70,5 +75,15 @@ class DTONotifiedUserProfile(BaseModel):
 
 class DTOUserNotification(DTOGeneralNotification):
     """The schema of the prepared notification"""
+    text: str | None = None
     user: DTONotifiedUserProfile
     timestamp: datetime = datetime.now(UTC)
+
+    @model_validator(mode='after')
+    def check_params(self) -> Self:
+        """
+        Schema validator
+        """
+        if self.notification_type.value.casefold().endswith('test'):
+            self.text = "Test notification, don't pay attention."
+        return self

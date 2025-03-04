@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.13"
 
 [[package]]
@@ -134,8 +135,8 @@ wheels = [
 
 [[package]]
 name = "common-db"
-version = "0.1.4"
-source = { directory = "../packages/common_db" }
+version = "0.1.5"
+source = { directory = "../../packages/common_db" }
 dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
@@ -153,7 +154,7 @@ dependencies = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.13.1" },
     { name = "asyncpg", specifier = ">=0.30.0" },
-    { name = "config-library", directory = "../packages/config_library" },
+    { name = "config-library", directory = "../../packages/config_library" },
     { name = "psycopg2-binary", specifier = ">=2.9.9" },
     { name = "pycountry", specifier = ">=23.1.14" },
     { name = "pydantic", specifier = ">=2.10.4" },
@@ -174,7 +175,7 @@ dev = [
 [[package]]
 name = "config-library"
 version = "0.1.0"
-source = { directory = "../packages/config_library" }
+source = { directory = "../../packages/config_library" }
 dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings", extra = ["yaml"] },
@@ -571,7 +572,7 @@ wheels = [
 [[package]]
 name = "message-broker"
 version = "0.1.0"
-source = { directory = "../packages/message_broker" }
+source = { directory = "../../packages/message_broker" }
 dependencies = [
     { name = "google-cloud-pubsub" },
     { name = "pydantic" },
@@ -585,7 +586,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "message-broker-pytest", directory = "../packages/message_broker_pytest" },
+    { name = "message-broker-pytest", directory = "../../packages/message_broker_pytest" },
     { name = "pytest", specifier = ">=8.3.4" },
     { name = "pytest-asyncio", specifier = ">=0.25.0" },
     { name = "ruff", specifier = ">=0.8.4" },
@@ -620,10 +621,10 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiosmtplib", specifier = ">=4.0.0" },
-    { name = "common-db", directory = "../packages/common_db" },
+    { name = "common-db", directory = "../../packages/common_db" },
     { name = "fastapi", specifier = ">=0.115.8" },
     { name = "loguru", specifier = ">=0.7.3" },
-    { name = "message-broker", directory = "../packages/message_broker" },
+    { name = "message-broker", directory = "../../packages/message_broker" },
     { name = "uvicorn", specifier = ">=0.34.0" },
 ]
 

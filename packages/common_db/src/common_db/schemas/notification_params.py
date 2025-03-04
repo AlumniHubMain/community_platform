@@ -17,5 +17,6 @@ class DTOMeetingInvitationParams(BaseModel):
 
 # dictionary that defines the correspondence between the type and parameters of notifications
 type_params: dict[ENotificationType, type[BaseModel]] = {
+    ENotificationType.user_test: DTOEmptyParams,  # example: no parameters for this notification type
     ENotificationType.meeting_invitation: DTOMeetingInvitationParams,
 }
