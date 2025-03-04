@@ -864,6 +864,7 @@ def upgrade() -> None:
         sa.Column("meeting_id", sa.Integer(), nullable=False),
         sa.Column("meeting_organizer_id", sa.Integer(), nullable=False),
         sa.Column("meeting_match_id", sa.Integer(), nullable=True),
+        sa.Column("description", sa.Text(), nullable=True),
         sa.Column(
             "role",
             sa.Enum(
