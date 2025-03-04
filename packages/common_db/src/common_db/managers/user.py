@@ -57,7 +57,7 @@ class UserManager:
         """
         result = await session.execute(select(ORMUserProfile).where(ORMUserProfile.id == user_id))
         if not result.scalar_one_or_none():
-            raise HTTPException(status_code=404, detail="Not found")
+            raise HTTPException(status_code=404, detail="User not found")
         return JSONResponse(
             content={
                 "status": "success"

@@ -845,6 +845,13 @@ def upgrade() -> None:
         schema=f"{schema}",
     )
     op.create_index(
+        "ix_meeting_id",
+        "meetings",
+        ["id"],
+        unique=True,
+        schema=f"{schema}",
+    )
+    op.create_index(
         "ix_meeting_status",
         "meetings",
         ["status"],
@@ -920,6 +927,72 @@ def upgrade() -> None:
         schema=f"{schema}",
     )
     op.create_table(
+        "meeting_feedbacks",
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("meeting_id", sa.Integer(), nullable=False),
+        sa.Column("from_user_id", sa.Integer(), nullable=False),
+        sa.Column("to_user_id", sa.Integer(), nullable=False),
+        sa.Column("rate", sa.Integer(), nullable=False),
+        sa.Column("text", sa.Text(), nullable=True),
+        sa.Column("goal_matching_rate", sa.Integer(), nullable=False),
+        sa.Column("assignee_preparation_rate", sa.Integer(), nullable=False),
+        sa.Column(
+            "meeting_benefits",
+            sa.Enum(
+                "useful",
+                "pointless",
+                "partial",
+                name="meeting_feedback_benefit_enum",
+                schema=f"{schema}",
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.text("TIMEZONE('utc', now())"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.text("TIMEZONE('utc', now())"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["meeting_id"],
+            [
+                f"{schema}.meetings.id",
+            ],
+            name="fk_meeting_feedbacks_meetings",
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("id"),
+        schema=f"{schema}",
+    )
+    op.create_index(
+        "ix_meeting_feedback_meeting_id",
+        "meeting_feedbacks",
+        ["meeting_id"],
+        unique=False,
+        schema=f"{schema}",
+    )
+    op.create_index(
+        "ix_meeting_feedback_from_user_id",
+        "meeting_feedbacks",
+        ["from_user_id"],
+        unique=False,
+        schema=f"{schema}",
+    )
+    op.create_index(
+        "ix_meeting_feedback_to_user_id",
+        "meeting_feedbacks",
+        ["to_user_id"],
+        unique=False,
+        schema=f"{schema}",
+    )
+    op.create_table(
         "vacancies",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column(
@@ -973,6 +1046,22 @@ def downgrade() -> None:
     op.drop_index(
         op.f(f"ix_{schema}_linkedin_experience_profile_id"),
         table_name="linkedin_experience",
+        schema=f"{schema}",
+    )
+    op.drop_table("meeting_feedbacks", schema=f"{schema}")
+    op.drop_index(
+        op.f(f"ix_meeting_feedback_meeting_id"),
+        table_name="meeting_feedbacks",
+        schema=f"{schema}",
+    )
+    op.drop_index(
+        op.f(f"ix_meeting_feedback_from_user_id"),
+        table_name="meeting_feedbacks",
+        schema=f"{schema}",
+    )
+    op.drop_index(
+        op.f(f"ix_meeting_feedback_to_user_id"),
+        table_name="meeting_feedbacks",
         schema=f"{schema}",
     )
     op.drop_table("linkedin_experience", schema=f"{schema}")
