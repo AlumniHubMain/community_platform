@@ -1,99 +1,89 @@
 # LinkedIn Profile Validator Service
 
+## Зависимости (пока отсутствет ci/cd):
+// Их добавить в проект
+1. community_platform\apps\linkedin_verifiercommunityp-440714-40020f08d457.json - креды для broker (google pubsub) (пока запросить в личке у Миши)
+2. community_platform\apps\.env - файлик с секретами самого сервиса (пока запросить в личке у Миши)
+3. community_platform\config\db.json - креды PostgreSQL (найти значения переменных в Google-секретнице проекта communityp)
+
+
+
+## Запуск сервиса локально (IDE or bash)
+#### MacOs & Linux Install UV
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+#### Setup venv
+```bash
+cd .\apps\linkedin_verifier\    
+uv sync
+```
+
+
 ## Запуск сервиса с использованием Docker
-
 ### Сборка Docker-образа
-
 ```bash
 # Из корня проекта
 docker build -t linkedin-verifier:latest -f apps/linkedin_verifier/Dockerfile .
 ```
-
 ### Запуск контейнера
-
 ```bash
 # Запуск с переменными окружения из .env файла
-docker run -p 8000:8000 --env-file apps/linkedin_verifier/.env linkedin-verifier:latest
-
-# Или с явным указанием переменных окружения
-docker run -p 8000:8000 \
-  -e DB_HOST=your-db-host \
-  -e DB_PORT=5432 \
-  -e DB_NAME=linkedin \
-  -e DB_USER=user \
-  -e DB_PASS=password \
-  -e SCRAPIN_API_KEY=your-key-here \
-  linkedin-verifier:latest
+docker run -p 8000:8000 linkedin-verifier:latest
 ```
-
-### Запуск с видимыми логами
-
-```bash
-# Запуск в интерактивном режиме (логи видны в консоли)
-docker run -it -p 8000:8000 --env-file apps/linkedin_verifier/.env linkedin-verifier:latest
-
-# Запуск в фоновом режиме с именем контейнера
-docker run -d --name linkedin-verifier-container -p 8000:8000 --env-file apps/linkedin_verifier/.env linkedin-verifier:latest
-
-# Просмотр логов запущенного контейнера
-docker logs -f linkedin-verifier-container
-
-# Просмотр логов с временными метками
-docker logs -f --timestamps linkedin-verifier-container
-```
-
-### Остановка контейнера
-
-```bash
-# Если контейнер запущен с именем
-docker stop linkedin-verifier-container
-
-# Если контейнер запущен без имени, сначала узнайте его ID
-docker ps
-docker stop <container_id>
-
-# Принудительная остановка (если обычная не срабатывает)
-docker kill linkedin-verifier-container
-```
-
 ### Проверка работоспособности
-
 ```bash
 # Проверка статуса сервиса
 curl http://localhost:8000/api/v1/linkedin/health
 ```
 
+
+## "Ручной" деплой (TODO: удалить этот пункт как появится ci/cd workflow)
+// Особенности: кроежопность: файлики с секретами билдятся внутрь образа. TODO: секреты из G-секретницы брать при ci/cd
+#### MacOs & Linux Install UV
+### Сборка Docker-образа
+```bash
+# Из корня проекта community_platform
+docker build -t linkedin-verifier:latest -f apps/linkedin_verifier/Dockerfile .
+# Тегирование образа
+docker tag linkedin-verifier:latest us-east4-docker.pkg.dev/communityp-440714/linkedin-verifier-repo/linkedin-verifier:latest
+# Отправка образа
+docker push us-east4-docker.pkg.dev/communityp-440714/linkedin-verifier-repo/linkedin-verifier:latest
+```
+
+## 
+Целевая функция: получать задачи из pubsub на парсинг и парсить + верифицировать профили пользователей
+
+Как поставить задачу на парсинг:
+curl -X POST "http://localhost:8000/tasks/create" -H "Content-Type: application/json" -d "{\"username\": \"pavellukyanov\", \"target_company_label\": \"Yandex\"}"
+
 ## Описание сервиса
 
 Микросервис для валидации профилей LinkedIn. Проверяет опыт работы в целевых компаниях и сохраняет данные профилей.
-Пока версия для ручной заливки профилей членов сообщества. Для pubsub готова на ~95%, еще нужно uv toml настроить, 
-пока не успел,
-для своего окружения я хардкорно ебашу ~uv pip install --force-reinstall  .\packages\common_db\ ))
+Пока версия для ручной заливки профилей членов сообщества.
 
-Миграция на новые связные сущности добавлена как вторая миграция по счету после Initial 
-(Сергей сделал с акутальным downgrade).
-Для packages.common_db: __init__ модифицирован, добавлены нужные orm-модели.
 Для демонстрационного запуска, отладки добавлены mock-данные (и соответсвующий флаг).
 
 ## Основные функции
 
-1. **Асинхронная валидация через PubSub** (`main.py`)
+1. **Асинхронная валидация через PubSub - основа сервиса** (`main.py`)
    - Подписка на очередь профилей для валидации
    - Обработка входящих задач
    - Сохранение результатов в БД
    - Обновление лимитов API
 
-2. **Ручной парсинг профилей** (`parse_profiles.py`)
+2. **Ручной парсинг профилей - вспомогательное** (`parse_profiles.py`)
    - Для обработки списков профилей от комьюнити-менеджеров
    - Пакетная валидация профилей
    - Сохранение результатов в БД (без user_id_fk)
 
-3. **Миграция исторических данных** (`migrate_profiles.py`)
+3. **Миграция исторических данных - вспомогательное** (`migrate_profiles.py`)
    - Выгрузка данных из БД в JSON файлы
    - Импорт данных из JSON в новую БД
    - Поддержка разных схем БД
    - Bulk insert с обработкой конфликтов
    - Приведение skills и languages к нижнему регистру
+   - Баг: не запишутся новые кортежи - TODO: пофиксить
 
 > **Важно**: Перед импортом данных необходимо очистить целевые таблицы через `TRUNCATE TABLE` с опцией `RESTART IDENTITY`, чтобы избежать конфликтов с sequence для id. Например:
 > ```sql
@@ -296,3 +286,43 @@ class LinkedInParserType(str, Enum):
 
 
 TODO: при миграции данных последовательности перв. ключей обновить - иначе конфликты при записи новых данных
+
+___
+Ручной тест эндпоинтов:
+
+##
+1) "Создать задачу в брокере" эндпоинт /tasks/create
+Тестирование эндпоинта /tasks/create
+curl -X POST "http://localhost:8000/tasks/create" -H "Content-Type: application/json" -d "{\"username\": \"pavellukyanov\", \"target_company_label\": \"Yandex\"}"
+
+
+curl -X POST "https://linkedin-verifier-331173798018.us-east4.run.app/tasks/create" -H "Content-Type: application/json" -d "{\"username\": \"tmakhalova\", \"target_company_label\": \"Yandex\"}"
+
+##
+2) "Получение и обработка задания на парсинг" эндпоинт /pubsub/push
+//Для тестирования этого эндпоинта нам нужно создать сообщение в формате PubSub с данными в base64.
+
+Шаг 1: Создание файла с данными задачи
+Создайте файл task.json с содержимым:
+echo {"username": "pavellukyanov", "target_company_label": "Yandex"} > task.json
+
+Шаг 2: Кодирование данных в base64
+В Windows cmd нет прямого эквивалента команды base64, поэтому мы используем PowerShell для кодирования:
+powershell -Command "[Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes((Get-Content -Raw task.json)))" > encoded.txt
+
+Шаг 3: Создание файла с сообщением PubSub
+Создайте файл pubsub-message.json с шаблоном сообщения:
+echo {^
+  "message": {^
+    "data": "PLACEHOLDER",^
+    "message_id": "test-message-id",^
+    "publish_time": "2023-01-01T00:00:00.000Z"^
+  },^
+  "subscription": "projects/your-project-id/subscriptions/linkedin-tasks-sub"^
+} > pubsub-message.json
+
+Шаг 4: Замена PLACEHOLDER на закодированные данные
+powershell -Command "(Get-Content pubsub-message.json) -replace 'PLACEHOLDER', (Get-Content encoded.txt) | Set-Content pubsub-message.json"
+
+Шаг 5: Отправка запроса
+curl -X POST "http://localhost:8000/pubsub/push" -H "Content-Type: application/json" -d @pubsub-message.json
