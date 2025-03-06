@@ -59,7 +59,8 @@ docker push us-east4-docker.pkg.dev/communityp-440714/linkedin-verifier-repo/lin
 // pubsub: сейчас sub реализован как push (google) - то есть эндпоинт, в который гугл сам шлет задачу. Поэтому ack, nack - косвенные, по http кодам.
 
 Как вручную поставить задачу на парсинг (localhost:8000 - при необходимости сменить на актуальный):
-curl -X POST "http://localhost:8000/tasks/create" -H "Content-Type: application/json" -d "{\"username\": \"pavellukyanov\", \"target_company_label\": \"Yandex\"}"
+- curl -X POST "http://localhost:8000/tasks/create" -H "Content-Type: application/json" -d "{\"username\": \"pavellukyanov\", \"target_company_label\": \"Yandex\"}"
+- либо просто через сваггер и эндпоинт create task http://localhost:8000/docs
 
 Как выгрузить спаршенные акки:
 ```sql
