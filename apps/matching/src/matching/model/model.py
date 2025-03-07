@@ -22,6 +22,7 @@ class Model:
         self.predictor = None
         self.current_intent = None
         self.current_user = None
+        self.current_form = None
 
     def load_model(self, model_path: str | None = None):
         """Load model predictor based on settings"""
@@ -31,67 +32,65 @@ class Model:
             self.predictor = CatBoostPredictor()
             self.predictor.load_model(model_path)
 
-    def create_features(self, features_df: pd.DataFrame, user_id: int) -> pd.DataFrame:
+    def create_features(self, features_df: pd.DataFrame) -> pd.DataFrame:
         """Create additional features for the model using LinkedIn data"""
         # Add form content features
-        if 'content' in features_df.columns:
-            features_df['meeting_format'] = features_df['content'].apply(
-                lambda x: x.get('social_circle_expansion', {}).get('meeting_formats', [None])[0] 
-                if isinstance(x, dict) and 'social_circle_expansion' in x 
+        if "content" in features_df.columns:
+            features_df["meeting_format"] = features_df["content"].apply(
+                lambda x: x.get("social_circle_expansion", {}).get("meeting_formats", [None])[0]
+                if isinstance(x, dict) and "social_circle_expansion" in x
                 else None
             )
-            
+
             # Extract specialization based on form type
-            features_df['specialization'] = features_df.apply(
+            features_df["specialization"] = features_df.apply(
                 lambda row: (
-                    row['content'].get('specialization', [])
-                    if row['intent'] == EFormIntentType.mentoring_mentor.value
-                    else row['content'].get('mentor_specialization', [])
-                    if row['intent'] == EFormIntentType.mentoring_mentee.value
+                    row["content"].get("specialization", [])
+                    if row["intent"] == EFormIntentType.mentoring_mentor.value
+                    else row["content"].get("mentor_specialization", [])
+                    if row["intent"] == EFormIntentType.mentoring_mentee.value
                     else []
-                ) if isinstance(row['content'], dict) else [],
-                axis=1
+                )
+                if isinstance(row["content"], dict)
+                else [],
+                axis=1,
             )
-            
+
             # Extract grade based on form type
-            features_df['grade'] = features_df.apply(
+            features_df["grade"] = features_df.apply(
                 lambda row: (
-                    row['content'].get('required_grade', [])
-                    if row['intent'] == EFormIntentType.mentoring_mentor.value
-                    else row['content'].get('grade', [])
-                    if row['intent'] == EFormIntentType.mentoring_mentee.value
+                    row["content"].get("required_grade", [])
+                    if row["intent"] == EFormIntentType.mentoring_mentor.value
+                    else row["content"].get("grade", [])
+                    if row["intent"] == EFormIntentType.mentoring_mentee.value
                     else []
-                ) if isinstance(row['content'], dict) else [],
-                axis=1
+                )
+                if isinstance(row["content"], dict)
+                else [],
+                axis=1,
             )
 
         # Add skill matching feature
-        if 'skills' in features_df.columns and 'main_skills' in features_df.columns:
-            features_df['skill_match_score'] = features_df.apply(
-                lambda row: len(
-                    set(row['skills'] or []) & 
-                    set(row['main_skills'] or [])
-                ) if isinstance(row['skills'], list) and isinstance(row['main_skills'], list)
+        if "skills" in features_df.columns and "main_skills" in features_df.columns:
+            features_df["skill_match_score"] = features_df.apply(
+                lambda row: len(set(row["skills"] or []) & set(row["main_skills"] or []))
+                if isinstance(row["skills"], list) and isinstance(row["main_skills"], list)
                 else 0,
-                axis=1
+                axis=1,
             )
 
         # Add language matching feature
-        if 'languages' in features_df.columns and 'main_languages' in features_df.columns:
-            features_df['language_match_score'] = features_df.apply(
-                lambda row: len(
-                    set(row['languages'] or []) & 
-                    set(row['main_languages'] or [])
-                ) if isinstance(row['languages'], list) and isinstance(row['main_languages'], list)
+        if "languages" in features_df.columns and "main_languages" in features_df.columns:
+            features_df["language_match_score"] = features_df.apply(
+                lambda row: len(set(row["languages"] or []) & set(row["main_languages"] or []))
+                if isinstance(row["languages"], list) and isinstance(row["main_languages"], list)
                 else 0,
-                axis=1
+                axis=1,
             )
 
         # Add location matching feature
-        if 'location' in features_df.columns and 'main_location' in features_df.columns:
-            features_df['same_location'] = (
-                features_df['location'] == features_df['main_location']
-            ).astype(int)
+        if "location" in features_df.columns and "main_location" in features_df.columns:
+            features_df["same_location"] = (features_df["location"] == features_df["main_location"]).astype(int)
 
         return features_df
 
@@ -111,7 +110,7 @@ class Model:
             mask = df[filter_setting.filter_column].apply(lambda x: self.check_match(x, filter_setting))
             filtered_df = df[mask]
             return filtered_df
-        elif filter_setting.filter_type == FilterType.SOFT:
+        if filter_setting.filter_type == FilterType.SOFT:
             mask = df[filter_setting.filter_column].apply(lambda x: self.check_match(x, filter_setting))
             df.loc[~mask, "score"] *= 0.5
             return df
@@ -129,14 +128,14 @@ class Model:
         # Store current form and user for custom filters
         self.current_form = form
         self.current_user = next((user for user in all_users if user.id == user_id), None)
-        
+
         if self.predictor is None:
             raise ValueError("Model not loaded")
 
         # Convert users and form data
         users_data = [user.model_dump() for user in all_users]
         form_data = form.model_dump()
-        
+
         # Convert enum values
         for i, user in enumerate(users_data):
             for field, value in user.items():
@@ -147,40 +146,44 @@ class Model:
         # Create DataFrames
         users_df = pd.DataFrame(users_data).rename(columns={"id": "user_id"})
         linkedin_df = pd.DataFrame([p.model_dump() for p in linkedin_profiles])
-        
+
         # Prepare LinkedIn features
         if not linkedin_df.empty:
-            linkedin_features = linkedin_df[[
-                'users_id_fk',
-                'current_company_label',
-                'current_position_title',
-                'is_currently_employed',
-                'skills',
-                'languages',
-                'headline',
-                'location'  # This will be used for location matching
-            ]].rename(columns={
-                'users_id_fk': 'user_id',
-                'location': 'location'  # Keep original name for clarity
-            })
-            
+            linkedin_features = linkedin_df[
+                [
+                    "users_id_fk",
+                    "current_company_label",
+                    "current_position_title",
+                    "is_currently_employed",
+                    "skills",
+                    "languages",
+                    "headline",
+                    "location",  # This will be used for location matching
+                ]
+            ].rename(
+                columns={
+                    "users_id_fk": "user_id",
+                    "location": "location",  # Keep original name for clarity
+                }
+            )
+
             # Merge LinkedIn data with users
             users_df = users_df.merge(
                 linkedin_features,
                 on="user_id",
                 how="left",
-                suffixes=('', '_linkedin')  # Prevent _x, _y suffixes
+                suffixes=("", "_linkedin"),  # Prevent _x, _y suffixes
             )
 
         intents_df = pd.DataFrame([form_data])
-        
+
         # Create main user DataFrame with form data
         main_user_df = users_df[users_df["user_id"] == user_id].copy()
         main_user_df = intents_df.merge(
-            main_user_df, 
-            on="user_id", 
+            main_user_df,
+            on="user_id",
             how="left",
-            suffixes=('_form', '')  # Use meaningful suffixes
+            suffixes=("_form", ""),  # Use meaningful suffixes
         )
         main_user_df = main_user_df.add_prefix("main_")
 
@@ -189,35 +192,32 @@ class Model:
 
         # Create features DataFrame
         main_user_repeated = pd.concat([main_user_df] * len(other_users_df), ignore_index=True)
-        features_df = pd.concat(
-            [main_user_repeated, other_users_df.reset_index(drop=True)], 
-            axis=1
-        )
+        features_df = pd.concat([main_user_repeated, other_users_df.reset_index(drop=True)], axis=1)
 
         # Ensure location columns are properly named
-        if 'location' in features_df.columns:
-            features_df = features_df.rename(columns={'location': 'location_other'})
-        if 'main_location' not in features_df.columns and 'main_location' in main_user_df.columns:
-            features_df['main_location'] = main_user_df['main_location'].iloc[0]
+        if "location" in features_df.columns:
+            features_df = features_df.rename(columns={"location": "location_other"})
+        if "main_location" not in features_df.columns and "main_location" in main_user_df.columns:
+            features_df["main_location"] = main_user_df["main_location"].iloc[0]
 
         # Create additional features using LinkedIn data
-        features_df = self.create_features(features_df, user_id)
-        
+        features_df = self.create_features(features_df)
+
         # Get predictions and apply filters/diversification
         predictions = self.predictor.predict(features_df)
         results_df = other_users_df.copy()
         results_df["score"] = predictions
-        
+
         for filter_setting in self.model_settings.filters:
             results_df = self._apply_filter(results_df, filter_setting)
-        
+
         for div_setting in self.model_settings.diversifications:
             results_df = self._apply_diversification(results_df, div_setting)
-        
+
         results_df = self._apply_exclusions(results_df)
         results_df = results_df.sort_values("score", ascending=False)
         predictions = results_df.head(n)["user_id"].tolist()
-        
+
         return predictions
 
     def _apply_diversification(self, df: pd.DataFrame, div_setting) -> pd.DataFrame:

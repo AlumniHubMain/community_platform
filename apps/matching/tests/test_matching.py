@@ -26,19 +26,15 @@ from common_db.enums.forms import (
     EFormSpecialization,
     EFormSkills,
 )
-from common_db.enums.users import (
-    EExpertiseArea,
-    EIndustry,
-    EGrade,
-    ELocation
-)
+from common_db.enums.users import EExpertiseArea, EIndustry, EGrade, ELocation
+
 
 # Test data fixtures
 @pytest.fixture
 def mock_users():
     """Create mock user profiles with proper enums"""
     current_time = datetime.now()
-    
+
     def create_linkedin_profile(user_id: int, **kwargs) -> dict:
         """Helper to create a complete LinkedIn profile"""
         base_profile = {
@@ -114,16 +110,15 @@ def mock_users():
                 languages=["english", "russian"],
                 follower_count=500,
                 summary="Experienced developer",
-                work_experience=[{
-                    "company": "Tech Corp",
-                    "title": "Senior Developer",
-                    "startEndDate": {
-                        "start": {"year": 2020, "month": 1},
-                        "end": {"year": 2023, "month": 12}
-                    },
-                    "description": "Some experience"
-                }]
-            )
+                work_experience=[
+                    {
+                        "company": "Tech Corp",
+                        "title": "Senior Developer",
+                        "startEndDate": {"start": {"year": 2020, "month": 1}, "end": {"year": 2023, "month": 12}},
+                        "description": "Some experience",
+                    }
+                ],
+            ),
         ),
         SUserProfileRead(
             id=2,
@@ -155,16 +150,15 @@ def mock_users():
                 languages=["english"],
                 follower_count=300,
                 summary="Growing developer",
-                work_experience=[{
-                    "company": "Dev Inc",
-                    "title": "Middle Developer",
-                    "startEndDate": {
-                        "start": {"year": 2021, "month": 6},
-                        "end": None
-                    },
-                    "description": "Some experience"
-                }]
-            )
+                work_experience=[
+                    {
+                        "company": "Dev Inc",
+                        "title": "Middle Developer",
+                        "startEndDate": {"start": {"year": 2021, "month": 6}, "end": None},
+                        "description": "Some experience",
+                    }
+                ],
+            ),
         ),
         SUserProfileRead(
             id=3,
@@ -196,8 +190,8 @@ def mock_users():
                 languages=["english"],
                 follower_count=100,
                 summary="Marketing enthusiast",
-                work_experience=[]
-            )
+                work_experience=[],
+            ),
         ),
     ]
 
@@ -210,17 +204,15 @@ def mock_form():
         user_id=1,
         intent=EFormIntentType.mentoring_mentor.value,
         content={
-            'meeting_format': EFormConnectsMeetingFormat.offline.value,
-            'help_request': {
-                'request': [EFormMentoringHelpRequest.process_and_teams_management.value]
-            },
-            'required_grade': [EGrade.middle.value],
-            'specialization': [EFormSpecialization.development__backend__python.value],
-            'is_local_community': True,
-            'about': "Looking for mentoring opportunities",
-            'location': ELocation.moscow_russia.value,
-            'expertise_area': [EExpertiseArea.development.value],
-            'grade': EGrade.senior.value,
+            "meeting_format": EFormConnectsMeetingFormat.offline.value,
+            "help_request": {"request": [EFormMentoringHelpRequest.process_and_teams_management.value]},
+            "required_grade": [EGrade.middle.value],
+            "specialization": [EFormSpecialization.development__backend__python.value],
+            "is_local_community": True,
+            "about": "Looking for mentoring opportunities",
+            "location": ELocation.moscow_russia.value,
+            "expertise_area": [EExpertiseArea.development.value],
+            "grade": EGrade.senior.value,
         },
         calendar="available",
         description="Test form",
@@ -232,6 +224,7 @@ def mock_form():
 @pytest.fixture
 def mock_session(mock_users, mock_form):
     """Create mock database session"""
+
     class MockAsyncSession:
         def __init__(self):
             self._id_counter = 1
@@ -243,7 +236,7 @@ def mock_session(mock_users, mock_form):
 
         def add(self, obj):
             # Fix the relationship property name
-            if hasattr(obj, 'requests_community'):  # Changed from requests_to_community
+            if hasattr(obj, "requests_community"):  # Changed from requests_to_community
                 obj.requests_community = []  # Initialize empty relationship
             self._stored_objects[id(obj)] = obj
 
@@ -272,8 +265,11 @@ def mock_session(mock_users, mock_form):
             """Enhanced execute method to handle different query types"""
             from sqlalchemy import Select, Insert, Update
             from common_db.models import (
-                ORMUserProfile, ORMForm, ORMMatchingResult,
-                ORMLinkedInProfile, ORMRequestsCommunity
+                ORMUserProfile,
+                ORMForm,
+                ORMMatchingResult,
+                ORMLinkedInProfile,
+                ORMRequestsCommunity,
             )
 
             class MockResult:
@@ -298,26 +294,26 @@ def mock_session(mock_users, mock_form):
 
             if isinstance(statement, Select):
                 entity = statement.column_descriptions[0]["entity"]
-                
+
                 # Handle user profile queries
                 if entity == ORMUserProfile:
                     # For single user query
-                    if hasattr(statement, 'whereclause') and statement.whereclause is not None:
+                    if hasattr(statement, "whereclause") and statement.whereclause is not None:
                         user_id = statement.whereclause.right.value
                         matching_users = [u for u in self.mock_users if u.id == user_id]
                         return MockResult(matching_users)
                     # For all users query
                     return MockResult(self.mock_users)
-                
+
                 # Handle form queries
                 elif entity == ORMForm:
-                    if hasattr(statement, 'whereclause') and statement.whereclause is not None:
+                    if hasattr(statement, "whereclause") and statement.whereclause is not None:
                         form_id = statement.whereclause.right.value
                         if form_id == self.mock_form.id:
                             return MockResult([self.mock_form])
                         return MockResult([])
                     return MockResult([self.mock_form])
-                
+
                 # Handle LinkedIn profile queries
                 elif entity == ORMLinkedInProfile:
                     linkedin_profiles = []
@@ -335,32 +331,31 @@ def mock_session(mock_users, mock_form):
                                     attr_mock.return_value = value
                                     setattr(profile, key, attr_mock)
                             # Ensure location data is properly set
-                            if not hasattr(profile, 'main_location'):
-                                setattr(profile, 'main_location', profile.location)
+                            if not hasattr(profile, "main_location"):
+                                setattr(profile, "main_location", profile.location)
                             linkedin_profiles.append(profile)
                     return MockResult(linkedin_profiles)
-                
+
                 # Handle requests community queries
                 elif entity == ORMRequestsCommunity:
                     return MockResult([])
-                
+
                 # Handle matching results queries
                 elif entity == ORMMatchingResult:
                     matching_results = [
-                        obj for obj in self._stored_objects.values() 
-                        if isinstance(obj, ORMMatchingResult)
+                        obj for obj in self._stored_objects.values() if isinstance(obj, ORMMatchingResult)
                     ]
                     return MockResult(matching_results)
-            
+
             elif isinstance(statement, Insert):
                 # Handle inserts
-                if hasattr(statement, 'parameters'):
+                if hasattr(statement, "parameters"):
                     entity = statement.table.name
-                    if entity == 'matching_results':
+                    if entity == "matching_results":
                         result = ORMMatchingResult(**statement.parameters)
                         self.add(result)
                         return MockResult([result])
-            
+
             return MockResult([])
 
     class AsyncSessionContextManager:
@@ -398,17 +393,12 @@ def mock_model_settings():
             settings_name="heuristic",
             rules=[
                 {
-                    'name': 'location',
-                    'type': 'location',
-                    'weight': 0.8,
-                    'params': {'city_penalty': 0.3, 'country_penalty': 0.1}
+                    "name": "location",
+                    "type": "location",
+                    "weight": 0.8,
+                    "params": {"city_penalty": 0.3, "country_penalty": 0.1},
                 },
-                {
-                    'name': 'expertise',
-                    'type': 'expertise',
-                    'weight': 0.7,
-                    'params': {'base_score': 0.5}
-                }
+                {"name": "expertise", "type": "expertise", "weight": 0.7, "params": {"base_score": 0.5}},
             ],
             filters=[],
             diversifications=[],
