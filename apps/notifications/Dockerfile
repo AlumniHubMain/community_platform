@@ -11,15 +11,15 @@ RUN apt-get update &&  \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Set working directory
-WORKDIR /build/notifications/
+WORKDIR /build/app/notifications/
 
 # Copy shared packages and configurations
 COPY packages/ /build/packages/
-COPY config/ /build/notifications/config/
+COPY config/ /build/app/notifications/config/
 
 # Copy project files
-COPY apps/notifications/pyproject.toml apps/notifications/uv.lock apps/notifications/README.md /build/notifications/
-COPY apps/notifications/src/ /build/notifications/src/
+COPY apps/notifications/pyproject.toml apps/notifications/uv.lock apps/notifications/README.md /build/app/notifications/
+COPY apps/notifications/src/ /build/app/notifications/src/
 
 # Install dependencies with frozen lock file
 RUN uv sync --frozen
@@ -29,4 +29,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
 # Run the service using uvicorn
-CMD ["/build/notifications/.venv/bin/uvicorn", "notifications.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["/build/app/notifications/.venv/bin/uvicorn", "notifications.main:app", "--host", "0.0.0.0", "--port", "8080"]

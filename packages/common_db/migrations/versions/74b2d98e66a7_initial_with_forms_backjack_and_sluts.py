@@ -522,6 +522,49 @@ def upgrade() -> None:
         schema=f"{schema}",
     )
     op.create_table(
+        "user_notifications",
+        sa.Column(
+            "notification_type",
+            sa.Enum(
+                "user_test",
+                "meeting_invitation",
+                name="notification_type",
+                schema=f"{schema}",
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column("params", sa.JSON(), nullable=True),
+        sa.Column("is_read", sa.Boolean(), nullable=False),
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.text("TIMEZONE('utc', now())"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(),
+            server_default=sa.text("TIMEZONE('utc', now())"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["user_id"],
+            [f"{schema}.users.id"],
+        ),
+        sa.PrimaryKeyConstraint("id"),
+        schema=f"{schema}",
+    )
+    op.create_index(
+        op.f("ix_alh_community_platform_user_notifications_user_id"),
+        "user_notifications",
+        ["user_id"],
+        unique=False,
+        schema=f"{schema}",
+    )
+    op.create_table(
         "users_industries",
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column(
@@ -848,7 +891,7 @@ def upgrade() -> None:
         "ix_meeting_id",
         "meetings",
         ["id"],
-        unique=True,
+        unique=False,
         schema=f"{schema}",
     )
     op.create_index(
@@ -865,6 +908,7 @@ def upgrade() -> None:
         unique=False,
         schema=f"{schema}",
     )
+
     op.create_table(
         "meeting_responses",
         sa.Column("user_id", sa.Integer(), nullable=False),
@@ -926,112 +970,14 @@ def upgrade() -> None:
         ),
         schema=f"{schema}",
     )
-    op.create_table(
-        "meeting_feedbacks",
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column("meeting_id", sa.Integer(), nullable=False),
-        sa.Column("from_user_id", sa.Integer(), nullable=False),
-        sa.Column("to_user_id", sa.Integer(), nullable=False),
-        sa.Column("rate", sa.Integer(), nullable=False),
-        sa.Column("text", sa.Text(), nullable=True),
-        sa.Column("goal_matching_rate", sa.Integer(), nullable=False),
-        sa.Column("assignee_preparation_rate", sa.Integer(), nullable=False),
-        sa.Column(
-            "meeting_benefits",
-            sa.Enum(
-                "useful",
-                "pointless",
-                "partial",
-                name="meeting_feedback_benefit_enum",
-                schema=f"{schema}",
-                inherit_schema=True,
-            ),
-            nullable=False,
-        ),
-        sa.Column(
-            "created_at",
-            sa.DateTime(),
-            server_default=sa.text("TIMEZONE('utc', now())"),
-            nullable=False,
-        ),
-        sa.Column(
-            "updated_at",
-            sa.DateTime(),
-            server_default=sa.text("TIMEZONE('utc', now())"),
-            nullable=False,
-        ),
-        sa.ForeignKeyConstraint(
-            ["meeting_id"],
-            [
-                f"{schema}.meetings.id",
-            ],
-            name="fk_meeting_feedbacks_meetings",
-            ondelete="CASCADE",
-        ),
-        sa.PrimaryKeyConstraint("id"),
-        schema=f"{schema}",
-    )
-    op.create_index(
-        "ix_meeting_feedback_meeting_id",
-        "meeting_feedbacks",
-        ["meeting_id"],
-        unique=False,
-        schema=f"{schema}",
-    )
-    op.create_index(
-        "ix_meeting_feedback_from_user_id",
-        "meeting_feedbacks",
-        ["from_user_id"],
-        unique=False,
-        schema=f"{schema}",
-    )
-    op.create_index(
-        "ix_meeting_feedback_to_user_id",
-        "meeting_feedbacks",
-        ["to_user_id"],
-        unique=False,
-        schema=f"{schema}",
-    )
-    op.create_table(
-        "vacancies",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column(
-            "first_timestamp", sa.DateTime(timezone=True), nullable=False
-        ),
-        sa.Column("time_reachable", sa.DateTime(timezone=True), nullable=True),
-        sa.Column(
-            "last_timestamp", sa.DateTime(timezone=True), nullable=False
-        ),
-        sa.Column("url", sa.String(length=255), nullable=False),
-        sa.Column("full_text", sa.Text(), nullable=True),
-        sa.Column("company", sa.String(length=255), nullable=True),
-        sa.Column("title", sa.String(length=255), nullable=True),
-        sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("skills", sa.ARRAY(sa.Text()), nullable=True),
-        sa.Column("required_experience", sa.String(length=255), nullable=True),
-        sa.Column("location", sa.String(length=255), nullable=True),
-        sa.Column("level", sa.String(length=255), nullable=True),
-        sa.Column("salary", sa.String(length=255), nullable=True),
-        sa.Column("responsibilities", sa.ARRAY(sa.Text()), nullable=True),
-        sa.Column("benefits", sa.ARRAY(sa.Text()), nullable=True),
-        sa.Column("additional_advantages", sa.ARRAY(sa.Text()), nullable=True),
-        sa.Column("remote_type", sa.String(length=255), nullable=True),
-        sa.Column("department", sa.String(length=255), nullable=True),
-        sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_index(op.f("ix_vacancies_id"), "vacancies", ["id"], unique=False)
-    op.create_index(
-        op.f("ix_vacancies_url"), "vacancies", ["url"], unique=True
-    )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_index(op.f("ix_vacancies_url"), table_name="vacancies")
-    op.drop_index(op.f("ix_vacancies_id"), table_name="vacancies")
-    op.drop_table("vacancies")
+    # -------------drop tables-------------
     op.drop_table("meeting_responses", schema=f"{schema}")
+
     op.drop_index(
         "ix_meeting_time",
         table_name="meetings",
@@ -1042,26 +988,13 @@ def downgrade() -> None:
         table_name="meetings",
         schema=f"{schema}",
     )
+    op.drop_index(
+        "ix_meeting_id", table_name="meetings", schema=f"{schema}"
+    )
     op.drop_table("meetings", schema=f"{schema}")
     op.drop_index(
         op.f(f"ix_{schema}_linkedin_experience_profile_id"),
         table_name="linkedin_experience",
-        schema=f"{schema}",
-    )
-    op.drop_table("meeting_feedbacks", schema=f"{schema}")
-    op.drop_index(
-        op.f(f"ix_meeting_feedback_meeting_id"),
-        table_name="meeting_feedbacks",
-        schema=f"{schema}",
-    )
-    op.drop_index(
-        op.f(f"ix_meeting_feedback_from_user_id"),
-        table_name="meeting_feedbacks",
-        schema=f"{schema}",
-    )
-    op.drop_index(
-        op.f(f"ix_meeting_feedback_to_user_id"),
-        table_name="meeting_feedbacks",
         schema=f"{schema}",
     )
     op.drop_table("linkedin_experience", schema=f"{schema}")
@@ -1127,6 +1060,12 @@ def downgrade() -> None:
         schema=f"{schema}",
     )
     op.drop_table("users_industries", schema=f"{schema}")
+    op.drop_index(
+        op.f(f"ix_{schema}_user_notifications_user_id"),
+        table_name="user_notifications",
+        schema=f"{schema}",
+    )
+    op.drop_table("user_notifications", schema=f"{schema}")
     op.drop_table("matching_results", schema=f"{schema}")
     op.drop_table("linkedin_profiles", schema=f"{schema}")
     op.drop_index(
@@ -1172,4 +1111,21 @@ def downgrade() -> None:
     )
     op.drop_table("linkedin_api_limits", schema=f"{schema}")
     op.drop_table("interests", schema=f"{schema}")
+
+    # -------------drop types-------------
+    op.execute(f"DROP TYPE IF EXISTS {schema}.user_interests_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.user_requests_to_community_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.user_skills_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.user_expertise_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.user_with_whom_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.user_visibility_settings_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.user_profile_type_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.form_intent_type_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.notification_type")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.user_industry_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.user_grade_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.meeting_location_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.meeting_status_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.meeting_user_role_enum")
+    op.execute(f"DROP TYPE IF EXISTS {schema}.meeting_response_status_enum")
     # ### end Alembic commands ###
