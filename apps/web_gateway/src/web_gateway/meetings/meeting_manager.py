@@ -3,7 +3,7 @@ from collections.abc import Iterable
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import selectinload
 
 
 from event_emitter import EmitterFactory, IProtoEmitter
@@ -19,6 +19,7 @@ from common_db.schemas.meetings import (
     MeetingList,
     MeetingFilter,
     MeetingsUserLimits,
+    MeetingRequestUpdateUserResponse,
 )
 
 def to_iterable(object):
@@ -42,6 +43,13 @@ class MeetingManager:
         return cls.__notification_event_emitter
 
     @classmethod
+    async def is_user_in_meeting(cls, user_id, meeting: ORMMeeting):
+        for response in meeting.user_responses:
+            if user_id == response.user.id:
+                return True
+        return False
+    
+    @classmethod
     async def check_confirmations_limit(cls, user_id: int, user_limits: MeetingsUserLimits):
         if user_limits.available_meeting_confirmations == 0:
             raise HTTPException(status_code=400, detail=f"Exceeded the limit of confirmed meetings for user {user_id}")
@@ -53,17 +61,17 @@ class MeetingManager:
     
     @classmethod
     async def create_meeting(
-        cls, session: AsyncSession, request: MeetingRequestCreate
+        cls, session: AsyncSession, user_id: int, request: MeetingRequestCreate
     ) -> MeetingRequestRead:
         organizer: ORMUserProfile | None = await session.get(
-            ORMUserProfile, request.organizer_id
+            ORMUserProfile, user_id
         )
         if not organizer:
             raise HTTPException(status_code=404, detail="Organiser not found")
         meeting_users = [organizer]
 
         # Check organizer limits
-        organizer_limits = await LimitsManager.get_user_meetings_limits(session, request.organizer_id, settings.limits)
+        organizer_limits = await LimitsManager.get_user_meetings_limits(session, user_id, settings.limits)
         await cls.check_pendings_limit(request.organizer_id, organizer_limits)
         await cls.check_confirmations_limit(request.organizer_id, organizer_limits)
         
@@ -83,7 +91,7 @@ class MeetingManager:
 
         # Create meeting
         meeting = ORMMeeting(
-            organizer_id=request.organizer_id,
+            organizer_id=user_id,
             match_id=request.match_id,
             scheduled_time=request.scheduled_time,
             location=request.location,
@@ -104,8 +112,6 @@ class MeetingManager:
         
         session.add(meeting)
         
-        print("Num of responses:", len(meeting.user_responses))
-        
         for user_orm in meeting_users:
             await LimitsManager.update_user_limits(session, user_orm.id, settings.limits)
         
@@ -118,7 +124,7 @@ class MeetingManager:
         for attendee_id in request.attendees_id:
             cls.notification_sender().emit(
                 NotificationEventBuilder.build_meeting_invitation_event(
-                    inviter_id=request.organizer_id,
+                    inviter_id=user_id,
                     invited_id=attendee_id,
                     meeting_id=created_meeting.id
                 )
@@ -127,10 +133,9 @@ class MeetingManager:
         # Return the meeting with the user information and responses
         return created_meeting
 
-
     @classmethod
     async def get_meeting(
-        cls, session: AsyncSession, meeting_id: int
+        cls, session: AsyncSession, user_id: int, meeting_id: int
     ) -> MeetingRequestRead:
         meeting = await session.execute(
             select(ORMMeeting)
@@ -145,16 +150,18 @@ class MeetingManager:
 
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
-
-        print("Num of responses:", len(meeting.user_responses))
+        
+        is_user_in_meeting = await cls.is_user_in_meeting(user_id, meeting)
+        if not is_user_in_meeting:
+            raise HTTPException(status_code=403, detail="Access denied. User not in meeting")
         
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
     @classmethod
-    async def get_meetings_with_filtering(cls, session: AsyncSession, filter: MeetingFilter):
+    async def get_meetings_with_filtering(cls, session: AsyncSession, user_id: int, filter: MeetingFilter):
         query = select(ORMMeeting).options(selectinload(ORMMeeting.user_responses))
         query = query.join(ORMMeetingResponse).where(
-            (ORMMeetingResponse.user_id == filter.user_id)
+            (ORMMeetingResponse.user_id == user_id)
         )
 
         # Filter by date_from: Meetings scheduled after this date
@@ -202,7 +209,7 @@ class MeetingManager:
     
     @classmethod
     async def update_user_meeting_response(
-        cls, session: AsyncSession, meeting_id: int, user_id: int, new_status: EMeetingResponseStatus
+        cls, session: AsyncSession, meeting_id: int, user_id: int, request: MeetingRequestUpdateUserResponse
     ) -> MeetingRequestRead:
         # Change status
         # Send notification to organizer
@@ -217,6 +224,9 @@ class MeetingManager:
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
 
+        if not (await cls.is_user_in_meeting(user_id, meeting)):
+            return HTTPException(status_code=403, detail="Access denied. User not in meeting")
+        
         # Get user response ORM
         user_response: ORMMeetingResponse = None
         for response in meeting.user_responses:
@@ -224,7 +234,7 @@ class MeetingManager:
                 user_response = response
         
         # Early stop when actual status equal to new status
-        if user_response.response == new_status:
+        if user_response.response == request.status:
             return MeetingRequestRead.model_validate(meeting, from_attributes=True)
         
         # Check limits
@@ -232,19 +242,21 @@ class MeetingManager:
         if user_response.response == EMeetingResponseStatus.declined:
             # If status will change form declined to other
             await cls.check_pendings_limit(user_id, user_limits)
-        if new_status == EMeetingResponseStatus.confirmed:
+        if request.status == EMeetingResponseStatus.confirmed:
             # If status will change to confirmed from other
             await cls.check_confirmations_limit(user_id, user_limits)
 
         # Update the user's response status
-        user_response.response = new_status
-        
+        user_response.response = request.status
+        if request.status == EMeetingResponseStatus.declined:
+            user_response.description = request.description
+
         # Update meeting status
         # When new status is declined, then meeting always move to archived
-        if new_status == EMeetingResponseStatus.declined:
+        if request.status == EMeetingResponseStatus.declined:
             meeting.status = EMeetingStatus.archived
         # When new status not is confirmed and meeting was confirmed by all attendees, then status is unknown
-        elif meeting.status == EMeetingStatus.confirmed and new_status != EMeetingResponseStatus.confirmed:
+        elif meeting.status == EMeetingStatus.confirmed and request.status != EMeetingResponseStatus.confirmed:
             meeting.status = EMeetingStatus.no_answer
         # Other situations
         else:
@@ -270,7 +282,6 @@ class MeetingManager:
         # Return the updated meeting response
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
 
-        
     @classmethod
     async def update_meeting(
         cls,
@@ -299,7 +310,7 @@ class MeetingManager:
         # Meeting can be updated only by attendee of this meeting
         user_response = [r for r in meeting.user_responses if r.user_id == user_id]
         if len(user_response) == 0:
-            raise HTTPException(status_code=403, detail="User must be attendee of this meeting")
+            raise HTTPException(status_code=403, detail="Access denied. User not in meeting")
         user_response = user_response[0]
 
 
