@@ -16,6 +16,7 @@ class ORMUserNotifications(ObjectTable):
 
     notification_type: Mapped[ENotificationType] = mapped_column(NotificationTypePGEnum)
     user_id: Mapped[int] = mapped_column(ForeignKey(column=f'{schema}.users.id'), index=True)
+    text: Mapped[str]
     params: Mapped[dict[str, str] | None] = mapped_column(JSON, nullable=True)
     is_read: Mapped[bool] = mapped_column(default=False)
 
