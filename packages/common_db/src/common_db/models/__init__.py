@@ -17,6 +17,7 @@ from .users import (
     ORMUserRequestsCommunity
 )
 from .meetings import ORMMeeting, ORMMeetingResponse
+from .notifications import ORMUserNotifications
 from .feedback import ORMMeetingFeedback
 from .forms import ORMForm
 
@@ -46,5 +47,6 @@ __all__ = [
     "ORMEducation",
     "ORMWorkExperience",
     "ORMLinkedInApiLimits",
-    "ORMLinkedInRawData"
+    "ORMLinkedInRawData",
+    "ORMUserNotifications",
 ]

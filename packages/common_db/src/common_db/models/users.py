@@ -93,6 +93,8 @@ class ORMUserProfile(ObjectTable):
         back_populates="users"
     )
 
+    notifications: Mapped[list['ORMUserNotifications']] = relationship(back_populates='user')
+
     who_to_date_with: Mapped[EWithWhom | None] = mapped_column(WithWhomEnumPGEnum)
     who_sees_profile: Mapped[EVisibilitySettings] = mapped_column(
         VisibilitySettingsPGEnum,

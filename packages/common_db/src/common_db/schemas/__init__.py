@@ -35,7 +35,9 @@ from .notification_params import (
 from .notifications import (
     DTOGeneralNotification,
     DTONotifiedUserProfile,
-    DTOUserNotification
+    DTOUserNotification,
+    DTOUserNotificationRead
+
 )
 from .forms import (
     FormBase,
@@ -46,7 +48,6 @@ from .forms import (
 __all__ = [
     "BaseSchema",
     "TimestampedSchema",
-    "UserProfile",
     "MeetingResponse",
     "MeetingRead",
     "MeetingRequestCreate",
@@ -70,14 +71,11 @@ __all__ = [
     "DTOSkillRead",
     "DTORequestsCommunityRead",
     "DTOSearchUser",
-    "DTOAllProperties"
-    "SUserProfileUpdate",
+    "DTOAllProperties",
     "LinkedInProfileRead",
     "FormBase",
     "FormCreate",
     "FormRead",
-    "FormFilter",
-    "FormList",
     "DTOSearchUser",
     "SUserProfileRead",
     "type_params",
@@ -85,5 +83,6 @@ __all__ = [
     "DTOMeetingInvitationParams",
     "DTOGeneralNotification",
     "DTONotifiedUserProfile",
-    "DTOUserNotification"
+    "DTOUserNotification",
+    "DTOUserNotificationRead"
 ]
