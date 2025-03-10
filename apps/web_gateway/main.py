@@ -16,6 +16,7 @@ from web_gateway.media_storage.router import router as mds_router
 from web_gateway.meetings.router import router as meetings_router
 from web_gateway.users.router import router as users_router
 from web_gateway.feedbacks.router import router as feedbacks_router
+from web_gateway.communities_companies_domains.router import router as communities_companies_domains_router
 
 from web_gateway.settings import settings
 
@@ -59,6 +60,7 @@ app.include_router(mds_router, dependencies=[Depends(authorize)])
 app.include_router(meetings_router, dependencies=[Depends(authorize)])
 app.include_router(enum_router, dependencies=[Depends(authorize)])
 app.include_router(feedbacks_router, dependencies=[Depends(authorize)])
+app.include_router(communities_companies_domains_router)  #, dependencies=[Depends(authorize)])
 
 
 @app.get("/", response_class=HTMLResponse)
