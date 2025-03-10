@@ -46,7 +46,7 @@ from .forms import (
 )
 from .communities_companies_domains import (
     DTOCommunityCompanyRead,
-    DTOCompanyServiceRead
+    DTOCommunityCompanyServiceRead
 )
 
 __all__ = [
@@ -90,5 +90,5 @@ __all__ = [
     "DTOUserNotification",
     "DTOUserNotificationRead",
     "DTOCommunityCompanyRead",
-    "DTOCompanyServiceRead"
+    "DTOCommunityCompanyServiceRead"
 ]
