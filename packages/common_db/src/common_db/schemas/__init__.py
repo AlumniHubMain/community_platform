@@ -44,6 +44,10 @@ from .forms import (
     FormCreate,
     FormRead,
 )
+from .communities_companies_domains import (
+    DTOCommunityCompanyRead,
+    DTOCompanyServiceRead
+)
 
 __all__ = [
     "BaseSchema",
@@ -84,5 +88,7 @@ __all__ = [
     "DTOGeneralNotification",
     "DTONotifiedUserProfile",
     "DTOUserNotification",
-    "DTOUserNotificationRead"
+    "DTOUserNotificationRead",
+    "DTOCommunityCompanyRead",
+    "DTOCompanyServiceRead"
 ]
