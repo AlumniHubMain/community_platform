@@ -1,5 +1,6 @@
 from datetime import datetime
-from sqlalchemy import String, ARRAY, BIGINT, Index, Integer, ForeignKey
+from typing import TYPE_CHECKING
+from sqlalchemy import String, ARRAY, BIGINT, Index, Integer, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from common_db.enums.users import (
     ExpertiseAreaPGEnum,
@@ -24,13 +25,16 @@ from common_db.enums.users import (
 from common_db.config import schema
 from common_db.models.base import Base, ObjectTable, PropertyTable
 
+if TYPE_CHECKING:
+    from models import ORMUserProfile, ORMLinkedInProfile, ORMMeetingResponse
+
 
 class ORMUserProfile(ObjectTable):
     """
     Модель таблицы (шаблон) пользователей.
     """
 
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     name: Mapped[str] = mapped_column(String, nullable=False)
     surname: Mapped[str] = mapped_column(String, nullable=False)
@@ -59,53 +63,42 @@ class ORMUserProfile(ObjectTable):
         "ORMSpecialisation",
         secondary=f"{schema}.users_specialisations",
         back_populates="users",
-        overlaps="user_specialisations"
+        overlaps="user_specialisations",
     )
 
     user_specialisations: Mapped[list["ORMUserSpecialisation"]] = relationship(
-        "ORMUserSpecialisation",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        overlaps="specialisations"
+        "ORMUserSpecialisation", back_populates="user", cascade="all, delete-orphan", overlaps="specialisations"
     )
 
     interests: Mapped[list["ORMInterest"]] = relationship(
-        "ORMInterest",
-        secondary=f"{schema}.users_interests",
-        back_populates="users"
+        "ORMInterest", secondary=f"{schema}.users_interests", back_populates="users"
     )
 
     industries: Mapped[list["ORMUserIndustry"]] = relationship(
-        "ORMUserIndustry",
-        back_populates="user",
-        cascade="all, delete-orphan"
+        "ORMUserIndustry", back_populates="user", cascade="all, delete-orphan"
     )
 
     skills: Mapped[list["ORMSkill"]] = relationship(
-        "ORMSkill",
-        secondary=f"{schema}.users_skills",
-        back_populates="users"
+        "ORMSkill", secondary=f"{schema}.users_skills", back_populates="users"
     )
 
     requests_to_community: Mapped[list["ORMRequestsCommunity"]] = relationship(
-        "ORMRequestsCommunity",
-        secondary=f"{schema}.users_requests_to_community",
-        back_populates="users"
+        "ORMRequestsCommunity", secondary=f"{schema}.users_requests_to_community", back_populates="users"
     )
 
     who_to_date_with: Mapped[EWithWhom | None] = mapped_column(WithWhomEnumPGEnum)
     who_sees_profile: Mapped[EVisibilitySettings] = mapped_column(
-        VisibilitySettingsPGEnum,
-        default=EVisibilitySettings.anyone)
+        VisibilitySettingsPGEnum, default=EVisibilitySettings.anyone
+    )
     who_sees_current_job: Mapped[EVisibilitySettings] = mapped_column(
-        VisibilitySettingsPGEnum,
-        default=EVisibilitySettings.anyone)
+        VisibilitySettingsPGEnum, default=EVisibilitySettings.anyone
+    )
     who_sees_contacts: Mapped[EVisibilitySettings] = mapped_column(
-        VisibilitySettingsPGEnum,
-        default=EVisibilitySettings.anyone)
+        VisibilitySettingsPGEnum, default=EVisibilitySettings.anyone
+    )
     who_sees_calendar: Mapped[EVisibilitySettings] = mapped_column(
-        VisibilitySettingsPGEnum,
-        default=EVisibilitySettings.anyone)
+        VisibilitySettingsPGEnum, default=EVisibilitySettings.anyone
+    )
 
     # Relationship for user_meetings, linking the user to their meetings with roles and responses
     meeting_responses: Mapped[list["ORMMeetingResponse"]] = relationship(
@@ -120,17 +113,11 @@ class ORMUserProfile(ObjectTable):
         "ORMLinkedInProfile",
         back_populates="user",
         uselist=False,  # one-to-one relationship
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
     profile_type: Mapped[EProfileType] = mapped_column(ProfileTypePGEnum, default=EProfileType.New)
 
-    __table_args__ = (
-        Index('ix_users_telegram_id', 'telegram_id'),
-        {
-            'schema': f"{schema}",
-            'extend_existing': True
-        }
-    )
+    __table_args__ = (Index("ix_users_telegram_id", "telegram_id"), {"schema": f"{schema}", "extend_existing": True})
 
 
 class ORMSpecialisation(PropertyTable):
@@ -138,7 +125,7 @@ class ORMSpecialisation(PropertyTable):
     The specializations table model.
     """
 
-    __tablename__ = 'specialisations'
+    __tablename__ = "specialisations"
 
     expertise_area: Mapped[EExpertiseArea | None] = mapped_column(ExpertiseAreaPGEnum)
 
@@ -146,14 +133,14 @@ class ORMSpecialisation(PropertyTable):
         "ORMUserProfile",
         secondary=f"{schema}.users_specialisations",
         back_populates="specialisations",
-        overlaps="user_specialisations"
+        overlaps="user_specialisations",
     )
 
     user_specialisations: Mapped[list["ORMUserSpecialisation"]] = relationship(
         "ORMUserSpecialisation",
         back_populates="specialisation",
         cascade="all, delete-orphan",
-        overlaps="users,specialisations"
+        overlaps="users,specialisations",
     )
 
 
@@ -162,25 +149,21 @@ class ORMUserSpecialisation(Base):
     The users specializations table model.
     """
 
-    __tablename__ = 'users_specialisations'
+    __tablename__ = "users_specialisations"
 
-    user_id: Mapped[int] = mapped_column(ForeignKey(column=f'{schema}.users.id'), primary_key=True, index=True)
-    specialisation_id: Mapped[int] = mapped_column(ForeignKey(column=f'{schema}.specialisations.id'),
-                                                   primary_key=True,
-                                                   index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey(column=f"{schema}.users.id"), primary_key=True, index=True)
+    specialisation_id: Mapped[int] = mapped_column(
+        ForeignKey(column=f"{schema}.specialisations.id"), primary_key=True, index=True
+    )
 
     grade: Mapped[EGrade | None] = mapped_column(GradePGEnum)
 
     user: Mapped["ORMUserProfile"] = relationship(
-        "ORMUserProfile", 
-        back_populates="user_specialisations",
-        overlaps="specialisations,users"
+        "ORMUserProfile", back_populates="user_specialisations", overlaps="specialisations,users"
     )
-    
+
     specialisation: Mapped["ORMSpecialisation"] = relationship(
-        "ORMSpecialisation",
-        back_populates="user_specialisations",
-        overlaps="specialisations,users"
+        "ORMSpecialisation", back_populates="user_specialisations", overlaps="specialisations,users"
     )
 
 
@@ -189,14 +172,12 @@ class ORMInterest(PropertyTable):
     The interests table model.
     """
 
-    __tablename__ = 'interests'
+    __tablename__ = "interests"
 
     interest_area: Mapped[EInterestsArea | None] = mapped_column(InterestsAreaPGEnum)
 
     users: Mapped[list["ORMUserProfile"]] = relationship(
-        "ORMUserProfile",
-        secondary=f"{schema}.users_interests",
-        back_populates="interests"
+        "ORMUserProfile", secondary=f"{schema}.users_interests", back_populates="interests"
     )
 
 
@@ -205,12 +186,10 @@ class ORMUserInterest(Base):
     The users interests table model.
     """
 
-    __tablename__ = 'users_interests'
+    __tablename__ = "users_interests"
 
-    user_id: Mapped[int] = mapped_column(ForeignKey(column=f'{schema}.users.id'), primary_key=True, index=True)
-    interest_id: Mapped[int] = mapped_column(ForeignKey(column=f'{schema}.interests.id'),
-                                             primary_key=True,
-                                             index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey(column=f"{schema}.users.id"), primary_key=True, index=True)
+    interest_id: Mapped[int] = mapped_column(ForeignKey(column=f"{schema}.interests.id"), primary_key=True, index=True)
 
 
 class ORMUserIndustry(ObjectTable):
@@ -218,9 +197,9 @@ class ORMUserIndustry(ObjectTable):
     The users industries table model.
     """
 
-    __tablename__ = 'users_industries'
+    __tablename__ = "users_industries"
 
-    user_id: Mapped[int] = mapped_column(ForeignKey(column=f'{schema}.users.id'), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey(column=f"{schema}.users.id"), index=True)
     label: Mapped[EIndustry | None] = mapped_column(IndustryPGEnum)
 
     user: Mapped["ORMUserProfile"] = relationship("ORMUserProfile", back_populates="industries")
@@ -231,13 +210,11 @@ class ORMSkill(PropertyTable):
     The skills table model.
     """
 
-    __tablename__ = 'skills'
+    __tablename__ = "skills"
 
     skill_area: Mapped[ESkillsArea | None] = mapped_column(SkillsAreaPGEnum)
     users: Mapped[list["ORMUserProfile"]] = relationship(
-        "ORMUserProfile",
-        secondary=f"{schema}.users_skills",
-        back_populates="skills"
+        "ORMUserProfile", secondary=f"{schema}.users_skills", back_populates="skills"
     )
 
 
@@ -246,12 +223,10 @@ class ORMUserSkill(Base):
     The users skills table model.
     """
 
-    __tablename__ = 'users_skills'
+    __tablename__ = "users_skills"
 
-    user_id: Mapped[int] = mapped_column(ForeignKey(column=f'{schema}.users.id'), primary_key=True, index=True)
-    skill_id: Mapped[int] = mapped_column(ForeignKey(column=f'{schema}.skills.id'),
-                                          primary_key=True,
-                                          index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey(column=f"{schema}.users.id"), primary_key=True, index=True)
+    skill_id: Mapped[int] = mapped_column(ForeignKey(column=f"{schema}.skills.id"), primary_key=True, index=True)
 
 
 class ORMRequestsCommunity(PropertyTable):
@@ -259,14 +234,12 @@ class ORMRequestsCommunity(PropertyTable):
     The requests to community table model.
     """
 
-    __tablename__ = 'requests_to_community'
+    __tablename__ = "requests_to_community"
 
     requests_area: Mapped[ERequestsArea | None] = mapped_column(RequestsAreaPGEnum)
 
     users: Mapped[list["ORMUserProfile"]] = relationship(
-        "ORMUserProfile",
-        secondary=f"{schema}.users_requests_to_community",
-        back_populates="requests_to_community"
+        "ORMUserProfile", secondary=f"{schema}.users_requests_to_community", back_populates="requests_to_community"
     )
 
 
@@ -275,9 +248,15 @@ class ORMUserRequestsCommunity(Base):
     The users skills table model.
     """
 
-    __tablename__ = 'users_requests_to_community'
+    __tablename__ = "users_requests_to_community"
 
-    user_id: Mapped[int] = mapped_column(ForeignKey(column=f'{schema}.users.id'), primary_key=True, index=True)
-    requests_id: Mapped[int] = mapped_column(ForeignKey(column=f'{schema}.requests_to_community.id'),
-                                             primary_key=True,
-                                             index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey(column=f"{schema}.users.id"), primary_key=True, index=True)
+    requests_id: Mapped[int] = mapped_column(
+        ForeignKey(column=f"{schema}.requests_to_community.id"), primary_key=True, index=True
+    )
+
+
+class ORMInviteCode(ObjectTable):
+    user_id: Mapped[int] = mapped_column(ForeignKey(column=f"{schema}.users.id"), index=True)
+    code: str = mapped_column(String(10), index=True)
+    is_active: bool = mapped_column(Boolean)
