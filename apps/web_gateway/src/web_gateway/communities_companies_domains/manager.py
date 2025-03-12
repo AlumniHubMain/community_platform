@@ -6,9 +6,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from common_db.models.communities_companies_domains import ORMCommunityCompany, ORMCommunityCompanyService
-from common_db.schemas.communities_companies_domains import (
-    DTOCommunityCompanyRead
-)
+from common_db.schemas.communities_companies_domains import DTOCommunityCompanyRead
 from common_db.db_abstract import db_manager
 
 
@@ -24,11 +22,9 @@ class CommunityCompanyManager:
         """
         Get a specific community company with all its services by company_id
         Not personal <- according to Tech Spec in clickup.
-        
         Args:
             company_label: Company label (if we fuck normalization so this)
             session: Database session
-            
         Returns:
             DTOCommunityCompanyRead | None: Company with services or None if not found
         """
