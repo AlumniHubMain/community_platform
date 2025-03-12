@@ -12,21 +12,21 @@ from common_db.schemas.communities_companies_domains import (
 from common_db.db_abstract import db_manager
 
 
-class CommunityCompanyManager:
-    """Manager for working with community companies and their services"""
+class ReferralManager:
+    """Manager for working with referrals."""
     
     @classmethod
     async def get_curr_community_company_with_services(
             cls,
-            company_label: str,
+            company_id: int,
             session: AsyncSession = db_manager.get_session(),
     ) -> DTOCommunityCompanyRead | None:
         """
         Get a specific community company with all its services by company_id
-        Not personal <- according to Tech Spec in clickup.
+        Not personal <- according to requirements in clickup.
         
         Args:
-            company_label: Company label (if we fuck normalization so this)
+            company_id: Company ID
             session: Database session
             
         Returns:
@@ -35,7 +35,7 @@ class CommunityCompanyManager:
         query = (
             select(ORMCommunityCompany)
             .options(selectinload(ORMCommunityCompany.services))
-            .filter(ORMCommunityCompany.community_company_domain_label == company_label)
+            .filter(ORMCommunityCompany.id == company_id)
         )
             
         result = await session.execute(query)

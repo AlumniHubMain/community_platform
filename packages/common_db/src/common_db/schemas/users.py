@@ -111,7 +111,7 @@ class DTOUserProfile(BaseSchema):
     communities_companies_domains: list[str] | None = None
     communities_companies_services: list[str] | None = None
     
-    # fields for company recommendations and vacancies
+    # fields for company recommendations and vacancies - referral block
     recommender_companies: list[str] | None = None  # list of companies where user is a recommender
     vacancy_pages: list[str] | None = None  # list of vacancy pages
 

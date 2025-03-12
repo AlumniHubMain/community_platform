@@ -61,7 +61,7 @@ class ORMUserProfile(ObjectTable):
     communities_companies_domains: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=[])
     communities_companies_services: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=[])
     
-    # fields for company recommendations and vacancies
+    # fields for company recommendations and vacancies - referral block
     recommender_companies: Mapped[list[str] | None] = mapped_column(
         ARRAY(String),
         default=[],
