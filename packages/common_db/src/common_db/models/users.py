@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
-from sqlalchemy import String, ARRAY, BIGINT, Index, Integer, ForeignKey, Boolean
+from sqlalchemy import String, ARRAY, BIGINT, Index, Integer, ForeignKey, Boolean, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from common_db.enums.users import (
     ExpertiseAreaPGEnum,
@@ -53,6 +53,7 @@ class ORMUserProfile(ObjectTable):
     city: Mapped[str | None]
     timezone: Mapped[str | None]
     referral: Mapped[bool] = mapped_column(default=False)
+    invited_by: Mapped[int | None] = mapped_column(ForeignKey(column=f"{schema}.users.id"), nullable=True)
 
     is_tg_notify: Mapped[bool] = mapped_column(default=False)
     is_email_notify: Mapped[bool] = mapped_column(default=False)
@@ -257,6 +258,10 @@ class ORMUserRequestsCommunity(Base):
 
 
 class ORMInviteCode(ObjectTable):
+    __tablename__ = "invite_codes"
+
     user_id: Mapped[int] = mapped_column(ForeignKey(column=f"{schema}.users.id"), index=True)
-    code: str = mapped_column(String(10), index=True)
-    is_active: bool = mapped_column(Boolean)
+    code: Mapped[str] = mapped_column(String(10), unique=True, index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean)
+
+    __table_args__ = (UniqueConstraint("code", name="uq_invite_code"),)

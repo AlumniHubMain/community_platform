@@ -14,13 +14,15 @@ from .users import (
     ORMSkill,
     ORMUserSkill,
     ORMRequestsCommunity,
-    ORMUserRequestsCommunity
+    ORMUserRequestsCommunity,
+    ORMInviteCode,
 )
 from .meetings import ORMMeeting, ORMMeetingResponse
 from .forms import ORMForm
 
 # Make sure all models are imported before configuring
 from sqlalchemy.orm import configure_mappers
+
 configure_mappers()
 
 __all__ = [
@@ -45,5 +47,6 @@ __all__ = [
     "ORMEducation",
     "ORMWorkExperience",
     "ORMLinkedInApiLimits",
-    "ORMLinkedInRawData"
+    "ORMLinkedInRawData",
+    "ORMInviteCode",
 ]

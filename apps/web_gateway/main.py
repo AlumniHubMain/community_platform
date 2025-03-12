@@ -15,6 +15,7 @@ from web_gateway.forms.router import router as forms_router
 from web_gateway.media_storage.router import router as mds_router
 from web_gateway.meetings.router import router as meetings_router
 from web_gateway.users.router import router as users_router
+from web_gateway.invites.router import router as invites_router
 
 from web_gateway.settings import settings
 
@@ -57,6 +58,7 @@ app.include_router(users_router, dependencies=[Depends(authorize)])
 app.include_router(mds_router, dependencies=[Depends(authorize)])
 app.include_router(meetings_router, dependencies=[Depends(authorize)])
 app.include_router(enum_router, dependencies=[Depends(authorize)])
+app.include_router(invites_router, dependencies=[Depends(authorize)])
 
 
 @app.get("/", response_class=HTMLResponse)
