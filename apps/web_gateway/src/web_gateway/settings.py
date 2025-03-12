@@ -3,9 +3,9 @@ from pydantic import BaseModel
 from config_library import BaseConfig, FieldType
 
 
-class SecretFiles(BaseModel):
-    access_secret_file: str
-    bot_token_file: str
+class Secrets(BaseConfig, BaseModel):
+    access_secret: FieldType[str]
+    bot_token: FieldType[str]
 
 
 class EmitterSettings(BaseModel):
@@ -28,14 +28,13 @@ class LimitsSettings(BaseModel):
 
 class Settings(BaseConfig):
     # ToDo(und3v3l0p3d): Move db_config into root config
-    environment: str = 'dev'
-    google_application_credentials: str  = './config/credentials.json'
-    google_cloud_bucket: str = 'community_platform_media1'
-    access_secret_file: FieldType[str] = './config/access_secret_file'
-    bot_token_file: FieldType[str] = './config/token'
-    emitter_settings: FieldType[EmitterSettings] = './public_config/emitter_settings.json'
-    limits: FieldType[LimitsSettings] = './public_config/limits.json'
+    environment: str = "dev"
+    google_application_credentials: str = "../../credentials/credentials.json"
+    google_cloud_bucket: str = "community_platform_media1"
+    emitter_settings: FieldType[EmitterSettings] = "./public_config/emitter_settings.json"
+    limits: FieldType[LimitsSettings] = "./public_config/limits.json"
     matching_requests: FieldType[MatchingRequestsSettings] = "./public_config/matching_requests.json"
+    secrets: FieldType[Secrets] = "./public_config/secret_files.json"
 
 
 settings = Settings()
