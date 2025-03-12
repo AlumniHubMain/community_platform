@@ -85,6 +85,3 @@ async def get_curr_community_company(
             detail="Company not found"
         )
     return company
-
-
-

@@ -111,4 +111,3 @@ async def get_vacancy_page_users(
         vacancy_page=vacancy_page,
         session=session
     )
-
