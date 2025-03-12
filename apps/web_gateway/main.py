@@ -14,6 +14,7 @@ from web_gateway.enums.router import router as enum_router
 from web_gateway.forms.router import router as forms_router
 from web_gateway.media_storage.router import router as mds_router
 from web_gateway.meetings.router import router as meetings_router
+from web_gateway.notifications.router import router as notifications_router
 from web_gateway.users.router import router as users_router
 from web_gateway.feedbacks.router import router as feedbacks_router
 
@@ -57,6 +58,7 @@ app.include_router(forms_router)
 app.include_router(users_router, dependencies=[Depends(authorize)])
 app.include_router(mds_router, dependencies=[Depends(authorize)])
 app.include_router(meetings_router, dependencies=[Depends(authorize)])
+app.include_router(notifications_router, dependencies=[Depends(authorize)])
 app.include_router(enum_router, dependencies=[Depends(authorize)])
 app.include_router(feedbacks_router, dependencies=[Depends(authorize)])
 
