@@ -24,7 +24,7 @@ router = APIRouter(prefix="/referrals", tags=["Referrals"])
 
 @router.get(
     "/docs",
-    name="get_integration_docs"
+    name="FRONTEND INTEGRATION GUIDE: get_integration_docs"
 )
 async def get_integration_docs():
     """

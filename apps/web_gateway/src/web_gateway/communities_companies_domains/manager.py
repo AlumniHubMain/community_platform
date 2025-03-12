@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from common_db.models.communities_companies_domains import ORMCommunityCompany, ORMCommunityCompanyService
+from common_db.models.communities_companies_domains import ORMCommunityCompany
 from common_db.schemas.communities_companies_domains import DTOCommunityCompanyRead
 from common_db.db_abstract import db_manager
 

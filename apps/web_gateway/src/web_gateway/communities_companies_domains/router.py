@@ -23,7 +23,7 @@ router = APIRouter(prefix="/community_companies", tags=["Community companies"])
 
 @router.get(
     "/docs",
-    name="get_integration_docs"
+    name="FRONTEND INTEGRATION GUIDE: get_integration_docs"
 )
 async def get_integration_docs():
     """
