@@ -57,7 +57,7 @@ class ORMUserProfile(ObjectTable):
     is_verified: Mapped[bool] = mapped_column(default=False)  # verification flag via linkedin_parser
     verified_datetime: Mapped[datetime | None]
 
-    # fuck the normalization:
+    # fuck the normalization and human logic:
     communities_companies_domains: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=[])
     communities_companies_services: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=[])
     
@@ -147,6 +147,11 @@ class ORMUserProfile(ObjectTable):
 
     __table_args__ = (
         Index('ix_users_telegram_id', 'telegram_id'),
+        # GIN индексы для массивов строк - ебумба
+        Index('ix_users_recommender_companies', 'recommender_companies', postgresql_using='gin'),
+        Index('ix_users_vacancy_pages', 'vacancy_pages', postgresql_using='gin'),
+        Index('ix_users_communities_companies_domains', 'communities_companies_domains', postgresql_using='gin'),
+        Index('ix_users_communities_companies_services', 'communities_companies_services', postgresql_using='gin'),
         {
             'schema': f"{schema}",
             'extend_existing': True

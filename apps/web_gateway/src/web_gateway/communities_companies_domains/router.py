@@ -18,11 +18,11 @@ from common_db.schemas.communities_companies_domains import (
 from web_gateway import auth
 from web_gateway.communities_companies_domains.manager import CommunityCompanyManager
 
-router = APIRouter(prefix="/community-companies", tags=["community-companies"])
+router = APIRouter(prefix="/community_companies", tags=["community-companies"])
 
 
 @router.get(
-    "/community_company_with_services/{company_label}",
+    "/{company_label}",
     name="get_community_company",
     response_model=DTOCommunityCompanyRead
 )
@@ -54,8 +54,7 @@ async def get_curr_community_company(
 
 @router.get(
     "/docs",
-    name="get_integration_docs",
-    include_in_schema=False  # Не показывать в Swagger
+    name="get_integration_docs"
 )
 async def get_integration_docs():
     """
