@@ -16,37 +16,14 @@ class CommunityCompanyManager:
     """Manager for working with community companies and their services"""
     
     @classmethod
-    async def get_all_community_companies_and_services(
-            cls,
-            session: AsyncSession = db_manager.get_session(),
-    ) -> list[DTOCommunityCompanyRead]:
-        """
-        Get a list of all community companies with all their services
-        
-        Args:
-            session: Database session
-            
-        Returns:
-            list[DTOCommunityCompanyRead]: List of companies
-        """
-        query = (
-            select(ORMCommunityCompany)
-            .options(selectinload(ORMCommunityCompany.services))
-        )
-            
-        result = await session.execute(query)
-        companies = result.scalars().all()
-        
-        return [DTOCommunityCompanyRead.model_validate(company) for company in companies]
-    
-    @classmethod
-    async def get_community_company_with_services(
+    async def get_curr_community_company_with_services(
             cls,
             company_id: int,
             session: AsyncSession = db_manager.get_session(),
     ) -> DTOCommunityCompanyRead | None:
         """
-        Get a specific community company with all its services by ID
+        Get a specific community company with all its services by company_id
+        Not personal <- according to requirements in clickup.
         
         Args:
             company_id: Company ID
