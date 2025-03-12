@@ -54,6 +54,25 @@ class ORMUserProfile(ObjectTable):
     is_email_notify: Mapped[bool] = mapped_column(default=False)
     is_push_notify: Mapped[bool] = mapped_column(default=False)
 
+    is_verified: Mapped[bool] = mapped_column(default=False)  # verification flag via linkedin_parser
+    verified_datetime: Mapped[datetime | None]
+
+    # fuck the normalization:
+    communities_companies_domains: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=[])
+    communities_companies_services: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=[])
+    
+    # fields for company recommendations and vacancies
+    recommender_companies: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String),
+        default=[],
+        doc="List of companies where user is a recommender"
+    )
+    vacancy_pages: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String),
+        default=[],
+        doc="list of vacancy pages"
+    )
+
     # relationships for basic user properties
     specialisations: Mapped[list["ORMSpecialisation"]] = relationship(
         "ORMSpecialisation",
