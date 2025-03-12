@@ -6,6 +6,8 @@ from config_library import FieldType, BaseConfig
 class MatchingConfig(BaseModel):
     project_id: str
     bucket_name: str
+    gemini_location: str = "us-central1"
+    gemini_model: str = "gemini-1.5-pro"
 
 
 class MatchingSettings(BaseConfig):

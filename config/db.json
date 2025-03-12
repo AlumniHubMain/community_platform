@@ -1,8 +1,8 @@
 {
-    "db_host": "db",
+    "db_host": "34.172.47.110",
     "db_port": 5432,
-    "db_name": "communityp",
-    "db_user": "postgres", 
-    "db_pass": "postgres",
+    "db_name": "development",
+    "db_user": "development", 
+    "db_pass": "^*2Z7HMZLg_/1FFK",
     "db_schema": "alh_community_platform"
 }

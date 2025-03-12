@@ -31,6 +31,7 @@ dependencies = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.23.0",
     "httpx>=0.24.0",
+    "google-cloud-aiplatform>=1.38.1",
     "common-db",
 ]
 
@@ -76,6 +77,13 @@ disable = [
     "W0511",  # fixme
     "R0914",  # too-many-locals
     "R0903",  # too-few-public-methods
+    "R0904",  # too-many-ancestors
+    "R0912",  # too-many-branches
+    "R0915",  # too-many-statements,
+    "R0911",  # too-many-return-statements,
+    "C0302",  # too-many-lines.
+    "R0917",  # too-many-positional-arguments,
+    "R0913",  # too-many-arguments,
 ]
 
 [tool.pytest.ini_options]
