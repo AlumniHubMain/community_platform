@@ -54,6 +54,25 @@ class ORMUserProfile(ObjectTable):
     is_email_notify: Mapped[bool] = mapped_column(default=False)
     is_push_notify: Mapped[bool] = mapped_column(default=False)
 
+    is_verified: Mapped[bool] = mapped_column(default=False)  # verification flag via linkedin_parser
+    verified_datetime: Mapped[datetime | None]
+
+    # fuck the normalization and human logic:
+    communities_companies_domains: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=[])
+    communities_companies_services: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=[])
+    
+    # fields for company recommendations and vacancies - referral block
+    recommender_companies: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String),
+        default=[],
+        doc="List of companies where user is a recommender"
+    )
+    vacancy_pages: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String),
+        default=[],
+        doc="list of vacancy pages"
+    )
+
     # relationships for basic user properties
     specialisations: Mapped[list["ORMSpecialisation"]] = relationship(
         "ORMSpecialisation",
@@ -128,6 +147,11 @@ class ORMUserProfile(ObjectTable):
 
     __table_args__ = (
         Index('ix_users_telegram_id', 'telegram_id'),
+        # GIN индексы для массивов строк - ебумба
+        Index('ix_users_recommender_companies', 'recommender_companies', postgresql_using='gin'),
+        Index('ix_users_vacancy_pages', 'vacancy_pages', postgresql_using='gin'),
+        Index('ix_users_communities_companies_domains', 'communities_companies_domains', postgresql_using='gin'),
+        Index('ix_users_communities_companies_services', 'communities_companies_services', postgresql_using='gin'),
         {
             'schema': f"{schema}",
             'extend_existing': True
