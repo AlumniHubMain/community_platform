@@ -5,11 +5,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from common_db.models.communities_companies_domains import ORMCommunityCompany, ORMCommunityCompanyService
 from common_db.models.users import ORMUserProfile
-from common_db.schemas.communities_companies_domains import (
-    DTOCommunityCompanyRead
-)
 from common_db.schemas.users import DTOUserProfileRead
 from common_db.db_abstract import db_manager
 
