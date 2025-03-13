@@ -1,6 +1,6 @@
 [project]
 name = "common-db"
-version = "0.1.8"
+version = "0.1.6"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -14,12 +14,13 @@ dependencies = [
     "pydantic-settings>=2.7.0",
     "sqlalchemy[asyncio]>=2.0.36",
     "alembic>=1.13.1",
-    "psycopg2-binary>=2.9.9",  # For running migrations
+    "psycopg2-binary>=2.9.9", # For running migrations
     "pydantic_extra_types>=0.1.0",
     "pydantic[email]>=2.10.6",
     "pycountry>=23.1.14",
     "tzdata>=2025.1",
     "pydantic[email]>=2.10.6",
+    "fastapi>=0.115.11",
 ]
 
 [project.scripts]

@@ -32,26 +32,26 @@ async def update_current_user_profile(
     return await UserManager.update_user(session=session, user_data=profile)
 
 
-@router.get(
-    "/{user_id}",
-    response_model=DTOUserProfileRead,
-    summary="Get user's profile"
-)
-async def get_profile(
-        user_id: int,
-        session: Annotated[AsyncSession, Depends(db_manager.get_session)]
-) -> DTOUserProfileRead:
-    return await UserManager.get_user_by_id(session=session, user_id=user_id)
+# @router.get(
+#    "/{user_id}",
+#    response_model=DTOUserProfileRead,
+#    summary="Get user's profile"
+#)
+# async def get_profile(
+#        user_id: int,
+#        session: Annotated[AsyncSession, Depends(db_manager.get_session)]
+#) -> DTOUserProfileRead:
+#    return await UserManager.get_user_by_id(session=session, user_id=user_id)
 
 
 # ToDo: evseev.dmsr check user id before patch
 # https://app.clickup.com/t/86c11fz94
-@router.patch("/{user_id}", summary="Modify user's profile")
-async def update_profile(
-        profile: DTOUserProfileUpdate,
-        session: Annotated[AsyncSession, Depends(db_manager.get_session)]
-) -> JSONResponse:
-    return await UserManager.update_user(session=session, user_data=profile)
+# @router.patch("/{user_id}", summary="Modify user's profile")
+# async def update_profile(
+#        profile: DTOUserProfileUpdate,
+#        session: Annotated[AsyncSession, Depends(db_manager.get_session)]
+#) -> JSONResponse:
+#    return await UserManager.update_user(session=session, user_data=profile)
 
 
 @router.post("", response_model=DTOUserProfile, summary="Creates user's profile")

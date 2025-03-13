@@ -25,12 +25,14 @@ class DTOGeneralNotification(BaseModel):
     Attributes:
         notification_type: Type of notification from ENotificationType enum
         user_id: User ID associated with the recipient of the notification
+        text: Optional text content of the notification
         params: Pydantic model containing notification parameters. Must match the schema
                defined in type_params for the given notification_type
         timestamp: Optional timestamp of the notification
     """
     notification_type: ENotificationType
     user_id: int | None = None
+    text: str | None = None
     params: BaseModel | None = None
     timestamp: datetime | None = None
 
@@ -91,6 +93,8 @@ class DTOGeneralNotification(BaseModel):
             params_schema(**self.params.model_dump())
         except Exception:
             raise ValueError(f'The set of parameters (params) does not correspond to the notification type.')
+        if self.notification_type.value.casefold().endswith('test'):
+            self.text = "Test notification, don't pay attention."
         return self
 
 
@@ -112,18 +116,8 @@ class DTONotifiedUserProfile(BaseModel):
 
 class DTOUserNotification(DTOGeneralNotification):
     """The schema of the prepared notification"""
-    text: str | None = None
     user: DTONotifiedUserProfile
     timestamp: datetime = datetime.now(UTC)
-
-    @model_validator(mode='after')
-    def check_params(self) -> Self:
-        """
-        Schema validator
-        """
-        if self.notification_type.value.casefold().endswith('test'):
-            self.text = "Test notification, don't pay attention."
-        return self
 
 
 class DTOUserNotificationRead(TimestampedSchema):
@@ -134,6 +128,7 @@ class DTOUserNotificationRead(TimestampedSchema):
         id: Unique identifier of the notification
         notification_type: Type of notification from ENotificationType enum
         user_id: User ID associated with the recipient of the notification
+        text: Text content of the notification
         params: Notification parameters specific to the notification_type
         is_read: Whether the notification has been read
         created_at: When the notification was created
@@ -141,5 +136,6 @@ class DTOUserNotificationRead(TimestampedSchema):
     """
     notification_type: ENotificationType
     user_id: int
+    text: str
     params: list[str] | None = None
     is_read: bool
