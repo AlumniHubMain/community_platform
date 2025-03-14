@@ -14,7 +14,8 @@ from .users import (
     ORMSkill,
     ORMUserSkill,
     ORMRequestsCommunity,
-    ORMUserRequestsCommunity
+    ORMUserRequestsCommunity,
+    ORMReferralCode
 )
 from .meetings import ORMMeeting, ORMMeetingResponse
 from .notifications import ORMUserNotifications
@@ -39,6 +40,7 @@ __all__ = [
     "ORMUserSkill",
     "ORMRequestsCommunity",
     "ORMUserRequestsCommunity",
+    "ORMReferralCode",
     "ORMMeeting",
     "ORMMeetingResponse",
     "ORMMatchingResult",
