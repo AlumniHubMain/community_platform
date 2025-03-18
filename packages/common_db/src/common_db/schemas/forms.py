@@ -4,13 +4,11 @@ from common_db.schemas.base import BaseSchema, TimestampedSchema
 from common_db.enums.forms import (
     EFormIntentType,
     EFormConnectsMeetingFormat,
-    EFormMentoringHelpRequest, 
-    EFormSpecialization,
+    EFormMentoringHelpRequest,
     EFormRefferalsCompanyType,
     EFormEnglishLevel,
     EFormMockInterviewType,
     EFormLangluage,
-    EFormSkills,
     EFormProjectProjectState,
     EFormProjectUserRole,
 )

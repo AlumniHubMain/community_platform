@@ -13,26 +13,6 @@ class EFormIntentType(Enum):
     projects_pet_project = "projects_pet_project"
 
 
-class EFormSpecialization(Enum):
-    """
-    Warning! __ separator must be user for construction of tree structure.
-    For example: 
-        development__data_science__deep_learning means this tree -> [development -> data science -> deep learning]
-    """
-    development__frontend__react = "development__frontend__react"
-    development__frontend__vue = "development__frontend__vue"
-    development__backend__cpp = "development__backend__cpp"
-    development__backend__python = "development__backend__python"
-    development__data_science__deep_learning = "development__data_science__deep_learning"
-    # TODO: Fill me
-
-
-class EFormSkills(Enum):
-    development__frontend = "development__frontend"
-    design_ui_ux = "design_ui_ux"
-    # TODO: Fill me
-
-
 class EFormEnglishLevel(Enum):
     not_required = "not_required"
     A1 = "A1"
