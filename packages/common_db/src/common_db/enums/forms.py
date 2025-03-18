@@ -49,25 +49,6 @@ class EFormConnectsMeetingFormat(Enum):
     online = "online"
 
 
-class EFormConnectsSocialExpansionTopic(Enum):
-    """
-    Warning! __ separator must be user for construction of tree structure.
-    For example: 
-        development__data_science__deep_learning means this tree -> [development -> data science -> deep learning]
-    """
-    development__web_development = "development__web_development"
-    development__mobile_development = "development__mobile_development"
-    design__design_system_development = "design__design_system_development"
-    custom = "custom"
-    # TODO: Fill me
-
-
-class EFormProfessionalNetworkingTopic(Enum):
-    development = "development"
-    analytics = "analytics"
-    # TODO: Fill me
-
-
 class EFormMentoringHelpRequest(Enum):
     career_trainsition = "career_trainsition"
     professional_development = "professional_development"
