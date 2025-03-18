@@ -69,33 +69,39 @@ class EFormProfessionalNetworkingTopic(Enum):
 
 
 class EFormMentoringHelpRequest(Enum):
-    adaptation_after_relocate = "adaptation_after_relocate"
-    process_and_teams_management = "process_and_teams_management"
+    career_trainsition = "career_trainsition"
+    professional_development = "professional_development"
+    people_and_process_management = "people_and_process_management"
+    personal_brand_creation = "personal_brand_creation"
+    public_speaking_and_presentation = "public_speaking_and_presentation"
+    entrepreneurship = "entrepreneurship"
+    relocation_and_adaptation = "relocation_and_adaptation"
+    work_life_balance = "work_life_balance"
+    overcoming_impostor_syndrome = "overcoming_impostor_syndrome"
+    overcoming_fear_of_uncertainty = "overcoming_fear_of_uncertainty"
+    reducing_anxiety_and_procrastination = "reducing_anxiety_and_procrastination"
+    foreign_univercity_admission_and_study_assistance = "foreign_univercity_admission_and_study_assistance"
+    conflict_resolution = "conflict_resolution"
+    preparation_for_interview = "preparation_for_interview"
+    finding_job_help = "finding_job_help"
     custom = "custom"
-    # TODO: Fill me
-
-
-class EFormMentoringGrade(Enum):
-    junior = "junior"
-    middle = "middle"
-    senior = "senior"
-    lead = "lead"
-    head = "head"
-    executive = "executive"
 
 
 class EFormRefferalsCompanyType(Enum):
-    dummy = "dummy"
-    # TODO: Fill me
+    startup = "startup"
+    growing_company = "growing_company"
+    mature_company = "mature_company"
 
 
 class EFormMockInterviewType(Enum):
-    technical = "technical"
+    technical_algorithms = "technical_algorithms"
+    technical_system_design = "technical_system_design"
     behavioral = "behavioral"
-    role_playing = "role_playing"
+    case = "case"
+    custom = "custom"
 
 
-class EFormMockInterviewLangluages(Enum):
+class EFormLangluage(Enum):
     english = "english"
     russian = "russian"
     custom = "custom"

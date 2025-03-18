@@ -6,16 +6,18 @@ from common_db.enums.forms import (
     EFormConnectsMeetingFormat,
     EFormConnectsSocialExpansionTopic,
     EFormProfessionalNetworkingTopic,
-    EFormMentoringGrade,
     EFormMentoringHelpRequest, 
     EFormSpecialization,
     EFormRefferalsCompanyType,
     EFormEnglishLevel,
     EFormMockInterviewType,
-    EFormMockInterviewLangluages,
+    EFormLangluage,
     EFormSkills,
     EFormProjectProjectState,
     EFormProjectUserRole,
+)
+from common_db.enums.users import (
+    ESpecialisation
 )
 from common_db.enums.users import EGrade
 
@@ -100,16 +102,16 @@ class FormMentoringHelpRequest(BaseModel):
             raise ValueError("\"custom_request\" field must be non-empty when " + 
                              f"\"{EFormMentoringHelpRequest.custom.value}\"" + 
                              " help request selected")
-        if EFormMentoringHelpRequest.adaptation_after_relocate in self.request and self.country is None:
+        if EFormMentoringHelpRequest.relocation_and_adaptation in self.request and self.country is None:
             raise ValueError("\"country\" field must be non-empty when " + 
-                             f"\"{EFormMentoringHelpRequest.adaptation_after_relocate.value}\"" + 
+                             f"\"{EFormMentoringHelpRequest.relocation_and_adaptation.value}\"" + 
                              " help request selected")
         
 
 class FormMentoringMentor(BaseModel):
     is_local_community: bool
-    required_grade: list[EFormMentoringGrade]
-    specialization: list[EFormSpecialization]
+    required_grade: list[EGrade]
+    specialization: list[ESpecialisation]
     help_request: FormMentoringHelpRequest
     about: str
 
@@ -120,8 +122,8 @@ class FormMentoringMentor(BaseModel):
 
 
 class FormMentoringMentee(BaseModel):
-    grade: list[EFormMentoringGrade]
-    mentor_specialization: list[EFormSpecialization]
+    grade: list[EGrade]
+    mentor_specialization: list[ESpecialisation]
     help_request: FormMentoringHelpRequest
     details: str
 
@@ -148,27 +150,28 @@ class FormReferralsRecommendation(BaseModel):
 # ========================= Mock interview form schema =========================
 
 class FromMockInterviewInterviewLangluage(BaseModel):
-    langs: list[EFormMockInterviewLangluages]
+    langs: list[EFormLangluage]
     custom_langs: list[str] | None = None
     
     @model_validator(mode='after')
     def check_nonempty(self):
         validate_non_empty_list(self, ["langs"])
 
-        if EFormMockInterviewLangluages.custom in self.langs:
+        if EFormLangluage.custom in self.langs:
             if self.custom_langs is None:
                 raise ValueError("\"custom_langs\" list must be setted, when " + 
-                                 f"\"{EFormMockInterviewLangluages.custom.value}\"" + 
+                                 f"\"{EFormLangluage.custom.value}\"" + 
                                  " langluage added")
             if len(self.custom_langs) == 0:
                 raise ValueError("\"custom_langs\" list must be non-empty, when " + 
-                                 f"\"{EFormMockInterviewLangluages.custom.value}\"" + 
+                                 f"\"{EFormLangluage.custom.value}\"" + 
                                  " langluage added")
         return self
 
 
 class FormMockInterview(BaseModel):
     interview_type: list[EFormMockInterviewType]
+    custom_interview_type: str | None = None
     job_link: str | None = None
     langluage: FromMockInterviewInterviewLangluage
     resume: str
@@ -178,6 +181,10 @@ class FormMockInterview(BaseModel):
     @model_validator(mode='after')
     def extended_valiation(self):
         validate_non_empty_list(self, ["interview_type"])
+        if EFormMockInterviewType.custom in self.interview_type and self.custom_interview_type is None:
+            raise ValueError("\"custom_interview_type\" must be setted, when " + 
+                                 f"\"{EFormMockInterviewType.custom.value}\"" + 
+                                 " interview type added")
         return self
 
 # ==============================================================================
