@@ -105,6 +105,16 @@ class DTOUserProfile(BaseSchema):
     meeting_responses: list[MeetingResponseRead] | None = None
     profile_type: EProfileType | None = None
 
+    is_verified: bool = False  # verification flag via linkedin_parser
+    verified_datetime: datetime | None = None
+
+    communities_companies_domains: list[str] | None = None
+    communities_companies_services: list[str] | None = None
+    
+    # fields for company recommendations and vacancies - referral block
+    recommender_companies: list[str] | None = None  # list of companies where user is a recommender
+    vacancy_pages: list[str] | None = None  # list of vacancy pages
+
 
 class DTOUserProfileUpdate(DTOUserProfile):
     id: int
