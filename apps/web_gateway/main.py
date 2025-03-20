@@ -63,8 +63,8 @@ app.include_router(meetings_router, dependencies=[Depends(authorize)])
 app.include_router(notifications_router, dependencies=[Depends(authorize)])
 app.include_router(enum_router, dependencies=[Depends(authorize)])
 app.include_router(feedbacks_router, dependencies=[Depends(authorize)])
-app.include_router(communities_companies_domains_router)  #, dependencies=[Depends(authorize)])
-app.include_router(referrals_router)  #, dependencies=[Depends(authorize)])
+app.include_router(communities_companies_domains_router, dependencies=[Depends(authorize)])
+app.include_router(referrals_router, dependencies=[Depends(authorize)])
 
 
 @app.get("/", response_class=HTMLResponse)
