@@ -48,7 +48,32 @@ class ORMUserProfile(ObjectTable):
     country: Mapped[str | None]
     city: Mapped[str | None]
     timezone: Mapped[str | None]
-    referral: Mapped[bool] = mapped_column(default=False)
+
+    # Add referrer_id field - reference to the referrer user
+    referrer_id: Mapped[int | None] = mapped_column(ForeignKey(f"{schema}.users.id"), nullable=True)
+    
+    # Relationship with the referrer user
+    referrer: Mapped["ORMUserProfile | None"] = relationship(
+        "ORMUserProfile", 
+        remote_side="ORMUserProfile.id", 
+        back_populates="referred",
+        foreign_keys="ORMUserProfile.referrer_id",
+        uselist=False
+    )
+    
+    # Relationship with the list of users referred by this user
+    referred: Mapped[list["ORMUserProfile"]] = relationship(
+        "ORMUserProfile", 
+        back_populates="referrer",
+        foreign_keys="ORMUserProfile.referrer_id"
+    )
+
+    # Add relationship with referral codes
+    referral_codes: Mapped[list["ORMReferralCode"]] = relationship(
+        "ORMReferralCode",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
 
     is_tg_notify: Mapped[bool] = mapped_column(default=False)
     is_email_notify: Mapped[bool] = mapped_column(default=False)
@@ -307,3 +332,22 @@ class ORMUserRequestsCommunity(Base):
     requests_id: Mapped[int] = mapped_column(ForeignKey(column=f'{schema}.requests_to_community.id'),
                                              primary_key=True,
                                              index=True)
+
+
+class ORMReferralCode(ObjectTable):
+    """
+    The referral codes table model.
+    """
+
+    __tablename__ = 'referral_codes'
+
+    user_id: Mapped[int] = mapped_column(ForeignKey(f"{schema}.users.id"), index=True)
+    code: Mapped[str] = mapped_column(String(30), unique=True, index=True)
+    generated_in: Mapped[str]
+    is_active: Mapped[bool] = mapped_column(default=True)
+
+    # Relationship with the user who generated the code
+    user: Mapped["ORMUserProfile"] = relationship(
+        "ORMUserProfile",
+        back_populates="referral_codes"
+    )

@@ -14,7 +14,8 @@ from .users import (
     ORMSkill,
     ORMUserSkill,
     ORMRequestsCommunity,
-    ORMUserRequestsCommunity
+    ORMUserRequestsCommunity,
+    ORMReferralCode
 )
 from .communities_companies_domains import ORMCommunityCompany, ORMCommunityCompanyService
 from .meetings import ORMMeeting, ORMMeetingResponse
@@ -40,6 +41,7 @@ __all__ = [
     "ORMUserSkill",
     "ORMRequestsCommunity",
     "ORMUserRequestsCommunity",
+    "ORMReferralCode",
     "ORMMeeting",
     "ORMMeetingResponse",
     "ORMMatchingResult",
