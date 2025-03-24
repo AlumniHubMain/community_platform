@@ -49,7 +49,17 @@ async def process_matching_request(  # pylint: disable=too-many-arguments
             elif form.intent == EFormIntentType.mentoring_mentee:
                 if not form.content.get("mentor_specialization"):
                     raise ValueError("Mentor specialization not specified for mentee form")
-
+            elif form.intent == EFormIntentType.connects:
+                # Check for either social_circle_expansion or professional_networking
+                if not (form.content.get("social_circle_expansion") or form.content.get("professional_networking")):
+                    raise ValueError("Either social_circle_expansion or professional_networking must be specified")
+            elif form.intent == EFormIntentType.mock_interview:
+                if not form.content.get("interview_type") or not form.content.get("language"):
+                    raise ValueError("Interview type and language must be specified for mock interview form")
+            elif form.intent in [EFormIntentType.projects_find_contributor, EFormIntentType.projects_find_cofounder]:
+                if not form.content.get("specialization") or not form.content.get("skills"):
+                    raise ValueError("Specialization and skills must be specified for project forms")
+                    
             # Create model instance
             model = None
             if model_settings.model_type == ModelType.CATBOOST:
@@ -61,7 +71,7 @@ async def process_matching_request(  # pylint: disable=too-many-arguments
             # Make predictions
             predictions = matcher.predict(all_users, form, linkedin_profiles, user_id, n)
 
-            # TODO: get from settings
+            # Get user meeting limits
             limit_settings = MeetingsUserLimits(
                 max_user_confirmed_meetings_count=5,
                 max_user_pended_meetings_count=10,
@@ -247,7 +257,7 @@ async def parse_text_for_matching(
             # Make predictions
             predictions = matcher.predict(all_users, temp_form, linkedin_profiles, user_id, n)
 
-            # TODO: get from settings
+            # Get user meeting limits
             limit_settings = MeetingsUserLimits(
                 max_user_confirmed_meetings_count=5,
                 max_user_pended_meetings_count=10,
@@ -293,7 +303,8 @@ async def parse_text_for_matching(
                 user_id=user_id,
                 form_id=None,
                 error_code="TEXT_MATCHING_ERROR",
-                error_details={"error": str(e), "text_description": text_description, "intent_type": intent_type.value},
+                error_details={"error": str(e), "text_description": text_description, 
+                               "intent_type": intent_type.value if intent_type else None},
                 matching_result=[],
             )
             session.add(error_result)

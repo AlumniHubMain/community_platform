@@ -5,7 +5,6 @@ import pandas as pd
 import numpy as np
 from common_db.enums.users import (
     EGrade,
-    EExpertiseArea,
 )
 from common_db.enums.forms import (
     EFormIntentType,
@@ -17,38 +16,209 @@ from common_db.enums.forms import (
     EFormEnglishLevel,
     EFormProjectProjectState,
     EFormConnectsSocialExpansionTopic,
-    EFormMockInterviewLangluages,
+    EFormMockInterviewLanguages,
     EFormRefferalsCompanyType,
     EFormProfessionalNetworkingTopic,
 )
 
 from .base import BasePredictor
-
+from .scoring_config import ScoringConfig
+import traceback
+from .data_normalizer import DataNormalizer
+from .scoring_rules import RuleFactory
 
 class HeuristicPredictor(BasePredictor):
     """Heuristic-based predictor"""
 
-    def __init__(self, rules: list[dict]):
-        """Initialize with list of rules
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+        self.config = ScoringConfig()
+        self.normalizer = DataNormalizer()
+        self.rule_factory = RuleFactory(self.config, self.normalizer)
+        
+    def predict(self, features: pd.DataFrame, params: dict = None) -> np.ndarray:
+        """
+        Predict matching scores for users based on features
+        
+        Args:
+            features: DataFrame with user features
+            params: Optional parameters for prediction
+            
+        Returns:
+            Array of scores for each user
+        """
+        if params is None:
+            params = {}
+            
+        # Normalize features
+        features = self.normalizer.normalize_features(features)
+        
+        # Initialize scores
+        scores = np.ones(len(features))
+        
+        # Apply base rules
+        scores *= self._apply_base_rules(features, params)
+        
+        # Apply intent-specific rules
+        scores *= self._apply_intent_rules(features, params)
+        
+        # Ensure scores are between MIN_SCORE and MAX_SCORE
+        return np.clip(scores, self.config.MIN_SCORE, self.config.MAX_SCORE)
+        
+    def _apply_base_rules(self, features: pd.DataFrame, params: dict) -> np.ndarray:
+        """Apply base matching rules"""
+        scores = np.ones(len(features))
+        
+        # Apply location rule
+        location_rule = self.rule_factory.create_rule("location")
+        scores *= location_rule.apply(features, params)
+        
+        # Apply grade rule
+        grade_rule = self.rule_factory.create_rule("grade")
+        scores *= grade_rule.apply(features, params)
+        
+        # Apply skill rule
+        skill_rule = self.rule_factory.create_rule("skill")
+        scores *= skill_rule.apply(features, params)
+        
+        # Apply language rule
+        language_rule = self.rule_factory.create_rule("language")
+        scores *= language_rule.apply(features, params)
+        
+        # Apply expertise rule
+        expertise_rule = self.rule_factory.create_rule("expertise")
+        scores *= expertise_rule.apply(features, params)
+        
+        # Apply network quality rule
+        network_rule = self.rule_factory.create_rule("network")
+        scores *= network_rule.apply(features, params)
+        
+        # Apply project experience rule
+        project_rule = self.rule_factory.create_rule("project_experience")
+        scores *= project_rule.apply(features, params)
+        
+        # Apply education rule
+        education_rule = self.rule_factory.create_rule("education")
+        scores *= education_rule.apply(features, params)
+        
+        # Apply availability rule
+        availability_rule = self.rule_factory.create_rule("availability")
+        scores *= availability_rule.apply(features, params)
+        
+        # Apply communication style rule
+        communication_rule = self.rule_factory.create_rule("communication")
+        scores *= communication_rule.apply(features, params)
+        
+        return scores
+        
+    def _apply_intent_rules(self, features: pd.DataFrame, params: dict) -> np.ndarray:
+        """Apply intent-specific rules"""
+        scores = np.ones(len(features))
+        
+        if "main_intent" not in features.columns:
+            return scores
+            
+        intent_type = self.normalizer.normalize_intent(features["main_intent"].iloc[0])
+        if not intent_type:
+            return scores
+            
+        # Get intent-specific weights
+        intent_weights = self.config.get_intent_weights(intent_type)
+        if not intent_weights:
+            return scores
+            
+        # Apply intent-specific scoring
+        if intent_type == "mock_interview":
+            scores *= self._apply_mock_interview_rules(features, intent_weights)
+        elif intent_type == "mentoring":
+            scores *= self._apply_mentoring_rules(features, intent_weights)
+        elif intent_type == "project":
+            scores *= self._apply_project_rules(features, intent_weights)
+        elif intent_type == "referral":
+            scores *= self._apply_referral_rules(features, intent_weights)
+            
+        return scores
+        
+    def _apply_mock_interview_rules(
+        self, features: pd.DataFrame, weights: dict
+    ) -> np.ndarray:
+        """Apply mock interview specific rules"""
+        scores = np.ones(len(features))
+        
+        # Grade matching with higher weight
+        grade_rule = self.rule_factory.create_rule("grade")
+        grade_scores = grade_rule.apply(features, {"weight": weights["grade_weight"]})
+        scores *= grade_scores
+        
+        # Language matching with higher weight
+        language_rule = self.rule_factory.create_rule("language")
+        language_scores = language_rule.apply(features, {"weight": weights["language_weight"]})
+        scores *= language_scores
+        
+        # Expertise matching with higher weight
+        expertise_rule = self.rule_factory.create_rule("expertise")
+        expertise_scores = expertise_rule.apply(features, {"weight": weights["expertise_weight"]})
+        scores *= expertise_scores
+        
+        # Add senior bonus if applicable
+        if "main_grade" in features.columns:
+            main_grade = self.normalizer.normalize_grade(features["main_grade"].iloc[0])
+            if main_grade == "senior":
+                scores *= (1 + weights["senior_bonus"])
+                
+        return scores
+        
+    def _apply_mentoring_rules(
+        self, features: pd.DataFrame, weights: dict
+    ) -> np.ndarray:
+        """Apply mentoring specific rules"""
+        scores = np.ones(len(features))
+        
+        # Grade matching with higher weight
+        grade_rule = self.rule_factory.create_rule("grade")
+        grade_scores = grade_rule.apply(features, {"weight": weights["grade_weight"]})
+        scores *= grade_scores
+        
+        # Specialization matching
+        expertise_rule = self.rule_factory.create_rule("expertise")
+        expertise_scores = expertise_rule.apply(
+            features, {"weight": weights["specialization_weight"]}
+        )
+        scores *= expertise_scores
+        
+        # Experience quality consideration
+        network_rule = self.rule_factory.create_rule("network")
+        network_scores = network_rule.apply(
+            features, {"weight": weights["experience_weight"]}
+        )
+        scores *= network_scores
+        
+        return scores
+        
+    def _apply_project_rules(
+        self, features: pd.DataFrame, weights: dict
+    ) -> np.ndarray:
+        """Apply project specific rules"""
+    def __init__(self, rules: list[dict], config: ScoringConfig | None = None):
+        """Initialize with list of rules and optional configuration
 
-        Each rule is a dict with:
-        - name: str - rule name
-        - type: str - 'location', 'interests', 'expertise', 'grade', 'intent_specific'
-        - weight: float - base weight of this rule (0-1)
-        - params: dict - additional parameters for the rule
+        Args:
+            rules: List of rule dictionaries
+            config: Optional scoring configuration
         """
         self.rules = rules
         self.logger = logging.getLogger(__name__)
+        self.config = config or ScoringConfig()
         
-        # ADDED: Grade mapping between different enum types
+        # Grade mapping between different enum types
         self.grade_mapping = {
             # Form grade to user grade
             EFormMentoringGrade.junior.value: EGrade.junior.value,
             EFormMentoringGrade.middle.value: EGrade.middle.value,
             EFormMentoringGrade.senior.value: EGrade.senior.value,
-            EFormMentoringGrade.lead.value: EGrade.senior.value,  # Map to senior
-            EFormMentoringGrade.head.value: EGrade.senior.value,  # Map to senior
-            EFormMentoringGrade.executive.value: EGrade.senior.value,  # Map to senior
+            EFormMentoringGrade.lead.value: EGrade.senior.value,
+            EFormMentoringGrade.head.value: EGrade.senior.value,
+            EFormMentoringGrade.executive.value: EGrade.senior.value,
             
             # User grade to form grade
             EGrade.junior.value: EFormMentoringGrade.junior.value,
@@ -59,38 +229,36 @@ class HeuristicPredictor(BasePredictor):
         # Add topic-specific scoring rules
         self.professional_topic_rules = {
             EFormProfessionalNetworkingTopic.development.value: {
-                'senior_bonus': 0.3,
-                'middle_bonus': 0.1,
+                'senior_bonus': self.config.TECHNICAL_WEIGHT,
+                'middle_bonus': self.config.NON_TECHNICAL_WEIGHT,
                 'required_skills': ['development', 'programming', 'frontend', 'backend'],
-                'weight': 1.0
+                'weight': self.config.MAX_SCORE
             },
             EFormProfessionalNetworkingTopic.analytics.value: {
-                'senior_bonus': 0.2,
-                'middle_bonus': 0.1,
-                'data_science_bonus': 0.2,
+                'senior_bonus': self.config.TECHNICAL_WEIGHT - 0.1,
+                'middle_bonus': self.config.NON_TECHNICAL_WEIGHT,
+                'data_science_bonus': self.config.TECHNICAL_WEIGHT - 0.1,
                 'required_skills': ['analytics', 'data_science', 'machine_learning'],
                 'weight': 0.9
             }
-            # Add more topics as needed
         }
         
         self.social_topic_rules = {
             EFormConnectsSocialExpansionTopic.development__web_development.value: {
-                'expertise_weight': 0.7,
-                'interests_weight': 0.3,
+                'expertise_weight': self.config.TECHNICAL_WEIGHT + 0.3,
+                'interests_weight': self.config.NON_TECHNICAL_WEIGHT,
                 'required_skills': ['frontend', 'backend', 'web']
             },
             EFormConnectsSocialExpansionTopic.development__mobile_development.value: {
-                'expertise_weight': 0.7,
-                'interests_weight': 0.3,
+                'expertise_weight': self.config.TECHNICAL_WEIGHT + 0.3,
+                'interests_weight': self.config.NON_TECHNICAL_WEIGHT,
                 'required_skills': ['mobile', 'ios', 'android']
             },
             EFormConnectsSocialExpansionTopic.design__design_system_development.value: {
-                'expertise_weight': 0.6,
-                'interests_weight': 0.4,
+                'expertise_weight': self.config.TECHNICAL_WEIGHT + 0.2,
+                'interests_weight': self.config.NON_TECHNICAL_WEIGHT + 0.1,
                 'required_skills': ['design', 'ui', 'ux']
             }
-            # Add more topics as needed
         }
 
     def _normalize_grade(self, grade, target_type="user"):
@@ -118,17 +286,21 @@ class HeuristicPredictor(BasePredictor):
     def _apply_location_rule(self, features: pd.DataFrame, params: dict) -> np.ndarray:
         """Enhanced location matching rule"""
         scores = np.ones(len(features))
-        main_location = features["main_location"].iloc[0]
+        main_location = features["main_location"].iloc[0] if "main_location" in features.columns else None
 
+        # If no main location, try LinkedIn location
+        if not main_location and "linkedin_location" in features.columns:
+            main_location = features["linkedin_location"].iloc[0]
+            
+        # If still no location, return base scores
         if not main_location:
-            # If no main location, check LinkedIn location
-            if "linkedin_location" in features.columns:
-                main_location = features["linkedin_location"].iloc[0]
-            if not main_location:
-                return scores
+            return scores * params.get("base_score", 0.5)
 
         def get_location_details(location: str) -> tuple[str, str, str]:
             """Extract city, country and region from location"""
+            if not location:
+                return "", "", ""
+                
             parts = location.split("_")
             city = parts[0] if len(parts) > 0 else ""
             country = parts[1] if len(parts) > 1 else ""
@@ -138,58 +310,127 @@ class HeuristicPredictor(BasePredictor):
         main_city, main_country, main_region = get_location_details(main_location)
 
         def calculate_location_score(row):
-            score = 0.0
-            # Check user profile location
+            # Get all possible locations for this user from different sources
+            locations = []
+            
+            # Add profile location
             if row.get("location"):
-                city, country, region = get_location_details(row["location"])
-                if city == main_city:
-                    score = max(score, 1.0)
-                elif country == main_country:
-                    score = max(score, params.get("country_penalty", 0.3))
-                elif region == main_region:
-                    score = max(score, params.get("region_penalty", 0.2))
-
-            # Check LinkedIn location if available
+                locations.append(row["location"])
+                
+            # Add standalone LinkedIn location
             if row.get("linkedin_location"):
-                li_city, li_country, li_region = get_location_details(row["linkedin_location"])
-                if li_city == main_city:
-                    score = max(score, 1.0)
-                elif li_country == main_country:
-                    score = max(score, params.get("country_penalty", 0.3))
-                elif li_region == main_region:
-                    score = max(score, params.get("region_penalty", 0.2))
-
-            return max(score, 0.05)  # Minimum score
+                locations.append(row["linkedin_location"])
+                
+            # Add LinkedIn profile location
+            if row.get("linkedin_profile") and row["linkedin_profile"].get("location"):
+                locations.append(row["linkedin_profile"]["location"])
+                
+            # Add work experience locations from LinkedIn
+            if row.get("linkedin_profile") and row["linkedin_profile"].get("work_experience"):
+                for exp in row["linkedin_profile"]["work_experience"]:
+                    if isinstance(exp, dict) and exp.get("location"):
+                        locations.append(exp["location"])
+                    elif hasattr(exp, "location") and exp.location:
+                        locations.append(exp.location)
+                
+            # If no locations found, return base score
+            if not locations:
+                return params.get("base_score", 0.5)
+                
+            # Find best match among all locations
+            best_score = 0.0
+            
+            for location in locations:
+                city, country, region = get_location_details(location)
+                
+                # Calculate score for this location
+                if city == main_city and main_city:
+                    best_score = max(best_score, 1.0)
+                    break  # If we find an exact city match, no need to check other locations
+                elif country == main_country and main_country:
+                    best_score = max(best_score, params.get("country_penalty", 0.7))
+                elif region == main_region and main_region:
+                    best_score = max(best_score, params.get("region_penalty", 0.5))
+            
+            # Ensure minimum score
+            return max(best_score, params.get("base_score", 0.5))
 
         location_scores = features.apply(calculate_location_score, axis=1)
         scores *= location_scores
         return scores
 
     def _apply_interests_rule(self, features: pd.DataFrame, params: dict) -> np.ndarray:
-        """Apply interests matching rule"""
-        scores = np.ones(len(features))
-        main_interests = features["main_interests"].iloc[0]  # From main user
-
-        if not main_interests:
-            return scores
+        """
+        Apply interests matching rule using aggregated interests data from multiple sources
+        
+        Args:
+            features: DataFrame with user features
+            params: Parameters for the rule
             
-        # UPDATED: Use aggregated interests if available
-        def calculate_overlap(row):
+        Returns:
+            Array of scores for each user
+        """
+        scores = np.ones(len(features))
+        
+        # Check if we have the aggregated interests field available
+        if "aggregated_interests" in features.columns:
+            # Use the pre-calculated interest_match_score if available
+            if "interest_match_score" in features.columns:
+                interest_scores = features["interest_match_score"].values
+            else:
+                # Get main user's interests
+                main_interests = features["aggregated_interests"].iloc[0] if len(features) > 0 else []
+                
+                if not main_interests:
+                    return scores
+                
+                # Calculate interest match scores using the aggregated interests
+                def calculate_interest_match(row):
+                    if not main_interests:
+                        return 0
+                    
+                    interests = row.get("aggregated_interests", [])
+                    if not interests:
+                        return 0
+                    
+                    # Calculate Jaccard similarity (intersection / union)
+                    overlap = set(interests) & set(main_interests)
+                    total = set(interests) | set(main_interests)
+                    return len(overlap) / len(total) if total else 0
+                
+                interest_scores = features.apply(calculate_interest_match, axis=1).values
+            
+            # Apply scores with base score
+            base_score = params.get("base_score", 0.5)
+            scores = base_score + (1 - base_score) * interest_scores
+        
+        # If aggregated interests not available, fall back to the original interests
+        else:
+            main_interests = features["main_interests"].iloc[0] if len(features) > 0 else []
+            
             if not main_interests:
-                return 0
+                return scores
                 
-            # Use aggregated interests if available, otherwise fall back to regular interests
-            interests = row.get("aggregated_interests", row.get("interests", []))
-            if not interests:
-                return 0
-                
-            overlap = set(interests) & set(main_interests)
-            return len(overlap) / max(len(main_interests), len(interests))
-
-        interest_scores = features.apply(calculate_overlap, axis=1)
-        base_score = params.get("base_score", 0.5)
-        scores *= base_score + (1 - base_score) * interest_scores
-
+            def calculate_overlap(row):
+                if not main_interests:
+                    return 0
+                    
+                interests = row.get("interests", [])
+                if not interests:
+                    return 0
+                    
+                # Handle interests as list of strings or list of Interest objects
+                if isinstance(interests, list) and interests and not isinstance(interests[0], str):
+                    # For DTOInterestRead objects
+                    interests = [interest.label for interest in interests if hasattr(interest, "label")]
+                    
+                overlap = set(interests) & set(main_interests)
+                return len(overlap) / max(len(main_interests), len(interests)) if interests else 0
+    
+            interest_scores = features.apply(calculate_overlap, axis=1)
+            base_score = params.get("base_score", 0.5)
+            scores = base_score + (1 - base_score) * interest_scores
+        
         return scores
 
     def _apply_expertise_rule(self, features: pd.DataFrame, params: dict) -> np.ndarray:
@@ -197,91 +438,129 @@ class HeuristicPredictor(BasePredictor):
         scores = np.ones(len(features))
         main_expertise = features["main_expertise_area"].iloc[0]
 
+        if not main_expertise:
+            return scores
+
         def calculate_expertise_score(row):
             score = 0.0
             
-            # UPDATED: Use aggregated expertise if available
-            expertise_area = row.get("aggregated_expertise", row.get("expertise_area", []))
+            # Get expertise from different sources
+            expertise_area = row.get("expertise_area", [])
+            
+            # Handle expertise_area as list of strings or list of ExpertiseArea objects
+            if isinstance(expertise_area, list) and expertise_area and not isinstance(expertise_area[0], str):
+                expertise_area = [exp.value if hasattr(exp, 'value') else exp for exp in expertise_area]
+            
             if expertise_area:
                 expertise_matches = set(expertise_area) & set(main_expertise)
 
-                # Give higher weights to core technical areas
-                tech_areas = {
-                    EExpertiseArea.development.value,
-                    EExpertiseArea.devops.value,
-                    EExpertiseArea.data_science.value,
-                    EExpertiseArea.cyber_security.value,
-                }
-
-                # Calculate weighted match
+                # Calculate weighted match using config weights
                 for match in expertise_matches:
-                    if match in tech_areas:
-                        score += 0.4  # Higher weight for technical matches
+                    if match in self.config.TECHNICAL_AREAS:
+                        score += self.config.TECHNICAL_WEIGHT
                     else:
-                        score += 0.3  # Standard weight for other matches
+                        score += self.config.NON_TECHNICAL_WEIGHT
 
-                score = min(1.0, score)  # Cap at 1.0
+                score = min(score, self.config.MAX_SCORE)
 
-            return max(score, params.get("base_score", 0.3))
+            return max(score, params.get("base_score", self.config.BASE_SCORE))
 
         expertise_scores = features.apply(calculate_expertise_score, axis=1)
         scores *= expertise_scores
         return scores
 
     def _apply_grade_rule(self, features: pd.DataFrame, params: dict) -> np.ndarray:
-        """Apply grade matching rule"""
+        """Enhanced grade matching rule"""
         scores = np.ones(len(features))
-        main_grade = features["main_grade"].iloc[0]  # From main user
+        main_grade = features["main_grade"].iloc[0]
 
         if not main_grade:
             return scores
-            
-        # UPDATED: Normalize the main grade to user grade type
-        main_grade = self._normalize_grade(main_grade, "user")
 
         # Grade matching weights based on seniority levels
         grade_weights = {
             EGrade.junior.value: {EGrade.junior.value: 1.0, EGrade.middle.value: 0.7, EGrade.senior.value: 0.6},
             EGrade.middle.value: {
                 EGrade.middle.value: 1.0,
-                EGrade.senior.value: 0.8,  # Reduced from 0.9
-                EGrade.junior.value: 0.6,  # Reduced from 0.7
+                EGrade.senior.value: 0.8,
+                EGrade.junior.value: 0.6,
             },
             EGrade.senior.value: {EGrade.senior.value: 1.0, EGrade.middle.value: 0.7, EGrade.junior.value: 0.5},
         }
 
-        # UPDATED: Normalize each user's grade before comparison
-        grade_scores = features["grade"].apply(
-            lambda x: grade_weights.get(main_grade, {}).get(self._normalize_grade(x, "user"), params.get("base_score", 0.7))
-            if x
-            else params.get("base_score", 0.7)
-        )
-
+        def get_grade_score(grade_value):
+            if not grade_value:
+                return params.get("base_score", self.config.BASE_SCORE)
+                
+            # Handle grade as enum or string
+            if hasattr(grade_value, 'value'):
+                grade_value = grade_value.value
+                
+            normalized_grade = self._normalize_grade(grade_value, "user")
+            
+            # If grade is not in the mapping, use base score
+            if normalized_grade not in grade_weights.get(main_grade, {}):
+                return params.get("base_score", self.config.BASE_SCORE)
+                
+            return grade_weights[main_grade][normalized_grade]
+        
+        grade_scores = features["grade"].apply(get_grade_score)
         scores *= grade_scores
         return scores
 
     def _apply_skills_rule(self, features: pd.DataFrame, params: dict) -> np.ndarray:
-        """Apply skills matching rule using LinkedIn data"""
+        """Enhanced skills matching rule"""
         scores = np.ones(len(features))
+        main_skills = features["main_skills"].iloc[0] if "main_skills" in features.columns else []
 
-        if "skill_match_score" not in features.columns:
+        if not main_skills:
             return scores
 
-        # Normalize skill match score to 0-1 range
-        max_skills = features["skill_match_score"].max()
-        if max_skills > 0:
-            skill_scores = features["skill_match_score"] / max_skills
-        else:
-            skill_scores = features["skill_match_score"]
+        def calculate_skill_score(row):
+            # Get skills from different sources
+            skills = []
+            
+            # Add profile skills
+            if row.get("skills"):
+                if isinstance(row["skills"], list):
+                    skills.extend(
+                        skill.label if hasattr(skill, "label") else str(skill)
+                        for skill in row["skills"]
+                    )
+                else:
+                    skills.append(str(row["skills"]))
+                    
+            # Add LinkedIn skills
+            if row.get("linkedin_profile") and row["linkedin_profile"].get("skills"):
+                skills.extend(str(skill).lower() for skill in row["linkedin_profile"]["skills"])
+                
+            # If no skills found, return base score
+            if not skills:
+                return params.get("base_score", self.config.BASE_SCORE)
+                
+            # Calculate skill match ratio
+            skill_matches = set(skills) & set(main_skills)
+            match_ratio = len(skill_matches) / len(main_skills) if main_skills else 0
+            
+            # Get skill score from config based on match ratio
+            score = self.config.get_skill_score(match_ratio)
+                
+            # Apply skill weight from params
+            skill_weight = params.get("weight", 0.7)
+            skill_base_score = params.get("base_score", self.config.BASE_SCORE)
+            
+            # Calculate final score
+            final_score = skill_base_score + (1.0 - skill_base_score) * (score * skill_weight)
+            
+            return max(final_score, self.config.MIN_SCORE)
 
-        base_score = params.get("base_score", 0.5)
-        scores *= base_score + (1 - base_score) * skill_scores
-
+        skill_scores = features.apply(calculate_skill_score, axis=1)
+        scores *= skill_scores
         return scores
 
     def _apply_professional_background_rule(self, features: pd.DataFrame, params: dict) -> np.ndarray:
         """Enhanced professional background matching using LinkedIn data"""
-        scores = np.ones(len(features))  # pylint: disable=unused-variable
+        scores = np.ones(len(features))  # Initialize scores
 
         # Get weights from params with defaults
         employment_weight = params.get("employment_weight", 0.8)
@@ -289,7 +568,7 @@ class HeuristicPredictor(BasePredictor):
         industry_weight = params.get("industry_weight", 0.6)
 
         # Initialize component scores with base values
-        employment_scores = np.full(len(features), 0.5)  # Base score
+        employment_scores = np.full(len(features), self.config.BASE_SCORE)  # Use config base score
         position_scores = np.full(len(features), 0.4)  # Base score
         industry_scores = np.full(len(features), 0.4)  # Base score
 
@@ -298,18 +577,16 @@ class HeuristicPredictor(BasePredictor):
 
         # Check employment status from LinkedIn profile
         if "linkedin_profile" in features.columns:
-
             def check_employment(profile):
                 if profile is None:
                     return 0.3  # No data
                 has_any_data[features.index] = True
-                return 1.0 if profile.get("work_experience") else 0.5
+                return 1.0 if profile.get("work_experience") else self.config.BASE_SCORE
 
             employment_scores = features["linkedin_profile"].apply(check_employment)
 
         # Position matching using LinkedIn work experience
         if "linkedin_profile" in features.columns:
-
             def position_similarity(profile):
                 if profile is None:
                     return 0.3  # No data
@@ -318,7 +595,16 @@ class HeuristicPredictor(BasePredictor):
                 if not profile.get("work_experience"):
                     return 0.4  # Has profile but no experience
 
-                current_position = profile["work_experience"][0]["title"].lower()
+                current_position = ""
+                if profile["work_experience"] and len(profile["work_experience"]) > 0:
+                    if isinstance(profile["work_experience"][0], dict):
+                        current_position = profile["work_experience"][0].get("title", "").lower()
+                    else:
+                        # Assume it's a model object with attributes
+                        current_position = getattr(profile["work_experience"][0], "title", "").lower()
+                        
+                if not current_position:
+                    return 0.4
 
                 # Direct match with main grade
                 if "main_grade" in features.columns:
@@ -350,17 +636,22 @@ class HeuristicPredictor(BasePredictor):
 
         # Industry matching
         if "industry" in features.columns and "main_industry" in features.columns:
-
             def calculate_industry_match(row):
-                if pd.isna(row["industry"]).all() or pd.isna(row["main_industry"]).all():
+                if not row.get("industry") or not row.get("main_industry"):
                     return 0.3  # No data
                 has_any_data[features.index] = True
 
-                if not row["industry"] or not row["main_industry"]:
-                    return 0.4  # Has some data but empty
+                # Handle industry as list of strings or list of Industry objects
+                user_industries = row["industry"]
+                if isinstance(user_industries, list) and user_industries and hasattr(user_industries[0], 'label'):
+                    user_industries = [ind.label for ind in user_industries if ind.label]
+                    
+                main_industries = row["main_industry"]
+                if isinstance(main_industries, list) and main_industries and hasattr(main_industries[0], 'label'):
+                    main_industries = [ind.label for ind in main_industries if ind.label]
 
-                overlap = set(row["industry"]) & set(row["main_industry"])
-                match_ratio = len(overlap) / len(set(row["main_industry"]))
+                overlap = set(user_industries) & set(main_industries)
+                match_ratio = len(overlap) / len(set(main_industries)) if main_industries else 0
                 return 0.4 + (0.6 * match_ratio)  # Scale between 0.4 and 1.0
 
             industry_scores = features.apply(calculate_industry_match, axis=1)
@@ -396,25 +687,91 @@ class HeuristicPredictor(BasePredictor):
         return final_scores
 
     def _apply_language_rule(self, features: pd.DataFrame, params: dict) -> np.ndarray:
-        """Apply language matching rule using LinkedIn data"""
+        """Enhanced language matching rule"""
         scores = np.ones(len(features))
+        main_languages = features["main_languages"].iloc[0]
 
-        if "language_match_score" not in features.columns:
+        if not main_languages:
             return scores
 
-        # Normalize language match score to 0-1 range
-        max_languages = features["language_match_score"].max()
-        if max_languages > 0:
-            language_scores = features["language_match_score"] / max_languages
-        else:
-            language_scores = features["language_match_score"]
+        def calculate_language_score(row):
+            score = 0.0
+            
+            # Get languages from different sources
+            languages = row.get("languages", [])
+            linkedin_languages = row.get("linkedin_languages", [])
+            
+            # Combine all languages
+            all_languages = set(languages + linkedin_languages)
+            
+            if not all_languages:
+                return self.config.MIN_SCORE
 
-        base_score = params.get("base_score", 0.6)
-        scores *= base_score + (1 - base_score) * language_scores
+            # Calculate language matches using config weights
+            language_matches = set(all_languages) & set(main_languages)
+            
+            if language_matches:
+                # Check for country-specific language matches
+                for lang in language_matches:
+                    found_country_match = False
+                    for country_langs in self.config.language.COUNTRY_LANGUAGES.values():
+                        if lang.lower() in [l.lower() for l in country_langs]:
+                            score = max(score, self.config.language.WEIGHTS["country_specific"])
+                            found_country_match = True
+                            break
+                    
+                    if not found_country_match:
+                        score = max(score, self.config.language.WEIGHTS["standard"])
 
+            return max(score, self.config.MIN_SCORE)
+
+        language_scores = features.apply(calculate_language_score, axis=1)
+        scores *= language_scores
         return scores
 
-    def _apply_intent_specific_rule(self, features: pd.DataFrame, params: dict) -> np.ndarray:  # pylint: disable=unused-argument
+    def _calculate_network_quality(self, profile: dict) -> float:
+        """Calculate network quality score from LinkedIn profile"""
+        if not profile:
+            return 0.4  # Base score for having no profile
+
+        score = self.config.BASE_SCORE  # Base score from config for having a profile
+
+        # Consider follower count (max 0.2)
+        followers = profile.get("follower_count", 0) or 0
+        follower_score = min(0.2, followers / 5000)  # Cap at 0.2 for 5000+ followers
+        score += follower_score
+
+        # Consider profile completeness (max 0.3)
+        completeness_score = 0.0
+        if profile.get("summary"):
+            completeness_score += 0.1
+        if profile.get("skills"):
+            completeness_score += 0.1
+        if profile.get("work_experience"):
+            completeness_score += 0.1
+        score += completeness_score
+
+        # Consider work experience quality (max 0.2)
+        if profile.get("work_experience"):
+            experience = profile["work_experience"]
+            # Check if it's a list of dicts or objects with title attribute
+            job_titles = []
+            for job in experience:
+                if isinstance(job, dict):
+                    job_title = job.get("title", "")
+                else:
+                    # Assume it's a model object with attributes
+                    job_title = getattr(job, "title", "")
+                job_titles.append(job_title.lower() if isinstance(job_title, str) else "")
+                
+            if any(title.startswith(("senior", "lead", "head")) for title in job_titles if title):
+                score += 0.2
+            elif len(experience) > 2:  # Multiple experiences
+                score += 0.1
+
+        return min(score, self.config.MAX_SCORE)  # Cap at MAX_SCORE
+
+    def _apply_intent_specific_rule(self, features: pd.DataFrame, params: dict) -> np.ndarray:
         """Apply intent-specific matching rules"""
         scores = np.ones(len(features))
 
@@ -426,61 +783,22 @@ class HeuristicPredictor(BasePredictor):
 
         # Add network quality consideration for all intents
         if "linkedin_profile" in features.columns:
-
-            def calculate_network_score(profile):
-                if not profile:
-                    return 0.5
-
-                score = 0.5  # Base score for having a profile
-
-                # Consider follower count (max 0.2)
-                followers = profile.get("follower_count", 0) or 0
-                follower_score = min(0.2, followers / 5000)  # Cap at 0.2 for 5000+ followers
-                score += follower_score
-
-                # Consider profile completeness (max 0.3)
-                completeness_score = 0.0
-                if profile.get("summary"):
-                    completeness_score += 0.1
-                if profile.get("skills"):
-                    completeness_score += 0.1
-                if profile.get("work_experience"):
-                    completeness_score += 0.1
-                score += completeness_score
-
-                # Consider work experience quality (max 0.2)
-                if profile.get("work_experience"):
-                    experience = profile["work_experience"]
-                    if any(job.get("title", "").lower().startswith(("senior", "lead", "head")) for job in experience):
-                        score += 0.2
-                    elif len(experience) > 2:  # Multiple experiences
-                        score += 0.1
-
-                self.logger.debug(
-                    "Network quality breakdown - Base: 0.5, Followers: %s, Completeness: %s, Experience: %s",
-                    follower_score,
-                    completeness_score,
-                    0.2 if score > 0.8 else 0.1 if score > 0.7 else 0.0,
-                )
-
-                return score
-
-            network_scores = features["linkedin_profile"].apply(calculate_network_score)
+            network_scores = features["linkedin_profile"].apply(self._calculate_network_quality)
             self.logger.debug("Network quality scores: %s", network_scores)
-
+            
             # Apply network quality scores with higher minimum threshold
-            scores *= np.maximum(network_scores, 0.4)  # Increased minimum from 0.3 to 0.4
+            scores *= np.maximum(network_scores, 0.4)
 
         # Mock Interview specific matching
         if intent_type == EFormIntentType.mock_interview.value:
             interview_type = content.get("interview_type", [])
-            required_languages = content.get("languages", [])
+            languages = content.get("language", {}).get("langs", []) if content.get("language") else []
             required_grade = content.get("required_grade", [])
 
             self.logger.debug(
                 "Mock interview requirements - types: %s, languages: %s, grades: %s",
                 interview_type,
-                required_languages,
+                languages,
                 required_grade,
             )
 
@@ -491,15 +809,19 @@ class HeuristicPredictor(BasePredictor):
                 # Grade matching (max 0.4)
                 grade_score = 0.0
                 if row.get("grade"):
-                    if row["grade"] in required_grade:
+                    user_grade = row["grade"]
+                    if hasattr(user_grade, 'value'):
+                        user_grade = user_grade.value
+                        
+                    if user_grade in required_grade:
                         grade_score = 0.4
-                    elif row["grade"] in [
+                    elif user_grade in [
                         EFormMentoringGrade.senior.value,
                         EFormMentoringGrade.lead.value,
                         EFormMentoringGrade.head.value,
                     ]:
                         grade_score = 0.35
-                    elif row["grade"] == EFormMentoringGrade.middle.value:
+                    elif user_grade == EFormMentoringGrade.middle.value:
                         grade_score = 0.3
                 score += grade_score
                 score_breakdown.append(f"Grade: {grade_score}")
@@ -508,14 +830,15 @@ class HeuristicPredictor(BasePredictor):
                 lang_score = 0.0
                 if row.get("linkedin_profile") and row["linkedin_profile"].get("languages"):
                     profile_languages = set(lang.lower() for lang in row["linkedin_profile"].get("languages", []))
-                    required_langs = set(
-                        lang.value.lower()
-                        for lang in [
-                            EFormMockInterviewLangluages[lang]
-                            for lang in required_languages
-                            if lang != EFormMockInterviewLangluages.custom.value
-                        ]
-                    )
+                    required_langs = set()
+                    for lang in languages:
+                        if lang != EFormMockInterviewLanguages.custom.value:
+                            try:
+                                required_langs.add(EFormMockInterviewLanguages[lang].value.lower())
+                            except (KeyError, AttributeError):
+                                # Handle the case where the language is already a value
+                                required_langs.add(lang.lower())
+                    
                     if required_langs:
                         match_ratio = len(profile_languages & required_langs) / len(required_langs)
                         lang_score = 0.4 * match_ratio  # Increased weight
@@ -525,14 +848,30 @@ class HeuristicPredictor(BasePredictor):
                 # Expertise matching (max 0.4) - Increased from 0.3
                 exp_score = 0.0
                 if row.get("expertise_area") and interview_type:
-                    interview_types = set(EFormMockInterviewType[t].value for t in interview_type)
-                    expertise_match = set(row["expertise_area"]) & interview_types
+                    expertise_areas = row["expertise_area"]
+                    # Convert expertise areas to strings if they're objects
+                    if expertise_areas and not isinstance(expertise_areas[0], str):
+                        expertise_areas = [area.value if hasattr(area, 'value') else str(area) for area in expertise_areas]
+                    
+                    # Convert interview types to values if needed
+                    interview_type_values = []
+                    for itype in interview_type:
+                        if hasattr(itype, 'value'):
+                            interview_type_values.append(itype.value)
+                        else:
+                            try:
+                                interview_type_values.append(EFormMockInterviewType[itype].value)
+                            except (KeyError, AttributeError):
+                                interview_type_values.append(itype)
+                    
+                    expertise_match = set(expertise_areas) & set(interview_type_values)
                     if expertise_match:
                         exp_score = 0.4  # Increased base score
-                        if EFormMockInterviewType.technical.value in expertise_match and row.get("grade") in [
-                            EFormMentoringGrade.senior.value,
-                            EFormMentoringGrade.lead.value,
-                        ]:
+                        if (EFormMockInterviewType.technical.value in expertise_match and 
+                            row.get("grade") in [
+                                EFormMentoringGrade.senior.value,
+                                EFormMentoringGrade.lead.value,
+                        ]):
                             exp_score += 0.1
                 score += exp_score
                 score_breakdown.append(f"Expertise: {exp_score}")
@@ -541,7 +880,21 @@ class HeuristicPredictor(BasePredictor):
                 senior_score = 0.0
                 if row.get("linkedin_profile") and row["linkedin_profile"].get("work_experience"):
                     experience = row["linkedin_profile"]["work_experience"]
-                    if any(job.get("title", "").lower().startswith(("senior", "lead", "head")) for job in experience):
+                    # Check if experience is a list of dicts or objects with title attribute
+                    is_senior = False
+                    for job in experience:
+                        job_title = ""
+                        if isinstance(job, dict):
+                            job_title = job.get("title", "")
+                        else:
+                            # Assume it's a model object with attributes
+                            job_title = getattr(job, "title", "")
+                        
+                        if job_title and isinstance(job_title, str) and job_title.lower().startswith(("senior", "lead", "head")):
+                            is_senior = True
+                            break
+                            
+                    if is_senior:
                         senior_score = 0.2
                 score += senior_score
                 score_breakdown.append(f"Senior bonus: {senior_score}")
@@ -576,7 +929,7 @@ class HeuristicPredictor(BasePredictor):
                     social_scores = np.ones(len(features)) * 0.5  # Start with 0.5 base score
                     score_components = []
 
-                    # Consider topics for better matching - REFACTORED to be more generic
+                    # Consider topics for better matching
                     topics = social_expansion.get("topics", [])
                     if topics:
                         # Match topics against both expertise_area and interests
@@ -586,11 +939,23 @@ class HeuristicPredictor(BasePredictor):
                             
                             # Check expertise areas
                             if row.get("expertise_area"):
-                                expertise_match = len(set(row["expertise_area"] or []) & set(topics)) / len(topics) if topics else 0
+                                expertise_area = row["expertise_area"]
+                                # Convert expertise areas to strings if they're objects
+                                if expertise_area and not isinstance(expertise_area[0], str):
+                                    expertise_area = [area.value if hasattr(area, 'value') else str(area) 
+                                                    for area in expertise_area]
+                                
+                                expertise_match = len(set(expertise_area or []) & set(topics)) / len(topics) if topics else 0
                             
                             # Check interests
                             if row.get("interests"):
-                                interest_match = len(set(row["interests"] or []) & set(topics)) / len(topics) if topics else 0
+                                interests = row["interests"]
+                                # Convert interests to strings if they're objects
+                                if interests and not isinstance(interests[0], str):
+                                    interests = [interest.label if hasattr(interest, 'label') else str(interest) 
+                                                for interest in interests]
+                                
+                                interest_match = len(set(interests or []) & set(topics)) / len(topics) if topics else 0
                             
                             # Return the better of the two matches
                             return max(expertise_match, interest_match)
@@ -600,19 +965,40 @@ class HeuristicPredictor(BasePredictor):
                         social_scores += topic_contribution
                         score_components.append(("Topics", topic_contribution))
 
-                    # Handle custom topics if present - REFACTORED to be more generic
+                    # Handle custom topics if present
                     custom_topic_value = next((t for t in topics if t.endswith("custom")), None)
                     if custom_topic_value:
                         custom_topics = social_expansion.get("custom_topics", [])
                         if custom_topics:
                             # Match custom topics against expertise and interests
-                            custom_scores = features.apply(
-                                lambda row: max(
-                                    len(set(row.get("expertise_area", []) or []) & set(custom_topics)) / len(custom_topics) if custom_topics else 0,
-                                    len(set(row.get("interests", []) or []) & set(custom_topics)) / len(custom_topics) if custom_topics else 0,
-                                ),
-                                axis=1,
-                            )
+                            def calculate_custom_topic_score(row):
+                                expertise_match = 0
+                                interest_match = 0
+                                
+                                # Check expertise areas
+                                if row.get("expertise_area"):
+                                    expertise_area = row["expertise_area"]
+                                    # Convert expertise areas to strings if they're objects
+                                    if expertise_area and not isinstance(expertise_area[0], str):
+                                        expertise_area = [area.value if hasattr(area, 'value') else str(area) 
+                                                        for area in expertise_area]
+                                    
+                                    expertise_match = len(set(expertise_area or []) & set(custom_topics)) / len(custom_topics) if custom_topics else 0
+                                
+                                # Check interests
+                                if row.get("interests"):
+                                    interests = row["interests"]
+                                    # Convert interests to strings if they're objects
+                                    if interests and not isinstance(interests[0], str):
+                                        interests = [interest.label if hasattr(interest, 'label') else str(interest) 
+                                                    for interest in interests]
+                                    
+                                    interest_match = len(set(interests or []) & set(custom_topics)) / len(custom_topics) if custom_topics else 0
+                                
+                                # Return the better of the two matches
+                                return max(expertise_match, interest_match)
+                                
+                            custom_scores = features.apply(calculate_custom_topic_score, axis=1)
                             custom_contribution = 0.2 * custom_scores
                             social_scores += custom_contribution
                             score_components.append(("Custom Topics", custom_contribution))
@@ -659,12 +1045,30 @@ class HeuristicPredictor(BasePredictor):
                             if not row.get("expertise_area"):
                                 return 0.0
 
-                            # Validate topics are from the enum
-                            valid_topics = [t for t in topics if t in [e.value for e in EFormProfessionalNetworkingTopic]]
+                            # Get expertise areas as strings
+                            expertise_area = row["expertise_area"]
+                            if expertise_area and not isinstance(expertise_area[0], str):
+                                expertise_area = [area.value if hasattr(area, 'value') else str(area) 
+                                                for area in expertise_area]
+
+                            # Validate topics are from the enum or convert to enum values
+                            valid_topics = []
+                            for topic in topics:
+                                if hasattr(topic, 'value'):
+                                    valid_topics.append(topic.value)
+                                else:
+                                    try:
+                                        # Try to convert string to enum value
+                                        valid_topics.append(EFormProfessionalNetworkingTopic[topic].value)
+                                    except (KeyError, AttributeError):
+                                        # If it's already a value
+                                        if topic in [e.value for e in EFormProfessionalNetworkingTopic]:
+                                            valid_topics.append(topic)
+                            
                             if not valid_topics:
                                 return 0.0
                                 
-                            topic_matches = set(row["expertise_area"]) & set(valid_topics)
+                            topic_matches = set(expertise_area) & set(valid_topics)
                             if not topic_matches:
                                 return 0.0
                                 
@@ -680,18 +1084,27 @@ class HeuristicPredictor(BasePredictor):
                                     
                                     # Grade-based bonuses
                                     if row.get("grade"):
-                                        if row["grade"] in [
+                                        user_grade = row["grade"]
+                                        if hasattr(user_grade, 'value'):
+                                            user_grade = user_grade.value
+                                            
+                                        if user_grade in [
                                             EFormMentoringGrade.senior.value,
                                             EFormMentoringGrade.lead.value,
                                             EFormMentoringGrade.head.value
                                         ]:
                                             topic_score += rules['senior_bonus']
-                                        elif row["grade"] == EFormMentoringGrade.middle.value:
+                                        elif user_grade == EFormMentoringGrade.middle.value:
                                             topic_score += rules['middle_bonus']
                                     
                                     # Skill-specific bonuses
-                                    if row.get("specialization"):
-                                        if any(skill in row["specialization"] for skill in rules['required_skills']):
+                                    if row.get("specialisation") or row.get("specialisations"):
+                                        specialisations = row.get("specialisation") or row.get("specialisations") or []
+                                        # Convert specialisations to strings if they're objects
+                                        if specialisations and hasattr(specialisations[0], 'label'):
+                                            specialisations = [spec.label if spec.label else "" for spec in specialisations]
+                                            
+                                        if any(skill in spec.lower() for spec in specialisations for skill in rules['required_skills']):
                                             topic_score = min(1.0, topic_score + 0.2)
                                             
                                     # Add weighted topic score
@@ -704,66 +1117,6 @@ class HeuristicPredictor(BasePredictor):
                         scores *= np.maximum(topic_scores, 0.5)
                         self.logger.debug("Professional networking topic scores: %s", topic_scores)
 
-                    # Social Circle Expansion
-                    if "social_circle_expansion" in content:
-                        social_expansion = content["social_circle_expansion"]
-                        topics = social_expansion.get("topics", [])
-
-                        if topics:
-                            def calculate_social_topic_score(row):
-                                if not topics:
-                                    return 0.0
-                                    
-                                # Separate enum topics and custom topics
-                                valid_topics = [t for t in topics if t in [e.value for e in EFormConnectsSocialExpansionTopic]]
-                                custom_topics = [t for t in topics if t not in valid_topics and t != EFormConnectsSocialExpansionTopic.custom.value]
-                                
-                                total_score = 0.0
-                                total_weight = 0.0
-                                
-                                # Process enum-based topics
-                                for topic in valid_topics:
-                                    if topic in self.social_topic_rules:
-                                        rules = self.social_topic_rules[topic]
-                                        
-                                        # Calculate expertise match
-                                        expertise_score = 0.0
-                                        if row.get("expertise_area"):
-                                            expertise_match = set(row["expertise_area"]) & set(rules['required_skills'])
-                                            if expertise_match:
-                                                expertise_score = len(expertise_match) / len(rules['required_skills'])
-                                        
-                                        # Calculate interests match
-                                        interests_score = 0.0
-                                        if row.get("interests"):
-                                            interests_match = set(row["interests"]) & {topic}
-                                            if interests_match:
-                                                interests_score = 1.0
-                                        
-                                        # Combine scores using weights
-                                        topic_score = (
-                                            expertise_score * rules['expertise_weight'] +
-                                            interests_score * rules['interests_weight']
-                                        )
-                                        
-                                        total_score += topic_score
-                                        total_weight += 1.0
-                                
-                                # Process custom topics
-                                if custom_topics:
-                                    expertise_match = len(set(row.get("expertise_area", [])) & set(custom_topics)) / len(custom_topics)
-                                    interests_match = len(set(row.get("interests", [])) & set(custom_topics)) / len(custom_topics)
-                                    custom_score = max(expertise_match, interests_match)
-                                    
-                                    total_score += custom_score
-                                    total_weight += 1.0
-                                
-                                return total_score / total_weight if total_weight > 0 else 0.0
-                                
-                            social_topic_scores = features.apply(calculate_social_topic_score, axis=1)
-                            scores *= np.maximum(social_topic_scores, 0.4)
-                            self.logger.debug("Social expansion topic scores: %s", social_topic_scores)
-
                     # Consider user query with enhanced position matching
                     if prof_networking.get("user_query"):
                         query = prof_networking["user_query"].lower()
@@ -773,26 +1126,35 @@ class HeuristicPredictor(BasePredictor):
 
                             # Grade-based scoring
                             if row.get("grade"):
-                                if row["grade"] == EFormMentoringGrade.lead.value:
+                                user_grade = row["grade"]
+                                if hasattr(user_grade, 'value'):
+                                    user_grade = user_grade.value
+                                    
+                                if user_grade == EFormMentoringGrade.lead.value:
                                     score = 1.0
-                                elif row["grade"] == EFormMentoringGrade.senior.value:
+                                elif user_grade == EFormMentoringGrade.senior.value:
                                     score = 0.9
-                                elif row["grade"] == EFormMentoringGrade.middle.value:
+                                elif user_grade == EFormMentoringGrade.middle.value:
                                     score = 0.7
 
-                            # Position title matching
-                            if row.get("current_position_title"):
-                                title = row["current_position_title"].lower()
+                            # Position title matching from LinkedIn profile
+                            if row.get("linkedin_profile") and row["linkedin_profile"].get("current_position_title"):
+                                title = row["linkedin_profile"]["current_position_title"].lower()
                                 if any(role in title for role in ["lead", "head", "principal", "architect"]):
                                     score = max(score, 1.0)
                                 elif "senior" in title:
                                     score = max(score, 0.9)
 
                             # Specialization matching
-                            if row.get("specialization"):
+                            specialisations = row.get("specialisation") or row.get("specialisations") or []
+                            if specialisations:
+                                # Convert specialisations to strings if they're objects
+                                if hasattr(specialisations[0], 'label'):
+                                    specialisations = [spec.label if spec.label else "" for spec in specialisations]
+                                    
                                 spec_matches = [
                                     spec
-                                    for spec in row["specialization"]
+                                    for spec in specialisations
                                     if any(term in spec.lower() for term in query.split())
                                 ]
                                 if spec_matches:
@@ -1314,96 +1676,263 @@ class HeuristicPredictor(BasePredictor):
     # ADDED: Function to aggregate user data from different sources
     def _aggregate_user_data(self, features: pd.DataFrame) -> pd.DataFrame:
         """
-        Aggregate user data from different sources (profile, registration forms, etc.)
-        to create a more complete user representation.
+        Aggregate user data from different sources into a consistent format
         
         Args:
-            features: DataFrame with user features
+            features: Input features DataFrame
             
         Returns:
-            DataFrame with aggregated user features
+            DataFrame with aggregated user data
         """
-        aggregated_features = features.copy()
+        # Make a copy to avoid modifying original
+        features_copy = features.copy()
         
-        # Process each user row
-        for idx, row in features.iterrows():
-            # Initialize aggregated fields
-            aggregated_interests = set()
-            aggregated_expertise = set()
-            aggregated_specialization = set()
+        # Process each user entry and normalize data
+        for idx, row in features_copy.iterrows():
+            # Process expertise areas
+            if 'expertise_area' in row:
+                if row['expertise_area'] is None:
+                    features_copy.at[idx, 'expertise_area'] = []
+                # Handle both list of strings and list of objects
+                elif isinstance(row['expertise_area'], list):
+                    if row['expertise_area'] and not isinstance(row['expertise_area'][0], str):
+                        try:
+                            # Try to extract value or label attributes
+                            features_copy.at[idx, 'expertise_area'] = [
+                                area.value if hasattr(area, 'value') else 
+                                (area.label if hasattr(area, 'label') else str(area))
+                                for area in row['expertise_area']
+                            ]
+                        except Exception as e:
+                            # Fallback if extraction fails
+                            self.logger.warning(f"Failed to extract expertise area values - converting to strings: {e}")
+                            features_copy.at[idx, 'expertise_area'] = [str(area) for area in row['expertise_area']]
+                elif row['expertise_area'] and not isinstance(row['expertise_area'], str):
+                    # Handle single object
+                    try:
+                        features_copy.at[idx, 'expertise_area'] = [
+                            row['expertise_area'].value if hasattr(row['expertise_area'], 'value') else 
+                            (row['expertise_area'].label if hasattr(row['expertise_area'], 'label') else str(row['expertise_area']))
+                        ]
+                    except Exception as e:
+                        self.logger.warning(f"Failed to extract expertise area value - converting to string: {e}")
+                        features_copy.at[idx, 'expertise_area'] = [str(row['expertise_area'])]
+                elif isinstance(row['expertise_area'], str):
+                    # Handle single string by converting to list
+                    features_copy.at[idx, 'expertise_area'] = [row['expertise_area']]
+                
+            # Process interests
+            if 'interests' in row:
+                if row['interests'] is None:
+                    features_copy.at[idx, 'interests'] = []
+                # Handle both list of strings and list of objects
+                elif isinstance(row['interests'], list):
+                    if row['interests'] and not isinstance(row['interests'][0], str):
+                        try:
+                            # Try to extract label or value attribute
+                            features_copy.at[idx, 'interests'] = [
+                                interest.label if hasattr(interest, 'label') else 
+                                (interest.value if hasattr(interest, 'value') else str(interest))
+                                for interest in row['interests']
+                            ]
+                        except Exception as e:
+                            # Fallback if extraction fails
+                            self.logger.warning(f"Failed to extract interest labels - converting to strings: {e}")
+                            features_copy.at[idx, 'interests'] = [str(interest) for interest in row['interests']]
+                elif row['interests'] and not isinstance(row['interests'], str):
+                    # Handle single object
+                    try:
+                        features_copy.at[idx, 'interests'] = [
+                            row['interests'].label if hasattr(row['interests'], 'label') else 
+                            (row['interests'].value if hasattr(row['interests'], 'value') else str(row['interests']))
+                        ]
+                    except Exception as e:
+                        self.logger.warning(f"Failed to extract interest label - converting to string: {e}")
+                        features_copy.at[idx, 'interests'] = [str(row['interests'])]
+                elif isinstance(row['interests'], str):
+                    # Handle single string by converting to list
+                    features_copy.at[idx, 'interests'] = [row['interests']]
+                
+            # Process skills
+            if 'skills' in row:
+                if row['skills'] is None:
+                    features_copy.at[idx, 'skills'] = []
+                # Handle both list of strings and list of objects
+                elif isinstance(row['skills'], list):
+                    if row['skills'] and not isinstance(row['skills'][0], str):
+                        try:
+                            # Try to extract label or value attribute
+                            features_copy.at[idx, 'skills'] = [
+                                skill.label if hasattr(skill, 'label') else 
+                                (skill.value if hasattr(skill, 'value') else str(skill))
+                                for skill in row['skills']
+                            ]
+                        except Exception as e:
+                            # Fallback if extraction fails
+                            self.logger.warning(f"Failed to extract skill labels - converting to strings: {e}")
+                            features_copy.at[idx, 'skills'] = [str(skill) for skill in row['skills']]
+                elif row['skills'] and not isinstance(row['skills'], str):
+                    # Handle single object
+                    try:
+                        features_copy.at[idx, 'skills'] = [
+                            row['skills'].label if hasattr(row['skills'], 'label') else 
+                            (row['skills'].value if hasattr(row['skills'], 'value') else str(row['skills']))
+                        ]
+                    except Exception as e:
+                        self.logger.warning(f"Failed to extract skill label - converting to string: {e}")
+                        features_copy.at[idx, 'skills'] = [str(row['skills'])]
+                elif isinstance(row['skills'], str):
+                    # Handle single string by converting to list
+                    features_copy.at[idx, 'skills'] = [row['skills']]
+                            
+            # Process specialisations/specialization (handle both spellings)
+            for field in ['specialisations', 'specialisation']:
+                if field in row:
+                    if row[field] is None:
+                        features_copy.at[idx, field] = []
+                    # Handle both list of strings and list of objects
+                    elif isinstance(row[field], list):
+                        if row[field] and not isinstance(row[field][0], str):
+                            try:
+                                # Try to extract label or value attribute
+                                features_copy.at[idx, field] = [
+                                    spec.label if hasattr(spec, 'label') else 
+                                    (spec.value if hasattr(spec, 'value') else str(spec))
+                                    for spec in row[field]
+                                ]
+                            except Exception as e:
+                                # Fallback if extraction fails
+                                self.logger.warning(f"Failed to extract {field} labels - converting to strings: {e}")
+                                features_copy.at[idx, field] = [str(spec) for spec in row[field]]
+                    elif row[field] and not isinstance(row[field], str):
+                        # Handle single object
+                        try:
+                            features_copy.at[idx, field] = [
+                                row[field].label if hasattr(row[field], 'label') else 
+                                (row[field].value if hasattr(row[field], 'value') else str(row[field]))
+                            ]
+                        except Exception as e:
+                            self.logger.warning(f"Failed to extract {field} label - converting to string: {e}")
+                            features_copy.at[idx, field] = [str(row[field])]
+                    elif isinstance(row[field], str):
+                        # Handle single string by converting to list
+                        features_copy.at[idx, field] = [row[field]]
             
-            # Add data from user profile
-            if row.get("interests"):
-                aggregated_interests.update(row["interests"])
-                
-            if row.get("expertise_area"):
-                aggregated_expertise.update(row["expertise_area"])
-                
-            if row.get("specialization"):
-                aggregated_specialization.update(row["specialization"])
-                
-            # Add data from LinkedIn profile
-            if row.get("linkedin_profile"):
-                # Extract skills from LinkedIn
-                if row["linkedin_profile"].get("skills"):
-                    aggregated_expertise.update(row["linkedin_profile"]["skills"])
-                
-                # Extract industries as interests
-                if row["linkedin_profile"].get("industries"):
-                    aggregated_interests.update(row["linkedin_profile"]["industries"])
+            # Process industries/industry (handle both names)
+            for field in ['industries', 'industry']:
+                if field in row:
+                    if row[field] is None:
+                        features_copy.at[idx, field] = []
+                    # Handle both list of strings and list of objects
+                    elif isinstance(row[field], list):
+                        if row[field] and not isinstance(row[field][0], str):
+                            try:
+                                # Try to extract label or value attribute
+                                features_copy.at[idx, field] = [
+                                    ind.label if hasattr(ind, 'label') else 
+                                    (ind.value if hasattr(ind, 'value') else str(ind))
+                                    for ind in row[field]
+                                ]
+                            except Exception as e:
+                                # Fallback if extraction fails
+                                self.logger.warning(f"Failed to extract {field} labels - converting to strings: {e}")
+                                features_copy.at[idx, field] = [str(ind) for ind in row[field]]
+                    elif row[field] and not isinstance(row[field], str):
+                        # Handle single object
+                        try:
+                            features_copy.at[idx, field] = [
+                                row[field].label if hasattr(row[field], 'label') else 
+                                (row[field].value if hasattr(row[field], 'value') else str(row[field]))
+                            ]
+                        except Exception as e:
+                            self.logger.warning(f"Failed to extract {field} label - converting to string: {e}")
+                            features_copy.at[idx, field] = [str(row[field])]
+                    elif isinstance(row[field], str):
+                        # Handle single string by converting to list
+                        features_copy.at[idx, field] = [row[field]]
             
-            # Update the aggregated features
-            aggregated_features.at[idx, "aggregated_interests"] = list(aggregated_interests)
-            aggregated_features.at[idx, "aggregated_expertise"] = list(aggregated_expertise)
-            aggregated_features.at[idx, "aggregated_specialization"] = list(aggregated_specialization)
-            
-        return aggregated_features
+            # Process LinkedIn profile
+            if 'linkedin_profile' in row and row['linkedin_profile']:
+                # Ensure all values in the LinkedIn profile are properly extracted
+                try:
+                    if hasattr(row['linkedin_profile'], 'model_dump'):
+                        features_copy.at[idx, 'linkedin_profile'] = row['linkedin_profile'].model_dump()
+                    elif hasattr(row['linkedin_profile'], 'dict'):
+                        features_copy.at[idx, 'linkedin_profile'] = row['linkedin_profile'].dict()
+                except Exception as e:
+                    # Leave as is if conversion fails
+                    self.logger.warning(f"Failed to convert LinkedIn profile: {e}")
+                    pass
+        
+        return features_copy
     
     def predict(self, features: pd.DataFrame) -> np.ndarray:
-        """Apply heuristic rules to make predictions"""
-        # ADDED: Aggregate user data before prediction
+        """
+        Make predictions for a given set of features using heuristic rules
+
+        Args:
+            features: DataFrame with features
+
+        Returns:
+            numpy array with scores for each row in features
+        """
+        # First, aggregate user data to ensure consistent format
         features = self._aggregate_user_data(features)
+
+        # Initialize scores
+        scores = np.ones(len(features))
         
-        final_scores = np.ones(len(features))
-        self.logger.debug("Starting prediction with initial scores set to 1.0")
-
-        # Track individual rule scores for weighted combination
-        rule_scores = []
-        rule_weights = []
-
-        # Apply each rule and collect scores
+        # Apply rules with weighted combination
+        total_weight = 0
+        weighted_scores = np.zeros(len(features))
+        
         for rule in self.rules:
             rule_type = rule["type"]
-            weight = rule.get("weight", 1.0)
-            params = rule.get("params", {})
-
-            # Get the rule method
-            rule_method = getattr(self, f"_apply_{rule_type}_rule")
-
-            # Apply the rule and store results
-            scores = rule_method(features, params)
-            rule_scores.append(scores)
-            rule_weights.append(weight)
-
-            self.logger.debug("Applied rule '%s' with weight %s, scores: %s", rule_type, weight, scores)
-
-        # Combine all scores using weighted average
-        if rule_scores:
-            rule_scores = np.array(rule_scores)
-            rule_weights = np.array(rule_weights)
-
-            # Normalize weights
-            rule_weights = rule_weights / np.sum(rule_weights)
-
-            # Calculate weighted average
-            final_scores = np.sum(rule_scores * rule_weights[:, np.newaxis], axis=0)
-
-            # Ensure scores are in 0-1 range
-            final_scores = np.clip(final_scores, 0.0, 1.0)
-
-            self.logger.debug("Combined scores after weighting: %s", final_scores)
-
-        return final_scores
+            rule_weight = rule["weight"]
+            total_weight += rule_weight
+            
+            try:
+                if rule_type == "location":
+                    rule_scores = self._apply_location_rule(features, rule["params"])
+                elif rule_type == "interests":
+                    rule_scores = self._apply_interests_rule(features, rule["params"])
+                elif rule_type == "expertise":
+                    rule_scores = self._apply_expertise_rule(features, rule["params"])
+                elif rule_type == "grade":
+                    rule_scores = self._apply_grade_rule(features, rule["params"])
+                elif rule_type == "skills":
+                    rule_scores = self._apply_skills_rule(features, rule["params"])
+                elif rule_type == "professional_background":
+                    rule_scores = self._apply_professional_background_rule(features, rule["params"])
+                elif rule_type == "language":
+                    rule_scores = self._apply_language_rule(features, rule["params"])
+                elif rule_type == "intent_specific":
+                    rule_scores = self._apply_intent_specific_rule(features, rule["params"])
+                else:
+                    # Unknown rule type
+                    self.logger.warning("Unknown rule type: %s", rule_type)
+                    rule_scores = np.ones(len(features))
+                    
+                # Add weighted rule scores
+                weighted_scores += rule_scores * rule_weight
+                
+            except Exception as e:
+                # If rule application fails, log error and use neutral scores
+                self.logger.error("Error applying rule %s: %s", rule["name"], str(e))
+                traceback_str = traceback.format_exc()
+                self.logger.debug("Traceback: %s", traceback_str)
+                continue
+        
+        # Calculate final scores based on the weighted contributions
+        if total_weight > 0:
+            scores = weighted_scores / total_weight
+        else:
+            scores = np.ones(len(features))
+            
+        # Ensure scores are in 0-1 range
+        scores = np.clip(scores, 0, 1)
+        
+        return scores
 
     def _extract_meeting_format(self, intent_type: str, content: dict) -> str | None:
         """Extract meeting format based on form type"""
@@ -1412,6 +1941,27 @@ class HeuristicPredictor(BasePredictor):
 
         if intent_type == EFormIntentType.connects.value:
             if "social_circle_expansion" in content:
-                return content["social_circle_expansion"].get("meeting_formats", [None])[0]
+                meeting_formats = content["social_circle_expansion"].get("meeting_formats", [])
+                if meeting_formats:
+                    meeting_format = meeting_formats[0]
+                    # Handle enum object or string value
+                    if hasattr(meeting_format, 'value'):
+                        return meeting_format.value
+                    return meeting_format
 
         return content.get("meeting_format")
+
+    def _calculate_text_similarity(self, text1: str, text2: str) -> float:
+        """Calculate similarity between two text strings"""
+        if not text1 or not text2:
+            return 0.0
+            
+        # Convert to lowercase and split into words
+        words1 = set(text1.lower().split())
+        words2 = set(text2.lower().split())
+        
+        # Calculate Jaccard similarity
+        intersection = words1 & words2
+        union = words1 | words2
+        
+        return len(intersection) / len(union) if union else 0.0

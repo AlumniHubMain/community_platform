@@ -49,7 +49,11 @@ class FormParserService:
         try:
             # Use the enhanced parser that can detect intent type
             detected_intent, content = await self.parser.parse_text_to_form_content(text, intent_type)
-            return detected_intent, content
+            
+            # Normalize the content to ensure compatibility with both old and new schemas
+            normalized_content = self._normalize_object_types(content)
+            
+            return detected_intent, normalized_content
         except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error("Error parsing form text: %s", str(e))
             # If intent_type was provided, use it; otherwise default to connects
@@ -108,7 +112,7 @@ class FormParserService:
         if intent_type == EFormIntentType.mock_interview:
             return {
                 "interview_type": ["technical"],
-                "langluage": {
+                "language": {
                     "langs": ["english"],
                 },
                 "resume": "https://example.com/resume",
@@ -130,3 +134,47 @@ class FormParserService:
                 "role": "developer",
             }
         return {"note": "Fallback content - parsing failed"}
+
+    def _normalize_object_types(self, content: dict) -> dict:
+        """
+        Normalize object types in the form content to ensure they're compatible with both old and new schemas.
+        
+        Args:
+            content: The form content to normalize
+            
+        Returns:
+            Normalized form content
+        """
+        if content is None:
+            return {}
+            
+        # Define transformations for specialized fields
+        transforms = {
+            "expertise_area": lambda v: v if isinstance(v, list) else [v] if v else [],
+            "specialization": lambda v: v if isinstance(v, list) else [v] if v else [],
+            "skills": lambda v: v if isinstance(v, list) else [v] if v else [],
+            "languages": lambda v: v if isinstance(v, list) else [v] if v else [],
+            "industries": lambda v: v if isinstance(v, list) else [v] if v else [],
+            "interests": lambda v: v if isinstance(v, list) else [v] if v else [],
+            "required_grade": lambda v: v if isinstance(v, list) else [v] if v else [],
+            "grade": lambda v: v if isinstance(v, list) else [v] if v else [],
+            "meeting_formats": lambda v: v if isinstance(v, list) else [v] if v else [],
+            "topics": lambda v: v if isinstance(v, list) else [v] if v else [],
+            "interview_type": lambda v: v if isinstance(v, list) else [v] if v else [],
+        }
+        
+        # Apply transformations to top-level fields
+        for field, transform in transforms.items():
+            if field in content:
+                content[field] = transform(content[field])
+        
+        # Process nested fields
+        for key, value in list(content.items()):
+            if isinstance(value, dict):
+                content[key] = self._normalize_object_types(value)
+            elif isinstance(value, list):
+                # Process list of dictionaries
+                if value and isinstance(value[0], dict):
+                    content[key] = [self._normalize_object_types(item) if item is not None else {} for item in value]
+                
+        return content

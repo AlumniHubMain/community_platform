@@ -61,6 +61,22 @@ class GeminiParser:
                 "help_request": FormMentoringHelpRequest,
             },
         }
+        
+        # Map of data types we need to handle specially for new schemas
+        self.special_data_types = {
+            "expertise_area": lambda value: value if isinstance(value, list) else [value] if value else [],
+            "grade": lambda value: value if isinstance(value, str) else value.value if hasattr(value, "value") else None,
+            "interests": lambda value: [i.label if hasattr(i, "label") else (i.value if hasattr(i, "value") else i) for i in value] if isinstance(value, list) else [],
+            "skills": lambda value: [s.label if hasattr(s, "label") else (s.value if hasattr(s, "value") else s) for s in value] if isinstance(value, list) else [],
+            "specialisations": lambda value: [s.label if hasattr(s, "label") else (s.value if hasattr(s, "value") else s) for s in value] if isinstance(value, list) else [],
+            "languages": lambda value: [l.label if hasattr(l, "label") else (l.value if hasattr(l, "value") else l) for l in value] if isinstance(value, list) else [],
+            "industries": lambda value: [i.label if hasattr(i, "label") else (i.value if hasattr(i, "value") else i) for i in value] if isinstance(value, list) else [],
+            "specialization": lambda value: value if isinstance(value, list) else [value] if value else [],
+            "meeting_formats": lambda value: value if isinstance(value, list) else [value] if value else [],
+            "topics": lambda value: value if isinstance(value, list) else [value] if value else [],
+            "required_grade": lambda value: value if isinstance(value, list) else [value] if value else [],
+            "interview_type": lambda value: value if isinstance(value, list) else [value] if value else [],
+        }
 
     async def initialize(self):
         """Initialize the Gemini client"""
@@ -108,7 +124,7 @@ class GeminiParser:
         """
 
         try:
-            response = self.model.generate_content(prompt)
+            response = await self.model.generate_content(prompt)
             intent_str = response.text.strip().lower()
 
             # Map the response to an enum value
@@ -149,57 +165,100 @@ class GeminiParser:
         if not self.initialized:
             await self.initialize()
 
-        # Detect intent type if not provided
+        # If intent_type is not provided, detect it
         if intent_type is None:
             intent_type = await self.detect_intent_type(text)
 
-        # Get the appropriate schema class for the intent type
+        # Get the schema class for the intent type
         schema_class = self._get_schema_class_for_intent(intent_type)
         if not schema_class:
-            raise ValueError(f"Unsupported intent type: {intent_type}")
+            raise ValueError(f"No schema class found for intent type: {intent_type}")
 
-        # Create a prompt for the specific intent type
+        # Create prompt for the intent type
         prompt = self._create_prompt_for_intent(text, intent_type, schema_class)
 
+        # Generate response from Gemini
         try:
-            # Generate response from Gemini
-            response = self.model.generate_content(prompt)
-
-            # Extract and parse JSON from the response
-            json_content = self._extract_json_from_response(response.text)
-
-            # Validate against the schema
+            response = await self.model.generate_content(prompt)
+            parsed_content = self._extract_json_from_response(response.text)
+            
+            # Process nested fields for special data types
+            self._process_special_data_types(parsed_content)
+            
+            # Validate against schema
             try:
-                # Try to validate with the schema
-                parsed_content = schema_class.model_validate(json_content)
+                schema_class.model_validate(parsed_content)
+            except Exception as e:
+                logger.warning(f"Schema validation failed for {intent_type}: {e}")
+                # We continue even if validation fails - it might just be a few missing fields
+                # that have sensible defaults
 
-                # Check for nested fields that need special handling
-                if intent_type == EFormIntentType.connects:
-                    # For connects forms, ensure either social_circle_expansion or professional_networking is present
-                    if not parsed_content.social_circle_expansion and not parsed_content.professional_networking:
-                        # Default to social_circle_expansion if neither is present
-                        parsed_content.social_circle_expansion = FormFieldSocialSircleExpansion(
-                            meeting_formats=["online"],
-                            topics=["general_networking"],
-                            details="Generated from text description",
-                        )
-
-                # For mentoring forms, ensure help_request is present
-                if intent_type in [EFormIntentType.mentoring_mentor, EFormIntentType.mentoring_mentee]:
-                    if not parsed_content.help_request or not parsed_content.help_request.request:
-                        parsed_content.help_request = FormMentoringHelpRequest(request=["career_growth"])
-
-                # Return as dict for storage in the form content field
-                return intent_type, parsed_content.model_dump()
-
-            except Exception as validation_error:  # pylint: disable=broad-exception-caught
-                logger.warning("Schema validation error: %s. Using raw JSON.", validation_error)
-                # If validation fails, return the raw JSON
-                return intent_type, json_content
+            return intent_type, parsed_content
 
         except Exception as e:
-            logger.error("Error parsing text with Gemini: %s", str(e))
+            logger.error(f"Failed to generate form content: {e}")
             raise
+
+    def _process_special_data_types(self, content: dict) -> None:
+        """
+        Process special data types in the parsed content to match expected schema formats.
+        
+        Args:
+            content: The parsed content to process
+        """
+        if content is None:
+            return
+            
+        # Process each field in the content
+        for field_name, value in list(content.items()):
+            # Handle None values
+            if value is None:
+                content[field_name] = []
+                continue
+            
+            # Handle lists of objects
+            if isinstance(value, list):
+                # Skip if the list is empty
+                if not value:
+                    continue
+                    
+                # Check if the list contains objects with special attributes
+                if any(hasattr(item, "__dict__") or (not isinstance(item, dict) and not isinstance(item, str)) 
+                      for item in value if item is not None):
+                    # Process each item in the list
+                    new_list = []
+                    for item in value:
+                        if item is None:
+                            continue
+                        if hasattr(item, "label") and item.label is not None:
+                            new_list.append(item.label)
+                        elif hasattr(item, "value") and item.value is not None:
+                            new_list.append(item.value)
+                        else:
+                            # Keep original strings or other types as is
+                            new_list.append(item)
+                    content[field_name] = new_list
+            
+            # Handle single objects with attributes
+            elif not isinstance(value, dict) and not isinstance(value, str) and hasattr(value, "__dict__"):
+                if hasattr(value, "value") and value.value is not None:
+                    content[field_name] = value.value
+                elif hasattr(value, "label") and value.label is not None:
+                    content[field_name] = value.label
+                else:
+                    # Keep as original type
+                    content[field_name] = str(value)
+            
+            # Process nested dictionaries
+            elif isinstance(value, dict):
+                self._process_special_data_types(value)
+        
+        # Process nested lists of dictionaries
+        for key, value in content.items():
+            if isinstance(value, list) and value and isinstance(value[0], dict):
+                for item in value:
+                    if item is not None:
+                        self._process_special_data_types(item)
 
     def _get_schema_class_for_intent(self, intent_type: EFormIntentType) -> Type[BaseModel] | None:
         """Get the appropriate schema class for the given intent type."""

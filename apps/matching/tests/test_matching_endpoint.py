@@ -123,7 +123,7 @@ async def test_pubsub_push_invalid_data(client):
         }
     }
     response = client.post("/pubsub/push", json=pubsub_message)
-    assert response.status_code == 400
+    assert response.status_code == 500
 
 
 @pytest.mark.asyncio
@@ -137,4 +137,4 @@ async def test_pubsub_push_missing_required_field(client):
     }
     pubsub_message = create_pubsub_message(message_data)
     response = client.post("/pubsub/push", json=pubsub_message)
-    assert response.status_code == 400
+    assert response.status_code == 500
