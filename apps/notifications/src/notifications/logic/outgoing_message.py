@@ -2,7 +2,7 @@ from datetime import datetime, UTC
 from loguru import logger
 from zoneinfo import ZoneInfo
 
-from common_db.managers.user import UserManager
+from common_db.managers import UserManager, NotificationManager
 from common_db.schemas import DTOGeneralNotification, DTOUserNotification, DTONotifiedUserProfile
 from notifications.config import settings
 from notifications.loader import broker
@@ -71,11 +71,18 @@ class NotificationSender:
         """Sending notifications"""
         if notification.notification_type.value.casefold().startswith('user'):
             # getting notified user
-            notified_user: DTONotifiedUserProfile = DTONotifiedUserProfile(
-                **(await UserManager.get_user_by_id(user_id=notification.user_id)).model_dump())
+            try:
+                notified_user: DTONotifiedUserProfile = DTONotifiedUserProfile(
+                    **(await UserManager.get_user_by_id(user_id=notification.user_id)).model_dump())
+            except Exception as e:
+                logger.error(f"Error when receiving user data with id={notification.user_id}: {e}")
+                return  # stop processing the notification because the user has not been found.
 
             # preparing notification
             prepared_notification = DTOUserNotification(**notification.model_dump(), user=notified_user)
 
             # sending the prepared notification to the mailing module
             await cls.__send_user_notification(prepared_notification)
+
+            # saving the notification to the database
+            await NotificationManager.create_notification(notification_data=notification)

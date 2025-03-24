@@ -48,11 +48,55 @@ class ORMUserProfile(ObjectTable):
     country: Mapped[str | None]
     city: Mapped[str | None]
     timezone: Mapped[str | None]
-    referral: Mapped[bool] = mapped_column(default=False)
+
+    # Add referrer_id field - reference to the referrer user
+    referrer_id: Mapped[int | None] = mapped_column(ForeignKey(f"{schema}.users.id"), nullable=True)
+    
+    # Relationship with the referrer user
+    referrer: Mapped["ORMUserProfile | None"] = relationship(
+        "ORMUserProfile", 
+        remote_side="ORMUserProfile.id", 
+        back_populates="referred",
+        foreign_keys="ORMUserProfile.referrer_id",
+        uselist=False
+    )
+    
+    # Relationship with the list of users referred by this user
+    referred: Mapped[list["ORMUserProfile"]] = relationship(
+        "ORMUserProfile", 
+        back_populates="referrer",
+        foreign_keys="ORMUserProfile.referrer_id"
+    )
+
+    # Add relationship with referral codes
+    referral_codes: Mapped[list["ORMReferralCode"]] = relationship(
+        "ORMReferralCode",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
 
     is_tg_notify: Mapped[bool] = mapped_column(default=False)
     is_email_notify: Mapped[bool] = mapped_column(default=False)
     is_push_notify: Mapped[bool] = mapped_column(default=False)
+
+    is_verified: Mapped[bool] = mapped_column(default=False)  # verification flag via linkedin_parser
+    verified_datetime: Mapped[datetime | None]
+
+    # fuck the normalization and human logic:
+    communities_companies_domains: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=[])
+    communities_companies_services: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=[])
+    
+    # fields for company recommendations and vacancies - referral block
+    recommender_companies: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String),
+        default=[],
+        doc="List of companies where user is a recommender"
+    )
+    vacancy_pages: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String),
+        default=[],
+        doc="list of vacancy pages"
+    )
 
     # relationships for basic user properties
     specialisations: Mapped[list["ORMSpecialisation"]] = relationship(
@@ -93,6 +137,8 @@ class ORMUserProfile(ObjectTable):
         back_populates="users"
     )
 
+    notifications: Mapped[list['ORMUserNotifications']] = relationship(back_populates='user')
+
     who_to_date_with: Mapped[EWithWhom | None] = mapped_column(WithWhomEnumPGEnum)
     who_sees_profile: Mapped[EVisibilitySettings] = mapped_column(
         VisibilitySettingsPGEnum,
@@ -126,6 +172,11 @@ class ORMUserProfile(ObjectTable):
 
     __table_args__ = (
         Index('ix_users_telegram_id', 'telegram_id'),
+        # GIN индексы для массивов строк - ебумба
+        Index('ix_users_recommender_companies', 'recommender_companies', postgresql_using='gin'),
+        Index('ix_users_vacancy_pages', 'vacancy_pages', postgresql_using='gin'),
+        Index('ix_users_communities_companies_domains', 'communities_companies_domains', postgresql_using='gin'),
+        Index('ix_users_communities_companies_services', 'communities_companies_services', postgresql_using='gin'),
         {
             'schema': f"{schema}",
             'extend_existing': True
@@ -281,3 +332,22 @@ class ORMUserRequestsCommunity(Base):
     requests_id: Mapped[int] = mapped_column(ForeignKey(column=f'{schema}.requests_to_community.id'),
                                              primary_key=True,
                                              index=True)
+
+
+class ORMReferralCode(ObjectTable):
+    """
+    The referral codes table model.
+    """
+
+    __tablename__ = 'referral_codes'
+
+    user_id: Mapped[int] = mapped_column(ForeignKey(f"{schema}.users.id"), index=True)
+    code: Mapped[str] = mapped_column(String(30), unique=True, index=True)
+    generated_in: Mapped[str]
+    is_active: Mapped[bool] = mapped_column(default=True)
+
+    # Relationship with the user who generated the code
+    user: Mapped["ORMUserProfile"] = relationship(
+        "ORMUserProfile",
+        back_populates="referral_codes"
+    )

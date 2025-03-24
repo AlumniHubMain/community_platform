@@ -106,6 +106,7 @@ class ORMMeetingResponse(ObjectTable):
         nullable=False,
         default=EMeetingResponseStatus.no_answer
     )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
     user: Mapped["ORMUserProfile"] = relationship("ORMUserProfile", back_populates="meeting_responses")

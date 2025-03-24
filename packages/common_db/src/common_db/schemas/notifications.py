@@ -1,10 +1,12 @@
 from datetime import datetime, UTC
 
-from pydantic import BaseModel, Field, EmailStr, model_validator
+from pydantic import BaseModel, Field, EmailStr, model_validator, ValidationError
 from pydantic_extra_types.timezone_name import TimeZoneName
 
+from typing import Any
 from typing_extensions import Self
 
+from .base import TimestampedSchema
 from .notification_params import type_params, DTOEmptyParams
 from ..enums.notifications import ENotificationType
 
@@ -23,14 +25,51 @@ class DTOGeneralNotification(BaseModel):
     Attributes:
         notification_type: Type of notification from ENotificationType enum
         user_id: User ID associated with the recipient of the notification
+        text: Optional text content of the notification
         params: Pydantic model containing notification parameters. Must match the schema
                defined in type_params for the given notification_type
         timestamp: Optional timestamp of the notification
     """
     notification_type: ENotificationType
     user_id: int | None = None
+    text: str | None = None
     params: BaseModel | None = None
     timestamp: datetime | None = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def convert_params_from_json(cls, data: Any) -> Any:
+        """
+        Converts params field from JSON to the appropriate Pydantic model
+        based on the notification_type
+        """
+        # If data is not a dictionary, return it as is, model_validate_json will handle JSON decoding
+        if not isinstance(data, dict):
+            return data
+
+        notification_type = data.get('notification_type')
+        if not notification_type:
+            return data
+
+        # Get schema for this notification type
+        params_schema: type[BaseModel] | None = type_params.get(notification_type)
+        if params_schema is None or params_schema is DTOEmptyParams:
+            return data
+
+        # Check if params exist
+        params = data.get('params')
+        if params is None:
+            return data
+
+        # Convert params to the appropriate Pydantic model
+        if isinstance(params, dict):
+            try:
+                data['params'] = params_schema.model_validate(params)
+            except ValidationError:
+                # If validation fails, leave params as is, subsequent validation will raise a proper error
+                pass
+
+        return data
 
     @model_validator(mode='after')
     def check_params(self) -> Self:
@@ -54,6 +93,8 @@ class DTOGeneralNotification(BaseModel):
             params_schema(**self.params.model_dump())
         except Exception:
             raise ValueError(f'The set of parameters (params) does not correspond to the notification type.')
+        if self.notification_type.value.casefold().endswith('test'):
+            self.text = "Test notification, don't pay attention."
         return self
 
 
@@ -75,15 +116,26 @@ class DTONotifiedUserProfile(BaseModel):
 
 class DTOUserNotification(DTOGeneralNotification):
     """The schema of the prepared notification"""
-    text: str | None = None
     user: DTONotifiedUserProfile
     timestamp: datetime = datetime.now(UTC)
 
-    @model_validator(mode='after')
-    def check_params(self) -> Self:
-        """
-        Schema validator
-        """
-        if self.notification_type.value.casefold().endswith('test'):
-            self.text = "Test notification, don't pay attention."
-        return self
+
+class DTOUserNotificationRead(TimestampedSchema):
+    """
+    Schema for reading a notification from the database
+
+    Attributes:
+        id: Unique identifier of the notification
+        notification_type: Type of notification from ENotificationType enum
+        user_id: User ID associated with the recipient of the notification
+        text: Text content of the notification
+        params: Notification parameters specific to the notification_type
+        is_read: Whether the notification has been read
+        created_at: When the notification was created
+        updated_at: When the notification was last updated
+    """
+    notification_type: ENotificationType
+    user_id: int
+    text: str
+    params: list[str] | None = None
+    is_read: bool

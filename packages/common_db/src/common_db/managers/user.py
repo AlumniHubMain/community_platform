@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 
 from sqlalchemy import select, update, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
 from ..db_abstract import db_manager
 from ..enums import EMeetingResponseStatus
@@ -16,7 +16,8 @@ from ..models import (
     ORMSkill,
     ORMRequestsCommunity,
     ORMMeeting,
-    ORMMeetingResponse
+    ORMMeetingResponse,
+    ORMReferralCode
 )
 from ..schemas import (
     DTOUserProfile,
@@ -57,7 +58,7 @@ class UserManager:
         """
         result = await session.execute(select(ORMUserProfile).where(ORMUserProfile.id == user_id))
         if not result.scalar_one_or_none():
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=404, detail="Not found")
         return JSONResponse(
             content={
                 "status": "success"
@@ -92,7 +93,9 @@ class UserManager:
                 selectinload(ORMUserProfile.requests_to_community),
                 selectinload(ORMUserProfile.meeting_responses),
                 selectinload(ORMUserProfile.user_specialisations)
-                .joinedload(ORMUserSpecialisation.specialisation)
+                .joinedload(ORMUserSpecialisation.specialisation),
+                joinedload(ORMUserProfile.referrer),
+                selectinload(ORMUserProfile.referred)
             )
             .where(ORMUserProfile.id == user_id)
         )
@@ -192,7 +195,9 @@ class UserManager:
                 selectinload(ORMUserProfile.requests_to_community),
                 selectinload(ORMUserProfile.meeting_responses),
                 selectinload(ORMUserProfile.user_specialisations)
-                .joinedload(ORMUserSpecialisation.specialisation)
+                .joinedload(ORMUserSpecialisation.specialisation),
+                joinedload(ORMUserProfile.referrer),
+                selectinload(ORMUserProfile.referred)
             )
             .where(ORMUserProfile.telegram_id == user_tg_id)
         )
@@ -485,3 +490,41 @@ class UserManager:
 
         await session.commit()
         return DTOUserProfileRead.model_validate(profile_to_write).to_old_schema()
+
+    @classmethod
+    async def get_user_id_by_referral_code(
+            cls,
+            user_id: int,
+            code: str,
+            session: AsyncSession = db_manager.get_session()
+    ) -> int:
+        """
+        Get user id by referral code.
+
+        Args:
+            user_id: user ID of the verified user
+            code: referral code
+            session: database session
+
+        Returns:
+            int: user identifier
+
+        Raises:
+            HTTPException 404: if code not found or inactive
+        """
+        await cls.check_user(session=session, user_id=user_id)
+
+        query = select(ORMReferralCode).where(
+            and_(
+                ORMReferralCode.code == code.strip(),
+                ORMReferralCode.is_active == True
+            )
+        )
+        
+        result = await session.execute(query)
+        referral_code = result.scalar_one_or_none()
+        
+        if not referral_code:
+            raise HTTPException(status_code=404, detail="Not found")
+
+        return referral_code.user_id

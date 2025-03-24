@@ -14,9 +14,12 @@ from .users import (
     ORMSkill,
     ORMUserSkill,
     ORMRequestsCommunity,
-    ORMUserRequestsCommunity
+    ORMUserRequestsCommunity,
+    ORMReferralCode
 )
+from .communities_companies_domains import ORMCommunityCompany, ORMCommunityCompanyService
 from .meetings import ORMMeeting, ORMMeetingResponse
+from .notifications import ORMUserNotifications
 from .feedback import ORMMeetingFeedback
 from .forms import ORMForm
 
@@ -38,6 +41,7 @@ __all__ = [
     "ORMUserSkill",
     "ORMRequestsCommunity",
     "ORMUserRequestsCommunity",
+    "ORMReferralCode",
     "ORMMeeting",
     "ORMMeetingResponse",
     "ORMMatchingResult",
@@ -46,5 +50,8 @@ __all__ = [
     "ORMEducation",
     "ORMWorkExperience",
     "ORMLinkedInApiLimits",
-    "ORMLinkedInRawData"
+    "ORMLinkedInRawData",
+    "ORMUserNotifications",
+    "ORMCommunityCompany",
+    "ORMCommunityCompanyService"
 ]

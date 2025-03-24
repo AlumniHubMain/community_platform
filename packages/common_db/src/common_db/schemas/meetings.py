@@ -1,16 +1,16 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
 from common_db.enums.meetings import EMeetingStatus, EMeetingUserRole, EMeetingResponseStatus, EMeetingLocation
 from common_db.schemas.base import BaseSchema, TimestampedSchema
 
+from pydantic import model_validator
 
-class MeetingResponseRead(BaseSchema):
+
+class MeetingResponseRead(TimestampedSchema):
     user_id: int
     meeting_id: int
     role: EMeetingUserRole
     response: EMeetingResponseStatus | None = None
-    created_at: datetime
-    updated_at: datetime
+    description: str | None = None
 
 
 class MeetingRead(TimestampedSchema):
@@ -21,8 +21,7 @@ class MeetingRead(TimestampedSchema):
     user_responses: list[MeetingResponseRead]
 
 
-class MeetingRequestCreate(BaseModel):
-    organizer_id: int
+class MeetingRequestCreate(BaseSchema):
     match_id: int | None = None
     attendees_id: list[int]
     scheduled_time: datetime | None = None
@@ -30,7 +29,19 @@ class MeetingRequestCreate(BaseModel):
     description: str | None = None
 
 
-class MeetingRequestUpdate(BaseModel):
+class MeetingRequestUpdateUserResponse(BaseSchema):
+    status: EMeetingResponseStatus
+    description: str | None = None
+    
+    @model_validator(mode='after')
+    def validate_depended_fields(self):
+        if self.status == EMeetingResponseStatus.declined:
+            if self.description is None:
+                raise ValueError("\"description\" field must be filled when setted the \"declined\" meeting response")
+        return self
+
+
+class MeetingRequestUpdate(BaseSchema):
     description: str | None = None
     location: EMeetingLocation | None = None
     scheduled_time: datetime | None = None
@@ -49,32 +60,23 @@ class MeetingRequestUpdate(BaseModel):
 
 
 # For user status in a meeting
-class MeetingResponse(BaseModel):
+class MeetingResponse(TimestampedSchema):
     user_id: int
     role: EMeetingUserRole
     response: EMeetingResponseStatus | None = None
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
+    description: str | None = None
 
 
-class MeetingRequestRead(BaseModel):
-    id: int
+class MeetingRequestRead(TimestampedSchema):
     match_id: int | None = None
     description: str | None = None
     location: EMeetingLocation
     scheduled_time: datetime
     status: EMeetingStatus
     user_responses: list[MeetingResponse]
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
 
 
-class MeetingFilter(BaseModel):
-    user_id: int | None = None
+class MeetingFilter(BaseSchema):
     user_role: EMeetingUserRole | list[EMeetingUserRole] | None = None
     date_from: datetime | None = None
     date_to: datetime | None = None
@@ -83,11 +85,11 @@ class MeetingFilter(BaseModel):
     location: EMeetingLocation | list[EMeetingLocation] | None = None
 
 
-class MeetingList(BaseModel):
+class MeetingList(BaseSchema):
     meetings: list[MeetingRequestRead]
 
 
-class MeetingsUserLimits(BaseModel):
+class MeetingsUserLimits(BaseSchema):
     meetings_pendings_limit: int = 0
     meetings_confirmations_limit: int = 0
     available_meeting_pendings: int = 0
