@@ -39,6 +39,81 @@ class HeuristicPredictor(BasePredictor):
         """
         self.rules = rules
         self.logger = logging.getLogger(__name__)
+        
+        # ADDED: Grade mapping between different enum types
+        self.grade_mapping = {
+            # Form grade to user grade
+            EFormMentoringGrade.junior.value: EGrade.junior.value,
+            EFormMentoringGrade.middle.value: EGrade.middle.value,
+            EFormMentoringGrade.senior.value: EGrade.senior.value,
+            EFormMentoringGrade.lead.value: EGrade.senior.value,  # Map to senior
+            EFormMentoringGrade.head.value: EGrade.senior.value,  # Map to senior
+            EFormMentoringGrade.executive.value: EGrade.senior.value,  # Map to senior
+            
+            # User grade to form grade
+            EGrade.junior.value: EFormMentoringGrade.junior.value,
+            EGrade.middle.value: EFormMentoringGrade.middle.value,
+            EGrade.senior.value: EFormMentoringGrade.senior.value,
+        }
+
+        # Add topic-specific scoring rules
+        self.professional_topic_rules = {
+            EFormProfessionalNetworkingTopic.development.value: {
+                'senior_bonus': 0.3,
+                'middle_bonus': 0.1,
+                'required_skills': ['development', 'programming', 'frontend', 'backend'],
+                'weight': 1.0
+            },
+            EFormProfessionalNetworkingTopic.analytics.value: {
+                'senior_bonus': 0.2,
+                'middle_bonus': 0.1,
+                'data_science_bonus': 0.2,
+                'required_skills': ['analytics', 'data_science', 'machine_learning'],
+                'weight': 0.9
+            }
+            # Add more topics as needed
+        }
+        
+        self.social_topic_rules = {
+            EFormConnectsSocialExpansionTopic.development__web_development.value: {
+                'expertise_weight': 0.7,
+                'interests_weight': 0.3,
+                'required_skills': ['frontend', 'backend', 'web']
+            },
+            EFormConnectsSocialExpansionTopic.development__mobile_development.value: {
+                'expertise_weight': 0.7,
+                'interests_weight': 0.3,
+                'required_skills': ['mobile', 'ios', 'android']
+            },
+            EFormConnectsSocialExpansionTopic.design__design_system_development.value: {
+                'expertise_weight': 0.6,
+                'interests_weight': 0.4,
+                'required_skills': ['design', 'ui', 'ux']
+            }
+            # Add more topics as needed
+        }
+
+    def _normalize_grade(self, grade, target_type="user"):
+        """
+        Normalize grade between different enum types
+        
+        Args:
+            grade: The grade value to normalize
+            target_type: Either 'user' (convert to EGrade) or 'form' (convert to EFormMentoringGrade)
+            
+        Returns:
+            Normalized grade value
+        """
+        if not grade:
+            return None
+            
+        if target_type == "user":
+            return self.grade_mapping.get(grade, grade)
+        else:  # target_type == "form"
+            # Reverse mapping
+            reverse_mapping = {v: k for k, v in self.grade_mapping.items() 
+                              if k in [g.value for g in EFormMentoringGrade]}
+            return reverse_mapping.get(grade, grade)
 
     def _apply_location_rule(self, features: pd.DataFrame, params: dict) -> np.ndarray:
         """Enhanced location matching rule"""
@@ -97,14 +172,21 @@ class HeuristicPredictor(BasePredictor):
 
         if not main_interests:
             return scores
-
-        def calculate_overlap(interests):
-            if not interests or not main_interests:
+            
+        # UPDATED: Use aggregated interests if available
+        def calculate_overlap(row):
+            if not main_interests:
                 return 0
+                
+            # Use aggregated interests if available, otherwise fall back to regular interests
+            interests = row.get("aggregated_interests", row.get("interests", []))
+            if not interests:
+                return 0
+                
             overlap = set(interests) & set(main_interests)
             return len(overlap) / max(len(main_interests), len(interests))
 
-        interest_scores = features["interests"].apply(calculate_overlap)
+        interest_scores = features.apply(calculate_overlap, axis=1)
         base_score = params.get("base_score", 0.5)
         scores *= base_score + (1 - base_score) * interest_scores
 
@@ -117,8 +199,11 @@ class HeuristicPredictor(BasePredictor):
 
         def calculate_expertise_score(row):
             score = 0.0
-            if row.get("expertise_area"):
-                expertise_matches = set(row["expertise_area"]) & set(main_expertise)
+            
+            # UPDATED: Use aggregated expertise if available
+            expertise_area = row.get("aggregated_expertise", row.get("expertise_area", []))
+            if expertise_area:
+                expertise_matches = set(expertise_area) & set(main_expertise)
 
                 # Give higher weights to core technical areas
                 tech_areas = {
@@ -150,6 +235,9 @@ class HeuristicPredictor(BasePredictor):
 
         if not main_grade:
             return scores
+            
+        # UPDATED: Normalize the main grade to user grade type
+        main_grade = self._normalize_grade(main_grade, "user")
 
         # Grade matching weights based on seniority levels
         grade_weights = {
@@ -162,8 +250,9 @@ class HeuristicPredictor(BasePredictor):
             EGrade.senior.value: {EGrade.senior.value: 1.0, EGrade.middle.value: 0.7, EGrade.junior.value: 0.5},
         }
 
+        # UPDATED: Normalize each user's grade before comparison
         grade_scores = features["grade"].apply(
-            lambda x: grade_weights.get(main_grade, {}).get(x, params.get("base_score", 0.7))
+            lambda x: grade_weights.get(main_grade, {}).get(self._normalize_grade(x, "user"), params.get("base_score", 0.7))
             if x
             else params.get("base_score", 0.7)
         )
@@ -487,26 +576,40 @@ class HeuristicPredictor(BasePredictor):
                     social_scores = np.ones(len(features)) * 0.5  # Start with 0.5 base score
                     score_components = []
 
-                    # Consider topics for better matching
+                    # Consider topics for better matching - REFACTORED to be more generic
                     topics = social_expansion.get("topics", [])
                     if topics:
-                        topic_scores = features["expertise_area"].apply(
-                            lambda x: len(set(x or []) & set(topics)) / len(topics) if x else 0
-                        )
+                        # Match topics against both expertise_area and interests
+                        def calculate_topic_score(row):
+                            expertise_match = 0
+                            interest_match = 0
+                            
+                            # Check expertise areas
+                            if row.get("expertise_area"):
+                                expertise_match = len(set(row["expertise_area"] or []) & set(topics)) / len(topics) if topics else 0
+                            
+                            # Check interests
+                            if row.get("interests"):
+                                interest_match = len(set(row["interests"] or []) & set(topics)) / len(topics) if topics else 0
+                            
+                            # Return the better of the two matches
+                            return max(expertise_match, interest_match)
+                        
+                        topic_scores = features.apply(calculate_topic_score, axis=1)
                         topic_contribution = 0.3 * topic_scores
                         social_scores += topic_contribution
                         score_components.append(("Topics", topic_contribution))
 
-                    # Handle custom topics if present
-                    if EFormConnectsSocialExpansionTopic.custom.value in topics:
+                    # Handle custom topics if present - REFACTORED to be more generic
+                    custom_topic_value = next((t for t in topics if t.endswith("custom")), None)
+                    if custom_topic_value:
                         custom_topics = social_expansion.get("custom_topics", [])
                         if custom_topics:
                             # Match custom topics against expertise and interests
                             custom_scores = features.apply(
                                 lambda row: max(
-                                    len(set(row.get("expertise_area", []) or []) & set(custom_topics))
-                                    / len(custom_topics),
-                                    len(set(row.get("interests", []) or []) & set(custom_topics)) / len(custom_topics),
+                                    len(set(row.get("expertise_area", []) or []) & set(custom_topics)) / len(custom_topics) if custom_topics else 0,
+                                    len(set(row.get("interests", []) or []) & set(custom_topics)) / len(custom_topics) if custom_topics else 0,
                                 ),
                                 axis=1,
                             )
@@ -548,43 +651,118 @@ class HeuristicPredictor(BasePredictor):
                     topics = prof_networking.get("topics", [])
 
                     # Initialize base score
-                    base_scores = np.ones(len(features)) * 0.6  # Increased base score
+                    base_scores = np.ones(len(features)) * 0.6
 
-                    # Topic matching with proper enum handling
+                    # Topic matching with hybrid approach
                     if topics:
-
-                        def calculate_topic_score(row):
+                        def calculate_professional_topic_score(row):
                             if not row.get("expertise_area"):
                                 return 0.0
 
-                            # Direct topic matches
-                            topic_matches = set(row["expertise_area"]) & set(topics)
-                            if topic_matches:
-                                # Check for specific development expertise
-                                if EFormProfessionalNetworkingTopic.development.value in topic_matches:
-                                    if row.get("grade") in [
-                                        EFormMentoringGrade.senior.value,
-                                        EFormMentoringGrade.lead.value,
-                                        EFormMentoringGrade.head.value,
-                                    ]:
-                                        return 1.0
-                                    if row.get("grade") == EFormMentoringGrade.middle.value:
-                                        return 0.8
+                            # Validate topics are from the enum
+                            valid_topics = [t for t in topics if t in [e.value for e in EFormProfessionalNetworkingTopic]]
+                            if not valid_topics:
+                                return 0.0
+                                
+                            topic_matches = set(row["expertise_area"]) & set(valid_topics)
+                            if not topic_matches:
+                                return 0.0
+                                
+                            # Calculate base score from matches
+                            score = 0.0
+                            total_weight = 0.0
+                            
+                            # Apply topic-specific scoring
+                            for topic in topic_matches:
+                                if topic in self.professional_topic_rules:
+                                    rules = self.professional_topic_rules[topic]
+                                    topic_score = 0.6  # Base score for match
+                                    
+                                    # Grade-based bonuses
+                                    if row.get("grade"):
+                                        if row["grade"] in [
+                                            EFormMentoringGrade.senior.value,
+                                            EFormMentoringGrade.lead.value,
+                                            EFormMentoringGrade.head.value
+                                        ]:
+                                            topic_score += rules['senior_bonus']
+                                        elif row["grade"] == EFormMentoringGrade.middle.value:
+                                            topic_score += rules['middle_bonus']
+                                    
+                                    # Skill-specific bonuses
+                                    if row.get("specialization"):
+                                        if any(skill in row["specialization"] for skill in rules['required_skills']):
+                                            topic_score = min(1.0, topic_score + 0.2)
+                                            
+                                    # Add weighted topic score
+                                    score += topic_score * rules.get('weight', 1.0)
+                                    total_weight += rules.get('weight', 1.0)
+                            
+                            return score / total_weight if total_weight > 0 else 0.0
 
-                                # Check for analytics expertise
-                                if EFormProfessionalNetworkingTopic.analytics.value in topic_matches:
-                                    if row.get("specialization") and any(
-                                        spec.startswith("development__data_science")
-                                        for spec in row.get("specialization", [])
-                                    ):
-                                        return 0.9
-
-                            return len(topic_matches) / len(topics) if topics else 0.0
-
-                        topic_scores = features.apply(calculate_topic_score, axis=1)
+                        topic_scores = features.apply(calculate_professional_topic_score, axis=1)
                         scores *= np.maximum(topic_scores, 0.5)
-
                         self.logger.debug("Professional networking topic scores: %s", topic_scores)
+
+                    # Social Circle Expansion
+                    if "social_circle_expansion" in content:
+                        social_expansion = content["social_circle_expansion"]
+                        topics = social_expansion.get("topics", [])
+
+                        if topics:
+                            def calculate_social_topic_score(row):
+                                if not topics:
+                                    return 0.0
+                                    
+                                # Separate enum topics and custom topics
+                                valid_topics = [t for t in topics if t in [e.value for e in EFormConnectsSocialExpansionTopic]]
+                                custom_topics = [t for t in topics if t not in valid_topics and t != EFormConnectsSocialExpansionTopic.custom.value]
+                                
+                                total_score = 0.0
+                                total_weight = 0.0
+                                
+                                # Process enum-based topics
+                                for topic in valid_topics:
+                                    if topic in self.social_topic_rules:
+                                        rules = self.social_topic_rules[topic]
+                                        
+                                        # Calculate expertise match
+                                        expertise_score = 0.0
+                                        if row.get("expertise_area"):
+                                            expertise_match = set(row["expertise_area"]) & set(rules['required_skills'])
+                                            if expertise_match:
+                                                expertise_score = len(expertise_match) / len(rules['required_skills'])
+                                        
+                                        # Calculate interests match
+                                        interests_score = 0.0
+                                        if row.get("interests"):
+                                            interests_match = set(row["interests"]) & {topic}
+                                            if interests_match:
+                                                interests_score = 1.0
+                                        
+                                        # Combine scores using weights
+                                        topic_score = (
+                                            expertise_score * rules['expertise_weight'] +
+                                            interests_score * rules['interests_weight']
+                                        )
+                                        
+                                        total_score += topic_score
+                                        total_weight += 1.0
+                                
+                                # Process custom topics
+                                if custom_topics:
+                                    expertise_match = len(set(row.get("expertise_area", [])) & set(custom_topics)) / len(custom_topics)
+                                    interests_match = len(set(row.get("interests", [])) & set(custom_topics)) / len(custom_topics)
+                                    custom_score = max(expertise_match, interests_match)
+                                    
+                                    total_score += custom_score
+                                    total_weight += 1.0
+                                
+                                return total_score / total_weight if total_weight > 0 else 0.0
+                                
+                            social_topic_scores = features.apply(calculate_social_topic_score, axis=1)
+                            scores *= np.maximum(social_topic_scores, 0.4)
+                            self.logger.debug("Social expansion topic scores: %s", social_topic_scores)
 
                     # Consider user query with enhanced position matching
                     if prof_networking.get("user_query"):
@@ -683,20 +861,32 @@ class HeuristicPredictor(BasePredictor):
                         if not row.get("specialization"):
                             return 0.3
 
-                        spec_matches = []
+                        # REFACTORED: Remove dependency on string format with underscores
+                        # Instead, use direct matching and a category-based approach
+                        
+                        # Direct matches get highest score
+                        direct_matches = set(row["specialization"]) & set(specialization)
+                        if direct_matches:
+                            return 1.0
+                            
+                        # For partial matches, we'll use a category-based approach
+                        # Extract main categories from specializations
+                        req_categories = set()
+                        for spec in specialization:
+                            parts = spec.split("__") if "__" in spec else [spec]
+                            req_categories.add(parts[0])
+                            
+                        user_categories = set()
                         for spec in row["specialization"]:
-                            for req_spec in specialization:
-                                # Check exact match
-                                if spec == req_spec:
-                                    spec_matches.append(1.0)
-                                # Check parent category match (e.g., development__frontend matches development__frontend__react) # pylint: disable=line-too-long
-                                elif req_spec.startswith(spec + "__"):
-                                    spec_matches.append(0.8)
-                                # Check child category match
-                                elif spec.startswith(req_spec + "__"):
-                                    spec_matches.append(0.9)
-
-                        return max(spec_matches) if spec_matches else 0.3
+                            parts = spec.split("__") if "__" in spec else [spec]
+                            user_categories.add(parts[0])
+                            
+                        # Category matches get a good score
+                        category_matches = req_categories & user_categories
+                        if category_matches:
+                            return 0.8
+                            
+                        return 0.3
 
                     spec_scores = features.apply(calculate_spec_score, axis=1)
                     mentor_scores *= np.maximum(spec_scores, 0.4)
@@ -709,11 +899,48 @@ class HeuristicPredictor(BasePredictor):
                     if EFormMentoringHelpRequest.adaptation_after_relocate.value in request_types:
                         target_country = help_request.get("country")
                         if target_country:
-                            location_scores = features["location"].apply(
-                                lambda x: 1.0 if x and target_country in x else 0.3
-                            )
-                            mentor_scores *= np.maximum(location_scores, 0.4)
-                            score_components.append(("Location", location_scores))
+                            # ENHANCED: More comprehensive location matching for relocation
+                            def calculate_relocation_score(row):
+                                score = 0.3  # Base score
+                                
+                                # Check main location
+                                if row.get("location") and target_country in row["location"]:
+                                    score = max(score, 1.0)
+                                    
+                                # Check LinkedIn location
+                                if row.get("linkedin_profile") and row["linkedin_profile"].get("location"):
+                                    if target_country in row["linkedin_profile"]["location"]:
+                                        score = max(score, 0.9)
+                                
+                                # Check work experience in target country
+                                if row.get("linkedin_profile") and row["linkedin_profile"].get("work_experience"):
+                                    for exp in row["linkedin_profile"]["work_experience"]:
+                                        if exp.get("location") and target_country in exp["location"]:
+                                            score = max(score, 0.8)
+                                                
+                                # Check language match for the country
+                                if row.get("linkedin_profile") and row["linkedin_profile"].get("languages"):
+                                    # Simple mapping of countries to languages
+                                    country_languages = {
+                                        "usa": ["english"],
+                                        "uk": ["english"],
+                                        "germany": ["german"],
+                                        "france": ["french"],
+                                        "spain": ["spanish"],
+                                        # Add more as needed
+                                    }
+                                    
+                                    target_languages = country_languages.get(target_country.lower(), [])
+                                    if target_languages:
+                                        user_languages = [lang.lower() for lang in row["linkedin_profile"]["languages"]]
+                                        if any(lang in user_languages for lang in target_languages):
+                                            score = max(score, 0.7)
+                                
+                                return score
+                                
+                            relocation_scores = features.apply(calculate_relocation_score, axis=1)
+                            mentor_scores *= np.maximum(relocation_scores, 0.4)
+                            score_components.append(("Relocation", relocation_scores))
 
                     if EFormMentoringHelpRequest.process_and_teams_management.value in request_types:
 
@@ -791,23 +1018,30 @@ class HeuristicPredictor(BasePredictor):
                         if not row.get("specialization"):
                             return 0.3
 
-                        spec_matches = []
+                        # REFACTORED: Use the same approach as mentor specialization matching
+                        # Direct matches get highest score
+                        direct_matches = set(row["specialization"]) & set(mentor_specialization)
+                        if direct_matches:
+                            return 1.0
+                            
+                        # For partial matches, use a category-based approach
+                        # Extract main categories from specializations
+                        req_categories = set()
+                        for spec in mentor_specialization:
+                            parts = spec.split("__") if "__" in spec else [spec]
+                            req_categories.add(parts[0])
+                            
+                        user_categories = set()
                         for spec in row["specialization"]:
-                            for req_spec in mentor_specialization:
-                                # Check exact match
-                                if spec == req_spec:
-                                    spec_matches.append(1.0)
-                                # Check parent category match
-                                elif req_spec.startswith(spec + "__"):
-                                    spec_matches.append(0.8)
-                                # Check child category match
-                                elif spec.startswith(req_spec + "__"):
-                                    spec_matches.append(0.9)
-                                # Check same root category (e.g., development)
-                                elif spec.split("__")[0] == req_spec.split("__")[0]:
-                                    spec_matches.append(0.6)
-
-                        return max(spec_matches) if spec_matches else 0.3
+                            parts = spec.split("__") if "__" in spec else [spec]
+                            user_categories.add(parts[0])
+                            
+                        # Category matches get a good score
+                        category_matches = req_categories & user_categories
+                        if category_matches:
+                            return 0.8
+                            
+                        return 0.3
 
                     spec_scores = features.apply(calculate_mentor_spec_score, axis=1)
                     mentee_scores *= np.maximum(spec_scores, 0.4)
@@ -1077,8 +1311,59 @@ class HeuristicPredictor(BasePredictor):
 
         return scores
 
+    # ADDED: Function to aggregate user data from different sources
+    def _aggregate_user_data(self, features: pd.DataFrame) -> pd.DataFrame:
+        """
+        Aggregate user data from different sources (profile, registration forms, etc.)
+        to create a more complete user representation.
+        
+        Args:
+            features: DataFrame with user features
+            
+        Returns:
+            DataFrame with aggregated user features
+        """
+        aggregated_features = features.copy()
+        
+        # Process each user row
+        for idx, row in features.iterrows():
+            # Initialize aggregated fields
+            aggregated_interests = set()
+            aggregated_expertise = set()
+            aggregated_specialization = set()
+            
+            # Add data from user profile
+            if row.get("interests"):
+                aggregated_interests.update(row["interests"])
+                
+            if row.get("expertise_area"):
+                aggregated_expertise.update(row["expertise_area"])
+                
+            if row.get("specialization"):
+                aggregated_specialization.update(row["specialization"])
+                
+            # Add data from LinkedIn profile
+            if row.get("linkedin_profile"):
+                # Extract skills from LinkedIn
+                if row["linkedin_profile"].get("skills"):
+                    aggregated_expertise.update(row["linkedin_profile"]["skills"])
+                
+                # Extract industries as interests
+                if row["linkedin_profile"].get("industries"):
+                    aggregated_interests.update(row["linkedin_profile"]["industries"])
+            
+            # Update the aggregated features
+            aggregated_features.at[idx, "aggregated_interests"] = list(aggregated_interests)
+            aggregated_features.at[idx, "aggregated_expertise"] = list(aggregated_expertise)
+            aggregated_features.at[idx, "aggregated_specialization"] = list(aggregated_specialization)
+            
+        return aggregated_features
+    
     def predict(self, features: pd.DataFrame) -> np.ndarray:
         """Apply heuristic rules to make predictions"""
+        # ADDED: Aggregate user data before prediction
+        features = self._aggregate_user_data(features)
+        
         final_scores = np.ones(len(features))
         self.logger.debug("Starting prediction with initial scores set to 1.0")
 
