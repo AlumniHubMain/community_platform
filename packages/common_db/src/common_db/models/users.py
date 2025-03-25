@@ -49,31 +49,34 @@ class ORMUserProfile(ObjectTable):
     city: Mapped[str | None]
     timezone: Mapped[str | None]
 
-    # Add referrer_id field - reference to the referrer user
+    # Referrer_id field - reference to the referrer user
     referrer_id: Mapped[int | None] = mapped_column(ForeignKey(f"{schema}.users.id"), nullable=True)
-    
+
     # Relationship with the referrer user
     referrer: Mapped["ORMUserProfile | None"] = relationship(
-        "ORMUserProfile", 
-        remote_side="ORMUserProfile.id", 
+        "ORMUserProfile",
+        remote_side="ORMUserProfile.id",
         back_populates="referred",
         foreign_keys="ORMUserProfile.referrer_id",
         uselist=False
     )
-    
+
     # Relationship with the list of users referred by this user
     referred: Mapped[list["ORMUserProfile"]] = relationship(
-        "ORMUserProfile", 
+        "ORMUserProfile",
         back_populates="referrer",
         foreign_keys="ORMUserProfile.referrer_id"
     )
 
-    # Add relationship with referral codes
+    # Relationship with referral codes
     referral_codes: Mapped[list["ORMReferralCode"]] = relationship(
         "ORMReferralCode",
         back_populates="user",
         cascade="all, delete-orphan"
     )
+
+    is_recommendation_able: Mapped[bool] = mapped_column(default=False)
+    end_date_recommendation_access: Mapped[datetime | None]
 
     is_tg_notify: Mapped[bool] = mapped_column(default=False)
     is_email_notify: Mapped[bool] = mapped_column(default=False)
@@ -85,7 +88,7 @@ class ORMUserProfile(ObjectTable):
     # fuck the normalization and human logic:
     communities_companies_domains: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=[])
     communities_companies_services: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=[])
-    
+
     # fields for company recommendations and vacancies - referral block
     recommender_companies: Mapped[list[str] | None] = mapped_column(
         ARRAY(String),
@@ -223,11 +226,11 @@ class ORMUserSpecialisation(Base):
     grade: Mapped[EGrade | None] = mapped_column(GradePGEnum)
 
     user: Mapped["ORMUserProfile"] = relationship(
-        "ORMUserProfile", 
+        "ORMUserProfile",
         back_populates="user_specialisations",
         overlaps="specialisations,users"
     )
-    
+
     specialisation: Mapped["ORMSpecialisation"] = relationship(
         "ORMSpecialisation",
         back_populates="user_specialisations",

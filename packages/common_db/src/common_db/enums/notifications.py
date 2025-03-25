@@ -2,7 +2,7 @@ from enum import Enum
 from sqlalchemy import Enum as PGEnum
 
 
-class ENotificationType(Enum):
+class ENotificationType(Enum, str):
     """The enum containing notification types"""
     user_test: str = 'user_test'
     meeting_invitation: str = 'meeting_invitation'

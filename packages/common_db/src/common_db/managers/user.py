@@ -2,7 +2,7 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 
-from sqlalchemy import select, update, and_
+from sqlalchemy import select, update, and_, String, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
@@ -404,11 +404,19 @@ class UserManager:
         if search_params.city:
             conditions.append(ORMUserProfile.city.ilike(f"%{search_params.city}%"))
 
+        # To search by company domain
+        if search_params.companies_domain:
+            domain_pattern = f"%{search_params.companies_domain}%"
+            conditions.append(cast(ORMUserProfile.communities_companies_domains, String).ilike(domain_pattern))
+
+        # To search for the company's service
+        if search_params.companies_service:
+            service_pattern = f"%{search_params.companies_service}%"
+            conditions.append(cast(ORMUserProfile.communities_companies_services, String).ilike(service_pattern))
+
         # To search by expertise_area or specialisation, need to join with the specialisation table.
         if search_params.expertise_area or search_params.specialisation:
-            query = query.join(
-                ORMUserProfile.specialisations
-            )
+            query = query.join(ORMUserProfile.specialisations)
 
             # To search by expertise_area
             if search_params.expertise_area:
@@ -420,9 +428,7 @@ class UserManager:
 
         # To search by skills
         if search_params.skill:
-            query = query.join(
-                ORMUserProfile.skills
-            )
+            query = query.join(ORMUserProfile.skills)
             conditions.append(ORMSkill.label.ilike(f"%{search_params.skill}%"))
 
         # Adding all the conditions to the request using and_

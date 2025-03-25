@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import EmailStr
 from common_db.enums.users import (
     EExpertiseArea,
     EGrade,
@@ -9,8 +9,7 @@ from common_db.enums.users import (
     EInterestsArea,
     EWithWhom,
     EVisibilitySettings,
-    EProfileType,
-    ELocation,
+    EProfileType
 )
 from common_db.schemas.forms import EFormSpecialization, EFormSkills
 from common_db.schemas.base import BaseSchema, TimestampedSchema
@@ -92,6 +91,8 @@ class DTOUserProfile(BaseSchema):
     city: str | None = None
     timezone: TimeZoneName | None = None
     referrer_id: int | None = None
+    is_recommendation_able: bool | None = None
+    end_date_recommendation_access: datetime | None = None
     is_tg_notify: bool | None = None
     is_email_notify: bool | None = None
     is_push_notify: bool | None = None
@@ -239,6 +240,8 @@ class DTOSearchUser(BaseSchema):
     expertise_area: str | None = None
     specialisation: str | None = None
     skill: str | None = None
+    companies_domain: str | None = None
+    companies_service: str | None = None
     limit: int | None = 30
 
 
