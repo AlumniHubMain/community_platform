@@ -110,7 +110,7 @@ wheels = [
 
 [[package]]
 name = "common-db"
-version = "0.1.8"
+version = "0.1.9"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
