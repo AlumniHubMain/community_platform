@@ -195,3 +195,12 @@ Final match scores are calculated using:
 - Intent-specific rule weights
 - Weighted average combination
 - Score normalization to 0-1 range
+
+
+# Gemini tests on parsing
+
+
+Run
+```bash
+GOOGLE_CLOUD_PROJECT=communityp-440714 uv run python -m matching.parser.test_gemini_parser
+```
