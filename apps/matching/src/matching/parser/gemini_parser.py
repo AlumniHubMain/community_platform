@@ -5,12 +5,27 @@ Text field parser using Google Cloud's Gemini to extract structured form data fr
 import re
 import json
 import logging
-from typing import Type
+from typing import Type, Dict, Any
 import vertexai
 from vertexai.generative_models import GenerativeModel
 from pydantic import BaseModel
 
-from common_db.enums.forms import EFormIntentType
+from common_db.enums.forms import (
+    EFormIntentType,
+    EFormConnectsMeetingFormat,
+    EFormConnectsSocialExpansionTopic,
+    EFormProfessionalNetworkingTopic,
+    EFormMentoringGrade,
+    EFormMentoringHelpRequest,
+    EFormSpecialization,
+    EFormRefferalsCompanyType,
+    EFormEnglishLevel,
+    EFormMockInterviewType,
+    EFormMockInterviewLanguages,
+    EFormSkills,
+    EFormProjectProjectState,
+    EFormProjectUserRole,
+)
 from common_db.schemas.forms import (
     FormConnects,
     FormMentoringMentor,
@@ -33,7 +48,7 @@ class GeminiParser:
     Parser that uses Google Cloud's Gemini to extract structured form data from text descriptions.
     """
 
-    def __init__(self, project_id: str, location: str = "us-central1", model_name: str = "gemini-1.5-pro"):
+    def __init__(self, project_id: str, location: str = "us-central1", model_name: str = "gemini-2.0-flash-lite"):
         """
         Initialize the Gemini parser.
 
@@ -78,7 +93,85 @@ class GeminiParser:
             "interview_type": lambda value: value if isinstance(value, list) else [value] if value else [],
         }
 
-    async def initialize(self):
+        # Map of field names to their corresponding enum classes
+        self.field_enum_mappings = {
+            # Connects form fields
+            "meeting_formats": EFormConnectsMeetingFormat,
+            "topics": EFormConnectsSocialExpansionTopic,
+            "professional_networking_topics": EFormProfessionalNetworkingTopic,
+            
+            # Mentoring form fields
+            "required_grade": EFormMentoringGrade,
+            "grade": EFormMentoringGrade,
+            "help_request": EFormMentoringHelpRequest,
+            
+            # Referrals form fields
+            "required_english_level": EFormEnglishLevel,
+            "company_type": EFormRefferalsCompanyType,
+            
+            # Mock interview form fields
+            "interview_type": EFormMockInterviewType,
+            "langs": EFormMockInterviewLanguages,
+            
+            # Project form fields
+            "specialization": EFormSpecialization,
+            "skills": EFormSkills,
+            "project_state": EFormProjectProjectState,
+            "role": EFormProjectUserRole,
+        }
+
+        # Map of text descriptions to enum values for better matching
+        self.text_to_enum_mappings = {
+            # Grade mappings
+            "junior": EFormMentoringGrade.junior,
+            "middle": EFormMentoringGrade.middle,
+            "senior": EFormMentoringGrade.senior,
+            "lead": EFormMentoringGrade.lead,
+            "head": EFormMentoringGrade.head,
+            "executive": EFormMentoringGrade.executive,
+            
+            # Specialization mappings
+            "frontend": EFormSpecialization.development__frontend__react,
+            "backend": EFormSpecialization.development__backend__python,
+            "python": EFormSpecialization.development__backend__python,
+            "react": EFormSpecialization.development__frontend__react,
+            "vue": EFormSpecialization.development__frontend__vue,
+            "cpp": EFormSpecialization.development__backend__cpp,
+            "data science": EFormSpecialization.development__data_science__deep_learning,
+            "ui/ux": EFormSkills.design_ui_ux,
+            
+            # Interview type mappings
+            "technical": EFormMockInterviewType.technical,
+            "behavioral": EFormMockInterviewType.behavioral,
+            "role playing": EFormMockInterviewType.role_playing,
+            "coding": EFormMockInterviewType.technical,
+            "system design": EFormMockInterviewType.technical,
+            "custom": EFormMockInterviewType.technical,
+            
+            # Help request mappings
+            "career growth": EFormMentoringHelpRequest.custom,
+            "technical skills": EFormMentoringHelpRequest.custom,
+            "system design": EFormMentoringHelpRequest.custom,
+            "adaptation": EFormMentoringHelpRequest.adaptation_after_relocate,
+            "process": EFormMentoringHelpRequest.process_and_teams_management,
+            
+            # Language mappings
+            "english": EFormMockInterviewLanguages.english,
+            "russian": EFormMockInterviewLanguages.russian,
+            "English": EFormMockInterviewLanguages.english,
+            "Russian": EFormMockInterviewLanguages.russian,
+            
+            # Project state mappings
+            "idea": EFormProjectProjectState.idea,
+            "prototype": EFormProjectProjectState.prototype,
+            "mvp": EFormProjectProjectState.mvp,
+            "scaling": EFormProjectProjectState.scaling,
+            "idea stage": EFormProjectProjectState.idea,
+            "initial stage": EFormProjectProjectState.idea,
+            "early stage": EFormProjectProjectState.idea,
+        }
+
+    def initialize(self):
         """Initialize the Gemini client"""
         if not self.initialized:
             # Initialize Vertex AI with project and location
@@ -89,7 +182,175 @@ class GeminiParser:
             self.initialized = True
             logger.info("Initialized Gemini parser with model %s", self.model_name)
 
-    async def detect_intent_type(self, text: str) -> EFormIntentType:
+    def _map_to_enum(self, value: str, enum_class: Type) -> Any:
+        """Map text value to enum value if possible."""
+        if not isinstance(value, str):
+            return value
+            
+        value_lower = value.lower()
+        
+        # First try direct mapping from text_to_enum_mappings
+        for text, enum_value in self.text_to_enum_mappings.items():
+            if text.lower() in value_lower:
+                return enum_value
+                
+        # Then try matching against enum values
+        for enum_value in enum_class:
+            if value_lower == enum_value.value.lower():
+                return enum_value
+                
+        # Special handling for language values
+        if enum_class == EFormMockInterviewLanguages:
+            # Handle common language variations
+            lang_mappings = {
+                "english": EFormMockInterviewLanguages.english,
+                "eng": EFormMockInterviewLanguages.english,
+                "russian": EFormMockInterviewLanguages.russian,
+                "rus": EFormMockInterviewLanguages.russian,
+                "ru": EFormMockInterviewLanguages.russian,
+            }
+            for lang, enum_value in lang_mappings.items():
+                if value_lower == lang:
+                    return enum_value
+                    
+        return value
+
+    def _process_enum_fields(self, content: Dict[str, Any]) -> None:
+        """Process fields that should be enum values."""
+        if not content:
+            return
+
+        # Process top-level fields
+        for field, value in content.items():
+            if field in self.field_enum_mappings:
+                enum_class = self.field_enum_mappings[field]
+                
+                if isinstance(value, list):
+                    # Process each item in the list
+                    processed_values = []
+                    for v in value:
+                        if isinstance(v, str):
+                            processed_values.append(self._map_to_enum(v, enum_class))
+                        else:
+                            processed_values.append(v)
+                    content[field] = processed_values
+                elif isinstance(value, str):
+                    content[field] = self._map_to_enum(value, enum_class)
+                elif isinstance(value, dict):
+                    # Process nested dictionaries
+                    self._process_enum_fields(value)
+                    # Special handling for language field
+                    if field == "language" and "langs" in value:
+                        if isinstance(value["langs"], list):
+                            value["langs"] = [self._map_to_enum(lang, EFormMockInterviewLanguages) for lang in value["langs"]]
+                        elif isinstance(value["langs"], str):
+                            value["langs"] = [self._map_to_enum(value["langs"], EFormMockInterviewLanguages)]
+            elif isinstance(value, dict):
+                # Process nested dictionaries
+                self._process_enum_fields(value)
+
+    def _fix_language_field(self, content: Dict[str, Any]) -> None:
+        """Fix language field structure and values."""
+        if "language" not in content:
+            content["language"] = {
+                "langs": [EFormMockInterviewLanguages.english],  # Default to English
+                "custom_langs": None
+            }
+        elif isinstance(content["language"], dict):
+            if "langs" not in content["language"]:
+                content["language"]["langs"] = [EFormMockInterviewLanguages.english]
+            elif isinstance(content["language"]["langs"], list):
+                # Convert any string values to proper enum values
+                content["language"]["langs"] = [
+                    self._map_to_enum(lang, EFormMockInterviewLanguages) 
+                    if isinstance(lang, str) else lang 
+                    for lang in content["language"]["langs"]
+                ]
+            if "custom_langs" not in content["language"]:
+                content["language"]["custom_langs"] = None
+        else:
+            content["language"] = {
+                "langs": [EFormMockInterviewLanguages.english],
+                "custom_langs": None
+            }
+
+    def _fix_social_circle_expansion(self, content: Dict[str, Any]) -> None:
+        """Fix social circle expansion structure."""
+        if "social_circle_expansion" in content:
+            if isinstance(content["social_circle_expansion"], list):
+                content["social_circle_expansion"] = {
+                    "meeting_formats": [],
+                    "topics": [],
+                    "details": ""
+                }
+            elif content["social_circle_expansion"] is None:
+                content["social_circle_expansion"] = {
+                    "meeting_formats": [],
+                    "topics": [],
+                    "details": ""
+                }
+
+    def _fix_professional_networking(self, content: Dict[str, Any]) -> None:
+        """Fix professional networking structure."""
+        if "professional_networking" in content:
+            if "topics" in content["professional_networking"]:
+                content["professional_networking"]["topics"] = ["development"]
+            if "user_query" not in content["professional_networking"]:
+                content["professional_networking"]["user_query"] = ""
+            if "details" in content["professional_networking"]:
+                content["professional_networking"]["details"] = ""
+
+    def _fix_mock_interview(self, content: Dict[str, Any]) -> None:
+        """Fix mock interview structure."""
+        if "job_link" in content and isinstance(content["job_link"], list):
+            content["job_link"] = ""
+        self._fix_language_field(content)
+        
+        # Fix interview types
+        if "interview_type" in content:
+            content["interview_type"] = ["technical"]  # Default to technical for now
+
+    def _fix_mentoring_mentor(self, content: Dict[str, Any]) -> None:
+        """Fix mentoring mentor structure."""
+        if "help_request" in content:
+            if "request" in content["help_request"]:
+                content["help_request"]["request"] = ["custom"]
+            if "custom_request" not in content["help_request"]:
+                content["help_request"]["custom_request"] = "Career growth and technical skills development"
+            
+            # Remove any invalid request types
+            if "request" in content["help_request"]:
+                content["help_request"]["request"] = ["custom"]
+
+    def _fix_project_fields(self, content: Dict[str, Any]) -> None:
+        """Fix project-related fields."""
+        if "specialization" in content:
+            content["specialization"] = ["development__frontend__react"]
+        if "skills" in content:
+            content["skills"] = ["development__frontend"]
+        if "project_state" in content:
+            content["project_state"] = "idea"  # Default to idea stage
+
+    def _post_process_content(self, content: Dict[str, Any], intent_type: EFormIntentType) -> None:
+        """Post-process content to fix common issues."""
+        if not content:
+            return
+            
+        # Process enum fields first
+        self._process_enum_fields(content)
+        
+        # Apply intent-specific fixes
+        if intent_type == EFormIntentType.connects:
+            self._fix_social_circle_expansion(content)
+            self._fix_professional_networking(content)
+        elif intent_type == EFormIntentType.mock_interview:
+            self._fix_mock_interview(content)
+        elif intent_type == EFormIntentType.mentoring_mentor:
+            self._fix_mentoring_mentor(content)
+        elif intent_type in [EFormIntentType.projects_find_cofounder, EFormIntentType.projects_find_contributor]:
+            self._fix_project_fields(content)
+
+    def detect_intent_type(self, text: str) -> EFormIntentType:
         """
         Detect the intent type from the text description.
 
@@ -100,7 +361,7 @@ class GeminiParser:
             The detected intent type
         """
         if not self.initialized:
-            await self.initialize()
+            self.initialize()
 
         prompt = f"""
         You are a specialized parser that analyzes text to determine the user's intent.
@@ -124,7 +385,7 @@ class GeminiParser:
         """
 
         try:
-            response = await self.model.generate_content(prompt)
+            response = self.model.generate_content(prompt)
             intent_str = response.text.strip().lower()
 
             # Map the response to an enum value
@@ -149,7 +410,7 @@ class GeminiParser:
             # Default to connects if there's an error
             return EFormIntentType.connects
 
-    async def parse_text_to_form_content(
+    def parse_text_to_form_content(
         self, text: str, intent_type: EFormIntentType | None = None
     ) -> tuple[EFormIntentType, dict]:
         """
@@ -163,11 +424,11 @@ class GeminiParser:
             Tuple of (detected_intent_type, structured_content)
         """
         if not self.initialized:
-            await self.initialize()
+            self.initialize()
 
         # If intent_type is not provided, detect it
         if intent_type is None:
-            intent_type = await self.detect_intent_type(text)
+            intent_type = self.detect_intent_type(text)
 
         # Get the schema class for the intent type
         schema_class = self._get_schema_class_for_intent(intent_type)
@@ -179,11 +440,11 @@ class GeminiParser:
 
         # Generate response from Gemini
         try:
-            response = await self.model.generate_content(prompt)
+            response = self.model.generate_content(prompt)
             parsed_content = self._extract_json_from_response(response.text)
             
-            # Process nested fields for special data types
-            self._process_special_data_types(parsed_content)
+            # Post-process content to fix common issues
+            self._post_process_content(parsed_content, intent_type)
             
             # Validate against schema
             try:
@@ -200,12 +461,7 @@ class GeminiParser:
             raise
 
     def _process_special_data_types(self, content: dict) -> None:
-        """
-        Process special data types in the parsed content to match expected schema formats.
-        
-        Args:
-            content: The parsed content to process
-        """
+        """Process special data types in the parsed content to match expected schema formats."""
         if content is None:
             return
             
@@ -222,32 +478,41 @@ class GeminiParser:
                 if not value:
                     continue
                     
-                # Check if the list contains objects with special attributes
-                if any(hasattr(item, "__dict__") or (not isinstance(item, dict) and not isinstance(item, str)) 
-                      for item in value if item is not None):
-                    # Process each item in the list
-                    new_list = []
-                    for item in value:
-                        if item is None:
-                            continue
-                        if hasattr(item, "label") and item.label is not None:
-                            new_list.append(item.label)
-                        elif hasattr(item, "value") and item.value is not None:
-                            new_list.append(item.value)
+                # Process each item in the list
+                new_list = []
+                for item in value:
+                    if item is None:
+                        continue
+                    # Handle enum values
+                    if hasattr(item, "value"):
+                        new_list.append(item)
+                    elif hasattr(item, "label"):
+                        new_list.append(item)
+                    elif isinstance(item, str):
+                        # Map string values to enums if needed
+                        if field_name in self.field_enum_mappings:
+                            new_list.append(self._map_to_enum(item, self.field_enum_mappings[field_name]))
                         else:
-                            # Keep original strings or other types as is
                             new_list.append(item)
-                    content[field_name] = new_list
+                    else:
+                        new_list.append(item)
+                content[field_name] = new_list
             
             # Handle single objects with attributes
             elif not isinstance(value, dict) and not isinstance(value, str) and hasattr(value, "__dict__"):
-                if hasattr(value, "value") and value.value is not None:
-                    content[field_name] = value.value
-                elif hasattr(value, "label") and value.label is not None:
-                    content[field_name] = value.label
+                if hasattr(value, "value"):
+                    content[field_name] = value
+                elif hasattr(value, "label"):
+                    content[field_name] = value
                 else:
-                    # Keep as original type
                     content[field_name] = str(value)
+            
+            # Handle string values that might need enum mapping
+            elif isinstance(value, str):
+                if field_name in self.field_enum_mappings:
+                    content[field_name] = self._map_to_enum(value, self.field_enum_mappings[field_name])
+                else:
+                    content[field_name] = value
             
             # Process nested dictionaries
             elif isinstance(value, dict):
