@@ -12,7 +12,7 @@ from common_db.enums.forms import (
     EFormRefferalsCompanyType,
     EFormEnglishLevel,
     EFormMockInterviewType,
-    EFormMockInterviewLangluages,
+    EFormMockInterviewLanguages,
     EFormSkills,
     EFormProjectProjectState,
     EFormProjectUserRole,
@@ -147,30 +147,30 @@ class FormReferralsRecommendation(BaseModel):
 
 # ========================= Mock interview form schema =========================
 
-class FromMockInterviewInterviewLangluage(BaseModel):
-    langs: list[EFormMockInterviewLangluages]
+class FromMockInterviewInterviewLanguage(BaseModel):
+    langs: list[EFormMockInterviewLanguages]
     custom_langs: list[str] | None = None
     
     @model_validator(mode='after')
     def check_nonempty(self):
         validate_non_empty_list(self, ["langs"])
 
-        if EFormMockInterviewLangluages.custom in self.langs:
+        if EFormMockInterviewLanguages.custom in self.langs:
             if self.custom_langs is None:
                 raise ValueError("\"custom_langs\" list must be setted, when " + 
-                                 f"\"{EFormMockInterviewLangluages.custom.value}\"" + 
-                                 " langluage added")
+                                 f"\"{EFormMockInterviewLanguages.custom.value}\"" + 
+                                 " language added")
             if len(self.custom_langs) == 0:
                 raise ValueError("\"custom_langs\" list must be non-empty, when " + 
-                                 f"\"{EFormMockInterviewLangluages.custom.value}\"" + 
-                                 " langluage added")
+                                 f"\"{EFormMockInterviewLanguages.custom.value}\"" + 
+                                 " language added")
         return self
 
 
 class FormMockInterview(BaseModel):
     interview_type: list[EFormMockInterviewType]
     job_link: str | None = None
-    langluage: FromMockInterviewInterviewLangluage
+    language: FromMockInterviewInterviewLanguage
     resume: str
     details: str
     public_interview: bool

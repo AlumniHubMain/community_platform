@@ -14,6 +14,91 @@ class BaseScoreConfig:
     MAX_SCORE: float = 1.0
 
 @dataclass
+class NetworkQualityConfig:
+    """Configuration for network quality scoring"""
+    FOLLOWER_THRESHOLD: int = 5000
+    MAX_FOLLOWER_SCORE: float = 0.2
+    MAX_COMPLETENESS_SCORE: float = 0.3
+    MAX_EXPERIENCE_SCORE: float = 0.2
+    COMPLETENESS_WEIGHTS: Dict[str, float] = field(default_factory=lambda: {
+        "summary": 0.1,
+        "skills": 0.1,
+        "work_experience": 0.1
+    })
+    EXPERIENCE_WEIGHTS: Dict[str, float] = field(default_factory=lambda: {
+        "senior": 0.2,
+        "multiple": 0.1
+    })
+
+@dataclass
+class ExperienceConfig:
+    """Configuration for experience scoring"""
+    MAX_YEARS: int = 10
+    YEARS_WEIGHT: float = 0.6
+    QUALITY_WEIGHT: float = 0.4
+    ROLE_WEIGHTS: Dict[str, float] = field(default_factory=lambda: {
+        "senior": 1.0,
+        "junior": 0.3,
+        "default": 0.6
+    })
+
+@dataclass
+class SkillsConfig:
+    """Configuration for skills scoring"""
+    MAX_SKILLS: int = 10
+    MAX_ENDORSEMENTS: int = 50
+    SKILLS_WEIGHT: float = 0.7
+    ENDORSEMENTS_WEIGHT: float = 0.3
+
+@dataclass
+class ReferralRuleConfig:
+    """Configuration for referral rule scoring"""
+    BASE_SCORE: float = 0.3
+    EXPERTISE_WEIGHT: float = 0.8
+    PROF_BACKGROUND_WEIGHT: float = 0.85
+    NETWORK_WEIGHT: float = 0.9
+    MIN_SENIOR_SCORE: float = 0.5
+    MIN_MIDDLE_SCORE: float = 0.45
+    MIN_JUNIOR_SCORE: float = 0.35
+    EXPERTISE_MATCH_THRESHOLD: float = 0.4
+    SENIOR_BOOST: float = 1.1
+    MIDDLE_BOOST: float = 1.05
+    POOR_MATCH_PENALTY: float = 0.6
+
+@dataclass
+class MockInterviewRuleConfig:
+    """Configuration for mock interview rule scoring"""
+    BASE_SCORE: float = 0.6
+    GRADE_WEIGHT: float = 0.4
+    EXPERTISE_WEIGHT: float = 0.4
+    LANGUAGE_WEIGHT: float = 0.3
+    COMMUNICATION_WEIGHT: float = 0.3
+    EXPERIENCE_WEIGHT: float = 0.3
+    SKILL_WEIGHT: float = 0.4
+    PROJECT_WEIGHT: float = 0.3
+    MIN_SENIOR_SCORE: float = 0.6
+    MIN_MIDDLE_SCORE: float = 0.5
+    MIN_JUNIOR_SCORE: float = 0.4
+    SENIOR_BOOST: float = 1.2
+    MIDDLE_BOOST: float = 1.1
+    POOR_MATCH_PENALTY: float = 0.8
+    STRONG_TECHNICAL_BOOST: float = 1.2
+
+@dataclass
+class MentoringRuleConfig:
+    """Configuration for mentoring rule scoring"""
+    BASE_SCORE: float = 0.5
+    GRADE_WEIGHT: float = 0.4
+    EXPERTISE_WEIGHT: float = 0.4
+    PROF_BACKGROUND_WEIGHT: float = 0.6
+    EDUCATION_WEIGHT: float = 0.3
+    SKILLS_WEIGHT: float = 0.1
+    MIN_GOOD_MATCH_SCORE: float = 0.5
+    SENIOR_BOOST: float = 1.3
+    MIDDLE_BOOST: float = 1.1
+    PROF_BACKGROUND_BOOST: float = 1.2
+
+@dataclass
 class LocationScoreConfig:
     """Configuration for location scoring"""
     WEIGHTS: Dict[str, float] = field(default_factory=lambda: {
@@ -104,6 +189,12 @@ class IntentScoreConfig:
 class ScoringConfig:
     """Main configuration class combining all scoring parameters"""
     base: BaseScoreConfig = field(default_factory=BaseScoreConfig)
+    network_quality: NetworkQualityConfig = field(default_factory=NetworkQualityConfig)
+    experience: ExperienceConfig = field(default_factory=ExperienceConfig)
+    skills: SkillsConfig = field(default_factory=SkillsConfig)
+    referral: ReferralRuleConfig = field(default_factory=ReferralRuleConfig)
+    mock_interview: MockInterviewRuleConfig = field(default_factory=MockInterviewRuleConfig)
+    mentoring: MentoringRuleConfig = field(default_factory=MentoringRuleConfig)
     location: LocationScoreConfig = field(default_factory=LocationScoreConfig)
     grade: GradeScoreConfig = field(default_factory=GradeScoreConfig)
     skill: SkillScoreConfig = field(default_factory=SkillScoreConfig)

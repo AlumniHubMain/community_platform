@@ -3,7 +3,7 @@ from common_db.enums.forms import EFormIntentType
 
 import base64
 import json
-from pydantic import validator
+from pydantic import field_validator
 
 
 SUPPORTED_INTENTS: set[EFormIntentType] = {
@@ -28,10 +28,11 @@ class MatchingRequest(BaseSchema):
     text_description: str | None = None
     intent_type: EFormIntentType | None = None
     
-    @validator('form_id')
-    def validate_form_or_text(cls, v, values):
+    @field_validator('form_id')
+    def validate_form_or_text(cls, v, info):
         """Validate that either form_id or text_description is provided"""
-        if 'text_description' in values and values['text_description']:
+        data = info.data
+        if 'text_description' in data and data['text_description']:
             # For text-based matching, text_description is required
             return v
         elif v is None:
