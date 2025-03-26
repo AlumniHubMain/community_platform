@@ -213,40 +213,32 @@ async def parse_text_for_matching(
     """
     async with db_session_callable() as session:
         try:
-            # Initialize the parser service if needed
             if not form_parser_service.initialized:
                 await form_parser_service.initialize()
 
-            # Parse the text description into structured form content
-            # This will also detect the intent type if not provided
             detected_intent, form_content = await form_parser_service.parse_text_to_form_content(
                 text_description, intent_type
             )
 
-            # Use the detected intent type
             intent_type = detected_intent
 
-            # Create a temporary form object for matching (not saved to DB)
             temp_form = FormRead(
-                id=-1,  # Temporary ID
+                id=-1,
                 user_id=user_id,
                 intent=intent_type,
                 content=form_content,
-                created_at="2023-01-01T00:00:00",  # Placeholder
-                updated_at="2023-01-01T00:00:00",  # Placeholder
+                created_at="2023-01-01T00:00:00",
+                updated_at="2023-01-01T00:00:00",
                 description=f"Temporary form from text: {text_description[:50]}...",
             )
 
-            # Get user profiles with their LinkedIn data
             all_users = await DataLoader.get_all_user_profiles(session)
             linkedin_profiles = await DataLoader.get_all_linkedin_profiles(session)
 
-            # Get model settings
             if model_settings_preset not in model_settings_presets:
                 raise ValueError("Invalid model settings preset")
             model_settings = model_settings_presets[model_settings_preset]
 
-            # Create model instance
             model = None
             if model_settings.model_type == ModelType.CATBOOST:
                 model = psclient.get_file(model_settings.model_path)
@@ -254,7 +246,6 @@ async def parse_text_for_matching(
             matcher = Model(model_settings)
             matcher.load_model(model)
 
-            # Make predictions
             predictions = matcher.predict(all_users, temp_form, linkedin_profiles, user_id, n)
 
             # Get user meeting limits

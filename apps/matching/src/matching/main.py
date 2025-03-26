@@ -1,4 +1,4 @@
-"""Основной модуль приложения"""
+"""Main application module"""
 
 import os
 import logging
