@@ -30,6 +30,7 @@
 name: 'Build and Deploy to Cloud Run'
 
 on:
+  pull_request:
   push:
     branches:
       - '"main"'
