@@ -39,7 +39,7 @@ env:
   PROJECT_ID: 'communityp-440714'
   REGION: 'us-east4' 
   SERVICE: 'community-platform-gateway-staging'
-  WORKLOAD_IDENTITY_PROVIDER: 'projects/communityp-440714/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-oidc'
+  WORKLOAD_IDENTITY_PROVIDER: 'projects/331173798018/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-oidc'
 jobs:
   deploy:
     runs-on: 'ubuntu-latest'
