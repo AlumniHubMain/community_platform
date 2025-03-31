@@ -15,6 +15,7 @@ from common_db.enums.users import (
 from common_db.schemas.forms import EFormSpecialization, EFormSkills
 from common_db.schemas.base import BaseSchema, TimestampedSchema
 from common_db.schemas.meetings import MeetingResponseRead
+from common_db.schemas.linkedin import LinkedInProfileRead
 from pydantic_extra_types.country import CountryAlpha2, CountryAlpha3
 from pydantic_extra_types.timezone_name import TimeZoneName
 
@@ -107,6 +108,8 @@ class DTOUserProfile(BaseSchema):
 
     is_verified: bool = False  # verification flag via linkedin_parser
     verified_datetime: datetime | None = None
+
+    linkedin_profile: LinkedInProfileRead | None = None
 
     communities_companies_domains: list[str] | None = None
     communities_companies_services: list[str] | None = None
