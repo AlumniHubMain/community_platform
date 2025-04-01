@@ -14,21 +14,45 @@ from common_db.enums.users import (
     EWithWhom,
     EVisibilitySettings
 )
+from common_db.enums.forms import (
+    EFormIntentType,
+    EFormEnglishLevel,
+    EFormConnectsMeetingFormat,
+    EFormMentoringHelpRequest,
+    EFormRefferalsCompanyType,
+    EFormMockInterviewType,
+    EFormLangluage,
+    EFormProjectProjectState,
+    EFormProjectUserRole,
+)
+
 
 
 router = APIRouter(tags=["Enums"], prefix="/enums")
+types = [
+    EInterestsArea,
+    EExpertiseArea,
+    ESpecialisation,
+    EGrade,
+    EIndustry,
+    ESkillsArea,
+    ECompanyServices,
+    ELocation,
+    ERequestsArea,
+    EWithWhom,
+    EVisibilitySettings,
+    EFormIntentType,
+    EFormEnglishLevel,
+    EFormConnectsMeetingFormat,
+    EFormMentoringHelpRequest,
+    EFormRefferalsCompanyType,
+    EFormMockInterviewType,
+    EFormLangluage,
+    EFormProjectProjectState,
+    EFormProjectUserRole,
+]
 path_to_type = {
-    'EInterestsArea': EInterestsArea,
-    'EExpertiseArea': EExpertiseArea,
-    'ESpecialisation': ESpecialisation,
-    'EGrade': EGrade,
-    'EIndustry': EIndustry,
-    'ESkillsArea': ESkillsArea,
-    'ECompanyServices': ECompanyServices,
-    'ELocation': ELocation,
-    'ERequestsArea': ERequestsArea,
-    'EWithWhom': EWithWhom,
-    'EVisibilitySettings': EVisibilitySettings,
+    str(c.__class__.__name__): c for c in types
 }
 
 @router.get("/{type}", response_model=EnumValues, summary="Returns possible values of enum class")

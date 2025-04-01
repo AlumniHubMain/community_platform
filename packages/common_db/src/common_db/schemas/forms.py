@@ -4,18 +4,17 @@ from common_db.schemas.base import BaseSchema, TimestampedSchema
 from common_db.enums.forms import (
     EFormIntentType,
     EFormConnectsMeetingFormat,
-    EFormConnectsSocialExpansionTopic,
-    EFormProfessionalNetworkingTopic,
-    EFormMentoringGrade,
-    EFormMentoringHelpRequest, 
-    EFormSpecialization,
+    EFormMentoringHelpRequest,
     EFormRefferalsCompanyType,
     EFormEnglishLevel,
     EFormMockInterviewType,
-    EFormMockInterviewLanguages,
-    EFormSkills,
+    EFormLangluage,
     EFormProjectProjectState,
     EFormProjectUserRole,
+)
+from common_db.enums.users import (
+    ESpecialisation,
+    EExpertiseArea,
 )
 from common_db.enums.users import EGrade
 
@@ -29,35 +28,31 @@ def validate_non_empty_list(obj, fields):
 # ============================ Connects form schema ============================
 class FormFieldSocialSircleExpansion(BaseModel):
     meeting_formats: list[EFormConnectsMeetingFormat]
-    topics: list[EFormConnectsSocialExpansionTopic]
+    topics: list[int | None] # List of specializations id or custom topic(None)
     custom_topics: list[str] | None = None
     details: str | None = None
     
     @model_validator(mode='after')
     def check_nonempty(self):
-        if len(self.meeting_formats) == 0:
-            raise ValueError("\"meeting_formats\" list must be non-empty")
-        if len(self.topics) == 0:
-            raise ValueError("\"topics\" list must be non-empty")
-        if EFormConnectsSocialExpansionTopic.custom in self.topics:
+        validate_non_empty_list(self, ["topics"])
+        none_cnt = sum([1 for topic in self.topics if topic is None])
+        if none_cnt > 0:
             if self.custom_topics is None:
-                raise ValueError("\"custom_topics\" list must be setted, when " + 
-                                    f"\"{EFormConnectsSocialExpansionTopic.custom.value}\"" + 
-                                    " topic added")
+                raise ValueError("\"custom_topics\" list must be setted, when None topic added")
             if len(self.custom_topics) == 0:
-                raise ValueError("\"custom_topics\" list must be non-empty, when " + 
-                                    f"\"{EFormConnectsSocialExpansionTopic.custom.value}\"" + 
-                                    " topic added")
+                raise ValueError("\"custom_topics\" list must be non-empty, when None topic added")
+            if len(self.custom_topics) != none_cnt:
+                raise ValueError("\"custom_topics\" list must gave size equal to None count in \"topics\" field, when None topic added")
         return self
 
 
 class FormFieldProfessionalNetworking(BaseModel):
-    topics: list[EFormProfessionalNetworkingTopic]
-    user_query: str | None
+    required_expertises: list[EExpertiseArea]
+    user_query: str | None = None
 
     @model_validator(mode='after')
     def check_nonempty(self):
-        validate_non_empty_list(self, ["topics"])
+        validate_non_empty_list(self, ["required_expertises"])
         return self
 
   
@@ -100,16 +95,16 @@ class FormMentoringHelpRequest(BaseModel):
             raise ValueError("\"custom_request\" field must be non-empty when " + 
                              f"\"{EFormMentoringHelpRequest.custom.value}\"" + 
                              " help request selected")
-        if EFormMentoringHelpRequest.adaptation_after_relocate in self.request and self.country is None:
+        if EFormMentoringHelpRequest.relocation_and_adaptation in self.request and self.country is None:
             raise ValueError("\"country\" field must be non-empty when " + 
-                             f"\"{EFormMentoringHelpRequest.adaptation_after_relocate.value}\"" + 
+                             f"\"{EFormMentoringHelpRequest.relocation_and_adaptation.value}\"" + 
                              " help request selected")
         
 
 class FormMentoringMentor(BaseModel):
     is_local_community: bool
-    required_grade: list[EFormMentoringGrade]
-    specialization: list[EFormSpecialization]
+    required_grade: list[EGrade]
+    specialization: list[ESpecialisation]
     help_request: FormMentoringHelpRequest
     about: str
 
@@ -120,10 +115,9 @@ class FormMentoringMentor(BaseModel):
 
 
 class FormMentoringMentee(BaseModel):
-    grade: list[EFormMentoringGrade]
-    mentor_specialization: list[EFormSpecialization]
+    mentor_specialization: list[int] # List of specializations id
     help_request: FormMentoringHelpRequest
-    details: str
+    about: str
 
     @model_validator(mode='after')
     def extended_model_validation(self):
@@ -147,30 +141,31 @@ class FormReferralsRecommendation(BaseModel):
 
 # ========================= Mock interview form schema =========================
 
-class FromMockInterviewInterviewLanguage(BaseModel):
-    langs: list[EFormMockInterviewLanguages]
+class FromMockInterviewInterviewLangluage(BaseModel):
+    langs: list[EFormLangluage]
     custom_langs: list[str] | None = None
     
     @model_validator(mode='after')
     def check_nonempty(self):
         validate_non_empty_list(self, ["langs"])
 
-        if EFormMockInterviewLanguages.custom in self.langs:
+        if EFormLangluage.custom in self.langs:
             if self.custom_langs is None:
                 raise ValueError("\"custom_langs\" list must be setted, when " + 
-                                 f"\"{EFormMockInterviewLanguages.custom.value}\"" + 
-                                 " language added")
+                                 f"\"{EFormLangluage.custom.value}\"" + 
+                                 " langluage added")
             if len(self.custom_langs) == 0:
                 raise ValueError("\"custom_langs\" list must be non-empty, when " + 
-                                 f"\"{EFormMockInterviewLanguages.custom.value}\"" + 
-                                 " language added")
+                                 f"\"{EFormLangluage.custom.value}\"" + 
+                                 " langluage added")
         return self
 
 
 class FormMockInterview(BaseModel):
     interview_type: list[EFormMockInterviewType]
+    custom_interview_type: str | None = None
     job_link: str | None = None
-    language: FromMockInterviewInterviewLanguage
+    language: FromMockInterviewInterviewLangluage
     resume: str
     details: str
     public_interview: bool
@@ -178,6 +173,10 @@ class FormMockInterview(BaseModel):
     @model_validator(mode='after')
     def extended_valiation(self):
         validate_non_empty_list(self, ["interview_type"])
+        if EFormMockInterviewType.custom in self.interview_type and self.custom_interview_type is None:
+            raise ValueError("\"custom_interview_type\" must be setted, when " + 
+                                 f"\"{EFormMockInterviewType.custom.value}\"" + 
+                                 " interview type added")
         return self
 
 # ==============================================================================
@@ -186,12 +185,12 @@ class FormMockInterview(BaseModel):
 
 class FormProjectsBase(BaseModel):
     project_description: str
-    specialization: list[EFormSpecialization]
-    skills: list[EFormSkills]
+    specializations: list[int] # List of specializations id
+    skills: list[int] # List of skill id
     
     @model_validator(mode='after')
     def validate_depended_fields(self):
-        validate_non_empty_list(self, ["specialization", "skills"])        
+        validate_non_empty_list(self, ["specializations", "skills"])        
         return self
 
 
