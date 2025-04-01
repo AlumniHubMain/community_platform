@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import EmailStr
 from common_db.enums.users import (
     EExpertiseArea,
     EGrade,
@@ -10,9 +10,7 @@ from common_db.enums.users import (
     EWithWhom,
     EVisibilitySettings,
     EProfileType,
-    ELocation,
 )
-from common_db.schemas.forms import EFormSpecialization, EFormSkills
 from common_db.schemas.base import BaseSchema, TimestampedSchema
 from common_db.schemas.meetings import MeetingResponseRead
 from pydantic_extra_types.country import CountryAlpha2, CountryAlpha3
