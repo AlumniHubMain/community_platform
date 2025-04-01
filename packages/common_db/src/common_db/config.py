@@ -24,7 +24,7 @@ class PgSettings(BaseModel):
 
 
 class DbSettings(BaseConfig):
-    db: FieldType[PgSettings] = './config/db_config.env'
+    db: FieldType[PgSettings] = './config/db.json'
 
 
 class DbSettingsLocal(BaseConfig):

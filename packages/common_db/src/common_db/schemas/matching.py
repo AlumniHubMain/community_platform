@@ -1,9 +1,9 @@
 from common_db.schemas.base import BaseSchema, TimestampedSchema
 from common_db.enums.forms import EFormIntentType
-from fastapi import HTTPException
 
 import base64
 import json
+from pydantic import field_validator
 
 
 SUPPORTED_INTENTS: set[EFormIntentType] = {
@@ -18,22 +18,38 @@ SUPPORTED_INTENTS: set[EFormIntentType] = {
 
 
 class MatchingRequest(BaseSchema):
+    """Matching request schema"""
     user_id: int
-    form_id: int
-    model_settings_preset: str
-    n: int
-
+    form_id: int | None = None
+    model_settings_preset: str = "heuristic"
+    n: int = 5
+    
+    # Fields for text-based matching
+    text_description: str | None = None
+    intent_type: EFormIntentType | None = None
+    
+    @field_validator('form_id')
+    def validate_form_or_text(cls, v, info):
+        """Validate that either form_id or text_description is provided"""
+        data = info.data
+        if 'text_description' in data and data['text_description']:
+            # For text-based matching, text_description is required
+            return v
+        elif v is None:
+            # For form-based matching, form_id is required
+            raise ValueError("form_id is required for form-based matching")
+        return v
+    
     @classmethod
-    def from_pubsub_message(cls, message: dict) -> "MatchingRequest":
+    def from_pubsub_message(cls, message):
+        """Create MatchingRequest from PubSub message"""
         if not message.get("data"):
-            raise HTTPException(status_code=400, detail="No data in message")
-
-        try:
-            decoded_data = base64.b64decode(message["data"]).decode("utf-8")
-            data = json.loads(decoded_data)
-            return cls(**data)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid message format: {str(e)}") from e
+            return cls(user_id=0, form_id=0)
+        
+        data = base64.b64decode(message["data"]).decode("utf-8")
+        json_data = json.loads(data)
+        
+        return cls(**json_data)
 
 
 class MatchingResultRead(TimestampedSchema):
