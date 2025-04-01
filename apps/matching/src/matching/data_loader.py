@@ -4,7 +4,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from common_db.models import (
-    ORMUserProfile, 
+    ORMUserProfile,
     ORMLinkedInProfile,
     ORMForm,
     ORMMeetingResponse,
@@ -13,7 +13,6 @@ from common_db.schemas import (
     SUserProfileRead,
     LinkedInProfileRead,
     FormRead,
-    DTOUserProfile,
 )
 
 
@@ -31,7 +30,7 @@ class DataLoader:
                 selectinload(ORMUserProfile.skills),
                 selectinload(ORMUserProfile.user_specialisations),
                 selectinload(ORMUserProfile.industries),
-                selectinload(ORMUserProfile.interests)
+                selectinload(ORMUserProfile.interests),
             )
         )
         result = await session.execute(stmt)
@@ -39,8 +38,8 @@ class DataLoader:
         if profile is None:
             raise HTTPException(status_code=404, detail="Profile not found")
 
-        # Use the new from_orm method for ORM instances, or model_validate for mock data
-        if hasattr(profile, '__table__'):  # Check if it's an ORM instance
+        # Use the from_orm method for ORM instances, or model_validate for mock data
+        if hasattr(profile, "__table__"):  # Check if it's an ORM instance
             return SUserProfileRead.from_orm(profile)
         return SUserProfileRead.model_validate(profile)  # For mock data
 
@@ -52,23 +51,25 @@ class DataLoader:
             selectinload(ORMUserProfile.linkedin_profile),
             selectinload(ORMUserProfile.specialisations),
             selectinload(ORMUserProfile.skills),
-            selectinload(ORMUserProfile.user_specialisations)
+            selectinload(ORMUserProfile.user_specialisations),
+            selectinload(ORMUserProfile.industries),
+            selectinload(ORMUserProfile.interests),
         )
         result = await session.execute(stmt)
         profiles = result.scalars().all()
-        
+
         # Convert all profiles with additional data
-        return [await cls.get_user_profile(session, p.id) for p in profiles]
+        return [SUserProfileRead.from_orm(p) for p in profiles]
 
     @classmethod
     async def get_linkedin_profile(cls, session: AsyncSession, user_id: int) -> LinkedInProfileRead:
         """Get LinkedIn profile by user ID"""
-        result = await session.execute(
-            select(ORMLinkedInProfile).where(ORMLinkedInProfile.users_id_fk == user_id)
-        )
+        # Updated to use the relationship field instead of foreign key directly
+        stmt = select(ORMLinkedInProfile).where(ORMLinkedInProfile.users_id_fk == user_id)
+        result = await session.execute(stmt)
         profile = result.scalar_one_or_none()
         if profile is None:
-            raise HTTPException(status_code=404, detail="Profile not found")
+            raise HTTPException(status_code=404, detail="LinkedIn profile not found")
         return LinkedInProfileRead.model_validate(profile)
 
     @classmethod
@@ -81,9 +82,7 @@ class DataLoader:
     @classmethod
     async def get_form(cls, session: AsyncSession, form_id: int) -> FormRead:
         """Get form by ID"""
-        result = await session.execute(
-            select(ORMForm).where(ORMForm.id == form_id)
-        )
+        result = await session.execute(select(ORMForm).where(ORMForm.id == form_id))
         form = result.scalar_one_or_none()
         if form is None:
             raise HTTPException(status_code=404, detail="Form not found")

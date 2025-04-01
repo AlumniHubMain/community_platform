@@ -165,7 +165,7 @@ class FormMockInterview(BaseModel):
     interview_type: list[EFormMockInterviewType]
     custom_interview_type: str | None = None
     job_link: str | None = None
-    langluage: FromMockInterviewInterviewLangluage
+    language: FromMockInterviewInterviewLanguage
     resume: str
     details: str
     public_interview: bool

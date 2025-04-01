@@ -91,7 +91,7 @@ class DTOUserProfile(BaseSchema):
     country: CountryAlpha2 | CountryAlpha3 | None = None
     city: str | None = None
     timezone: TimeZoneName | None = None
-    referral: bool | None = None
+    referrer_id: int | None = None
     is_tg_notify: bool | None = None
     is_email_notify: bool | None = None
     is_push_notify: bool | None = None
@@ -104,6 +104,16 @@ class DTOUserProfile(BaseSchema):
     available_meetings_confirmations_count: int | None = None
     meeting_responses: list[MeetingResponseRead] | None = None
     profile_type: EProfileType | None = None
+
+    is_verified: bool = False  # verification flag via linkedin_parser
+    verified_datetime: datetime | None = None
+
+    communities_companies_domains: list[str] | None = None
+    communities_companies_services: list[str] | None = None
+    
+    # fields for company recommendations and vacancies - referral block
+    recommender_companies: list[str] | None = None  # list of companies where user is a recommender
+    vacancy_pages: list[str] | None = None  # list of vacancy pages
 
 
 class DTOUserProfileUpdate(DTOUserProfile):
@@ -194,6 +204,8 @@ class DTOUserProfileRead(DTOUserProfileUpdate):
     industry: list[DTOIndustry] | None = None
     skills: list[DTOSkillRead] | None = None
     requests_to_community: list[DTORequestsCommunityRead] | None = None
+    referrer: DTOUserProfileUpdate | None = None
+    referred: list[DTOUserProfileUpdate] | None = None
 
     def to_old_schema(self) -> SUserProfileRead:
         old_schema: SUserProfileRead = SUserProfileRead(**self.model_dump(
@@ -202,7 +214,9 @@ class DTOUserProfileRead(DTOUserProfileUpdate):
                 'interests',
                 'industry',
                 'skills',
-                'requests_to_community'
+                'requests_to_community',
+                'referrer',
+                'referred'
             }
         ))
         old_schema.specialisations = [x.specialisation.label for x in self.specialisations] \

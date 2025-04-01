@@ -1,18 +1,15 @@
-"""Основной модуль приложения"""
+"""Main application module"""
 
 import os
-import base64
-import json
 import logging
 from contextlib import asynccontextmanager
-from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from common_db.db_abstract import db_manager
 from common_db.schemas.matching import MatchingRequest
 from matching.transport import CloudStorageAdapter, PSClient
-from matching.matching import process_matching_request
+from matching.matching import process_matching_request, parse_text_for_matching
 from matching.services import psclient
 
 
@@ -62,23 +59,45 @@ async def pubsub_push(request: Request):
 
         matching_request = MatchingRequest.from_pubsub_message(message)
 
-        logger.info(
-            "Received matching request: user_id: %d, form_id: %d, model_settings_preset: %s, n: %d",
-            matching_request.user_id,
-            matching_request.form_id,
-            matching_request.model_settings_preset,
-            matching_request.n,
-        )
+        # Check if this is a text-based matching request
+        if hasattr(matching_request, "text_description") and matching_request.text_description:
+            logger.info(
+                "Received text-based matching request: user_id: %d, text_description: %s..., model_settings_preset: %s, n: %d",  # pylint: disable=line-too-long
+                matching_request.user_id,
+                matching_request.text_description[:50],  # pylint: disable=unsubscriptable-object
+                matching_request.model_settings_preset,
+                matching_request.n,
+            )
 
-        match_id, _ = await process_matching_request(
-            db_session_callable=db_manager.session,
-            psclient=psclient,
-            logger=logger,
-            user_id=matching_request.user_id,
-            form_id=matching_request.form_id,
-            model_settings_preset=matching_request.model_settings_preset,
-            n=matching_request.n,
-        )
+            match_id, _ = await parse_text_for_matching(
+                db_session_callable=db_manager.session,
+                psclient=psclient,
+                logger=logger,
+                user_id=matching_request.user_id,
+                text_description=matching_request.text_description,
+                intent_type=matching_request.intent_type,  # This might be None, and that's OK
+                model_settings_preset=matching_request.model_settings_preset,
+                n=matching_request.n,
+            )
+        else:
+            # Standard form-based matching request
+            logger.info(
+                "Received form-based matching request: user_id: %d, form_id: %d, model_settings_preset: %s, n: %d",
+                matching_request.user_id,
+                matching_request.form_id,
+                matching_request.model_settings_preset,
+                matching_request.n,
+            )
+
+            match_id, _ = await process_matching_request(
+                db_session_callable=db_manager.session,
+                psclient=psclient,
+                logger=logger,
+                user_id=matching_request.user_id,
+                form_id=matching_request.form_id,
+                model_settings_preset=matching_request.model_settings_preset,
+                n=matching_request.n,
+            )
 
         return {"status": "ok", "match_id": match_id}
 
