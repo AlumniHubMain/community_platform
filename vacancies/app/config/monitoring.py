@@ -38,53 +38,81 @@ class VacanciesMonitoring:
         self._init_metrics()
 
     def _init_metrics(self):
+        # Number of new vacancies parsed
         self.new_vacancies_counter = self.meter.create_counter(
             name="new_vacancies_counter",
             unit="1",
             description="Number of new vacancies parsed from each site",
         )
 
-        self.total_vacancies_gauge = self.meter.create_gauge(
-            name="total_vacancies_gauge",
+        # Total number of active vacancies on a site
+        self.active_vacancies_gauge = self.meter.create_gauge(
+            name="active_vacancies_gauge",
             unit="1",
-            description="Total number of vacancies available on each site",
+            description="Total number of active vacancies on each site",
         )
 
+        # Number of unparsed new vacancies
+        self.unparsed_vacancies_counter = self.meter.create_counter(
+            name="unparsed_vacancies_counter",
+            unit="1",
+            description="Number of vacancies that could not be parsed",
+        )
+
+        # Parsing duration metrics
         self.parsing_duration_histogram = self.meter.create_histogram(
             name="parsing_duration",
             unit="ms",
             description="Time taken to parse vacancies from each site",
         )
 
+        # Parsing failures counter
         self.parsing_failures_counter = self.meter.create_counter(
             name="parsing_failures_counter",
             unit="1",
             description="Number of parsing failures for each site",
         )
 
+        # Token usage by model and site
         self.token_usage_counter = self.meter.create_counter(
             name="token_usage_counter",
             unit="1",
             description="Number of tokens used for LLM processing",
         )
 
-    def record_new_vacancies(self, site_name: str, count: int):
-        """Record the number of new vacancies parsed from a site."""
-        if count <= 0:
-            return
+    def record_parsing_session(
+        self, site_name: str, active_vacancies: int, new_vacancies: int, unparsed_vacancies: int
+    ):
+        """Record metrics for a completed parsing session for a specific site.
 
-        self.new_vacancies_counter.add(count, {"site": site_name})
-        self.logger.info(f"Parsed {count} new vacancies from {site_name}", extra={"site": site_name, "count": count})
+        Args:
+            site_name: Name of the site that was parsed
+            active_vacancies: Total number of active vacancies on the site
+            new_vacancies: Number of new vacancies successfully parsed
+            unparsed_vacancies: Number of new vacancies that could not be parsed
+        """
+        attributes = {"site": site_name}
 
-    def record_total_vacancies(self, site_name: str, count: int):
-        """Record the total number of vacancies available on a site."""
-        if count < 0:
-            return
+        if active_vacancies >= 0:
+            self.active_vacancies_gauge.set(active_vacancies, attributes)
+            self.logger.info(
+                f"Active vacancies on {site_name}: {active_vacancies}",
+                extra={"site": site_name, "count": active_vacancies},
+            )
 
-        self.total_vacancies_gauge.set(count, {"site": site_name})
-        self.logger.info(
-            f"Total vacancies available on {site_name}: {count}", extra={"site": site_name, "count": count}
-        )
+        if new_vacancies > 0:
+            self.new_vacancies_counter.add(new_vacancies, attributes)
+            self.logger.info(
+                f"Parsed {new_vacancies} new vacancies from {site_name}",
+                extra={"site": site_name, "count": new_vacancies},
+            )
+
+        if unparsed_vacancies > 0:
+            self.unparsed_vacancies_counter.add(unparsed_vacancies, attributes)
+            self.logger.info(
+                f"Failed to parse {unparsed_vacancies} vacancies from {site_name}",
+                extra={"site": site_name, "count": unparsed_vacancies},
+            )
 
     def record_parsing_duration(self, site_name: str, start_time: float):
         """Record the time taken to parse vacancies from a site."""
@@ -103,22 +131,26 @@ class VacanciesMonitoring:
             exc_info=True,
         )
 
-    def record_token_usage(self, prompt_tokens: int, completion_tokens: int, model: str = "gemini"):
-        """Record the token usage for LLM processing.
+    def record_token_usage(self, site_name: str, prompt_tokens: int, completion_tokens: int, model: str = "gemini"):
+        """Record the token usage for LLM processing for a specific site.
 
         Args:
+            site_name: Name of the site being processed
             prompt_tokens: Number of tokens in the prompt
             completion_tokens: Number of tokens in the completion
             model: Name of the model used
         """
         total_tokens = prompt_tokens + completion_tokens
-        self.token_usage_counter.add(prompt_tokens, {"type": "prompt", "model": model})
-        self.token_usage_counter.add(completion_tokens, {"type": "completion", "model": model})
-        self.token_usage_counter.add(total_tokens, {"type": "total", "model": model})
+        attributes = {"site": site_name, "model": model}
+
+        self.token_usage_counter.add(prompt_tokens, {**attributes, "type": "prompt"})
+        self.token_usage_counter.add(completion_tokens, {**attributes, "type": "completion"})
+        self.token_usage_counter.add(total_tokens, {**attributes, "type": "total"})
 
         self.logger.info(
-            f"Token usage: {prompt_tokens} prompt, {completion_tokens} completion, {total_tokens} total for {model}",
+            "Token usage for {site_name}: {prompt_tokens} prompt, {completion_tokens} completion, {total_tokens} total with {model}",
             extra={
+                "site": site_name,
                 "prompt_tokens": prompt_tokens,
                 "completion_tokens": completion_tokens,
                 "total_tokens": total_tokens,
@@ -126,17 +158,28 @@ class VacanciesMonitoring:
             },
         )
 
-    def track_parsing_session(self, site_name: str, func):
-        """Decorator to track a complete parsing session including timing and error handling."""
+    def track_site_parsing(self, site_name: str, func):
+        """Decorator to track a complete parsing session including timing and error handling.
+
+        This decorator will time the parsing function and record all metrics for the site.
+        """
 
         def wrapper(*args, **kwargs):
             start_time = time.time()
             try:
+                # Assume the function returns a tuple of (new_vacancies, active_vacancies, unparsed_vacancies)
                 result = func(*args, **kwargs)
-                if isinstance(result, tuple) and len(result) >= 2:
-                    new_vacancies, total_vacancies = result[0], result[1]
-                    self.record_new_vacancies(site_name, new_vacancies)
-                    self.record_total_vacancies(site_name, total_vacancies)
+
+                # Handle different return formats
+                if isinstance(result, tuple) and len(result) >= 3:
+                    new_vacancies, active_vacancies, unparsed_vacancies = result[0], result[1], result[2]
+                    self.record_parsing_session(
+                        site_name=site_name,
+                        active_vacancies=active_vacancies,
+                        new_vacancies=new_vacancies,
+                        unparsed_vacancies=unparsed_vacancies,
+                    )
+
                 self.record_parsing_duration(site_name, start_time)
                 return result
             except Exception as e:

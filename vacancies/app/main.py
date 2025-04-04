@@ -4,7 +4,6 @@
 
 import asyncio
 import os
-import time
 import traceback
 from urllib.parse import urljoin
 
@@ -30,12 +29,10 @@ async def main(logger: picologging.Logger) -> None:
         extractors = [extractor_class(logger=logger) for extractor_class in config.EXTRACTORS.values()]
 
         async def extract_with_semaphore(extractor: BaseLinkExtractor) -> list[str]:
-            start_time = time.time()
             try:
                 async with semaphore:
                     links = await extractor.get_links()
                 # Record metrics after successful extraction
-                monitoring.record_parsing_duration(extractor.name, start_time)
                 return links
             except Exception:
                 logger.error(
@@ -92,9 +89,7 @@ async def main(logger: picologging.Logger) -> None:
                 },
             )
 
-            # Record total vacancies for the site
-            monitoring.record_total_vacancies(extractor.name, len(links))
-
+            # Tracking metrics for the site
             new_vacancies_count = 0
             for link in links:
                 full_link = urljoin(extractor.base_url, link)
@@ -108,8 +103,13 @@ async def main(logger: picologging.Logger) -> None:
                     vacancy = repository.update_time_reachable_by_url(full_link)
                     logger.info("Updated vacancy in database", extra={"vacancy_id": vacancy.id, "url": full_link})
 
-            # Record the number of new vacancies found
-            monitoring.record_new_vacancies(extractor.name, new_vacancies_count)
+            # Record all metrics for this site using the new method
+            monitoring.record_parsing_session(
+                site_name=extractor.name,
+                active_vacancies=len(links),
+                new_vacancies=new_vacancies_count,
+                unparsed_vacancies=0,  # We currently don't track this, setting to 0
+            )
 
         await processor.start()
         await processor.shutdown()

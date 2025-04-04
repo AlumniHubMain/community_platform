@@ -2,6 +2,7 @@
 """Extractor of vacancy data."""
 
 import traceback
+from urllib.parse import urlparse
 
 from langchain_google_vertexai import ChatVertexAI
 from langchain_google_vertexai.callbacks import VertexAICallbackHandler
@@ -104,8 +105,15 @@ class VacancyExtractor:
 
                 # Record token usage in monitoring if available
                 if self.monitoring:
+                    # Extract company name from URL domain for monitoring
+                    domain = urlparse(url).netloc
+                    company_site = domain.split(".")[-2] if len(domain.split(".")) > 1 else domain
+
                     self.monitoring.record_token_usage(
-                        prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, model="gemini-1.5-flash-002"
+                        site_name=company_site,
+                        prompt_tokens=prompt_tokens,
+                        completion_tokens=completion_tokens,
+                        model="gemini-1.5-flash-002",
                     )
                 else:
                     self.logger.info(
