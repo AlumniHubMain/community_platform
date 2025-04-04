@@ -10,7 +10,7 @@ from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
 
 
-class VacanciesMetrics:
+class VacanciesMonitoring:
     """Metrics for monitoring vacancy parsing."""
     
     def __init__(
