@@ -3,16 +3,16 @@
 
 import traceback
 
-from loguru import logger
+from picologging import Logger
 from playwright.async_api import Page
 
-from app.link_extractor.base import BaseLinkExtractor
+from app.core.link_extractor.base import BaseLinkExtractor
 
 
 class WargamingLinkExtractor(BaseLinkExtractor):
     """Extractor for Wargaming vacancy links."""
 
-    def __init__(self, logger: logger = logger) -> None:
+    def __init__(self, logger: Logger = Logger) -> None:
         """Initialize the WargamingLinkExtractor."""
         super().__init__("https://wargaming.com/en/careers/", logger)
 
@@ -32,11 +32,11 @@ class WargamingLinkExtractor(BaseLinkExtractor):
         try:
             await page.wait_for_selector(".careers-list", timeout=self.timeout)
         except Exception as e:  # noqa: BLE001
-            self.logger.info("No vacancies found: {error}", error=e)
+            self.logger.info("No vacancies found: {error}", extra={"error": e})
         try:
             await page.wait_for_load_state("networkidle")
         except Exception as e:  # noqa: BLE001
-            self.logger.info("Network idle not found: {error}", error=e)
+            self.logger.info("Network idle not found: {error}", extra={"error": e})
 
         while True:
             try:
@@ -45,11 +45,11 @@ class WargamingLinkExtractor(BaseLinkExtractor):
                 try:
                     await page.wait_for_load_state("networkidle")
                 except Exception:  # noqa: BLE001
-                    self.logger.info("Network idle not found", error=traceback.format_exc())
+                    self.logger.info("Network idle not found", extra={"error": traceback.format_exc()})
                 await page.wait_for_timeout(2000)  # Add delay to ensure content loads
 
             except Exception:  # noqa: BLE001
-                self.logger.info("Pagination completed or error occurred", error=traceback.format_exc())
+                self.logger.info("Pagination completed or error occurred", extra={"error": traceback.format_exc()})
                 break
 
     async def _extract_links(self, page: Page) -> list[str]:  # noqa: PLR6301

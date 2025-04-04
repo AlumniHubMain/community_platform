@@ -4,7 +4,7 @@
 import os
 
 from google.cloud.sql.connector import Connector, IPTypes
-from loguru import logger
+from picologging import Logger
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -15,7 +15,7 @@ from .vacancy_schema import Base
 class PostgresDB:
     """PostgreSQL connection."""
 
-    def __init__(self, settings: PostgresSettings, logger: logger = logger) -> None:
+    def __init__(self, settings: PostgresSettings, logger: Logger = Logger) -> None:
         """Initialize PostgreSQL connection parameters.
 
         Args:
@@ -30,7 +30,7 @@ class PostgresDB:
         self.logger = logger
 
     @classmethod
-    def create(cls, settings: PostgresSettings, logger: logger = logger) -> "PostgresDB":
+    def create(cls, settings: PostgresSettings, logger: Logger = Logger) -> "PostgresDB":
         """Create and initialize a new PostgresDB instance.
 
         Args:
@@ -95,19 +95,18 @@ class PostgresDB:
 
     def close(self) -> None:
         """Close the database connection."""
-        if self.engine:
-            try:
+        try:
+            if self.engine:
                 self.engine.dispose()
-            except Exception as e:
-                self.logger.exception("Error disposing engine: {error}", error=e)
+        except Exception as e:
+            self.logger.exception("Error disposing engine: {error}", extra={"error": e})
 
-        if self.connector:
-            try:
+        try:
+            if self.connector:
                 self.connector.close()
-            except Exception as e:
-                self.logger.exception("Error closing Cloud SQL connector: {error}", error=e)
-            finally:
                 self.connector = None
+        except Exception as e:
+            self.logger.exception("Error closing Cloud SQL connector: {error}", extra={"error": e})
 
     def __enter__(self) -> "PostgresDB":
         """Context manager entry."""

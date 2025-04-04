@@ -4,10 +4,10 @@
 import traceback
 from datetime import UTC, datetime, timedelta
 
-from loguru import logger
+from picologging import Logger
 from sqlalchemy import select
 
-from app.data_extractor.extractor import VacancyStructure
+from app.core.data_extractor.extractor import VacancyStructure
 from app.db import PostgresDB
 from app.db.vacancy_schema import Vacancy
 
@@ -15,7 +15,7 @@ from app.db.vacancy_schema import Vacancy
 class VacancyRepository:
     """Репозиторий для работы c вакансиями в базе данных."""
 
-    def __init__(self, db: PostgresDB, logger: logger) -> None:
+    def __init__(self, db: PostgresDB, logger: Logger) -> None:
         """Инициализация репозитория.
 
         Args:
@@ -44,7 +44,7 @@ class VacancyRepository:
                 existing_vacancy = session.execute(stmt).scalar_one_or_none()
 
                 if existing_vacancy:
-                    self._logger.info("Updating existing vacancy", url=url)
+                    self._logger.info("Updating existing vacancy", extra={"url": url})
                     # Обновляем существующую вакансию
                     update_data = vacancy_data.model_dump(exclude_unset=True)
                     for key, value in update_data.items():
@@ -54,7 +54,7 @@ class VacancyRepository:
                     existing_vacancy.last_timestamp = datetime.now(UTC)
                     vacancy = existing_vacancy
                 else:
-                    self._logger.info("Creating new vacancy", url=url)
+                    self._logger.info("Creating new vacancy", extra={"url": url})
                     # Создаем новую вакансию
                     vacancy = Vacancy(**vacancy_data.model_dump())
                     vacancy.url = url
@@ -65,7 +65,9 @@ class VacancyRepository:
                 session.refresh(vacancy)
                 return vacancy
             except Exception as e:
-                self._logger.error("Error while adding/updating vacancy", url=url, error=traceback.format_exc())
+                self._logger.error(
+                    "Error while adding/updating vacancy", extra={"url": url, "error": traceback.format_exc()}
+                )
                 session.rollback()
                 raise e
 
@@ -82,12 +84,14 @@ class VacancyRepository:
                 result = session.execute(stmt)
                 vacancy = result.scalar_one_or_none()
                 if vacancy:
-                    self._logger.debug("Found vacancy by URL", url=url)
+                    self._logger.debug("Found vacancy by URL", extra={"url": url})
                 else:
-                    self._logger.debug("Vacancy not found by URL", url=url)
+                    self._logger.debug("Vacancy not found by URL", extra={"url": url})
                 return vacancy
             except Exception as e:
-                self._logger.error("Error while getting vacancy by URL", url=url, error=traceback.format_exc())
+                self._logger.error(
+                    "Error while getting vacancy by URL", extra={"url": url, "error": traceback.format_exc()}
+                )
                 session.rollback()
                 raise e
 
@@ -111,7 +115,7 @@ class VacancyRepository:
 
         with self._db.get_session() as session:
             try:
-                self._logger.info("Updating vacancy", url=url)
+                self._logger.info("Updating vacancy", extra={"url": url})
                 update_data = vacancy_data.model_dump(exclude_unset=True)
                 for key, value in update_data.items():
                     if value:
@@ -122,7 +126,7 @@ class VacancyRepository:
                 session.refresh(vacancy)
                 return vacancy
             except Exception as e:
-                self._logger.error("Error while updating vacancy", url=url, error=traceback.format_exc())
+                self._logger.error("Error while updating vacancy", extra={"url": url, "error": traceback.format_exc()})
                 session.rollback()
                 raise e
 
@@ -144,15 +148,13 @@ class VacancyRepository:
                 exists = result.scalar() is not None
                 self._logger.debug(
                     "Checking vacancy existence",
-                    url=url,
-                    exists=exists,
+                    extra={"url": url, "exists": exists},
                 )
                 return exists
             except Exception as e:
                 self._logger.error(
                     "Error while checking vacancy existence",
-                    url=url,
-                    error=traceback.format_exc(),
+                    extra={"url": url, "error": traceback.format_exc()},
                 )
                 session.rollback()
                 raise e
@@ -177,19 +179,18 @@ class VacancyRepository:
                 vacancy = result.scalar_one_or_none()
 
                 if vacancy:
-                    self._logger.info("Updating time_reachable for vacancy", url=url)
+                    self._logger.info("Updating time_reachable for vacancy", extra={"url": url})
                     vacancy.time_reachable = datetime.now(UTC)
                     session.add(vacancy)
                     session.commit()
                     session.refresh(vacancy)
                     return vacancy
-                self._logger.warning("Vacancy not found for updating time_reachable", url=url)
+                self._logger.warning("Vacancy not found for updating time_reachable", extra={"url": url})
                 return None
             except Exception as e:
                 self._logger.error(
                     "Error while updating time_reachable for vacancy",
-                    url=url,
-                    error=traceback.format_exc(),
+                    extra={"url": url, "error": traceback.format_exc()},
                 )
                 session.rollback()
                 raise e

@@ -8,7 +8,6 @@ dependencies = [
     "cloud-sql-python-connector[asyncpg]>=1.16.0",
     "langchain>=0.3.14",
     "langchain-google-vertexai>=2.0.11",
-    "loguru>=0.7.3",
     "playwright>=1.49.1",
     "pydantic>=2.9.2",
     "pydantic-settings>=2.7.1",
@@ -17,6 +16,8 @@ dependencies = [
     "pg8000>=1.31.2",
     "opentelemetry-sdk>=1.31.1",
     "opentelemetry-exporter-gcp-monitoring>=1.9.0a0",
+    "picologging>=0.9.3",
+    "python-json-logger>=3.3.0",
 ]
 
 [tool.uv]

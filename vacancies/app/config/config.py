@@ -7,7 +7,7 @@ import os
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.link_extractor import (
+from app.core.link_extractor import (
     BaseLinkExtractor,
     BookingLinkExtractor,
     IndriverLinkExtractor,
@@ -62,4 +62,3 @@ class Config(BaseSettings):
 
 config = Config()
 credentials = Credentials.load()
-GCP_LOG_FORMAT = "{level:<.1}{time:MMDD HH:mm:ss.SSSSSS} {process} {name}:{line}] {message} | {extra}"

@@ -1,14 +1,14 @@
 import pytest
-from loguru import logger
+from picologging import Logger
 from playwright.async_api import Browser, BrowserContext, Page
 
-from app.data_extractor.extractor import VacancyExtractor
-from app.data_extractor.structure_vacancy import VacancyStructure
+from app.core.data_extractor.extractor import VacancyExtractor
+from app.core.data_extractor.structure_vacancy import VacancyStructure
 
 
 @pytest.fixture
 def mock_logger():
-    return logger
+    return Logger("test_vacancy_extractor")
 
 
 @pytest.fixture

@@ -3,16 +3,16 @@
 
 import traceback
 
-from loguru import logger
+from picologging import Logger
 from playwright.async_api import Page
 
-from app.link_extractor.base import BaseLinkExtractor
+from app.core.link_extractor.base import BaseLinkExtractor
 
 
 class BookingLinkExtractor(BaseLinkExtractor):
     """Extractor for Booking vacancy links."""
 
-    def __init__(self, logger: logger = logger) -> None:
+    def __init__(self, logger: Logger = Logger) -> None:
         """Initialize the BookingLinkExtractor."""
         super().__init__("https://jobs.booking.com/booking/jobs", logger)
         self.all_links = set()
@@ -30,8 +30,8 @@ class BookingLinkExtractor(BaseLinkExtractor):
     async def _load_all_content(self, page: Page) -> None:
         try:
             await page.wait_for_selector('a[href*="/booking/jobs/"]', timeout=self.timeout)
-        except TimeoutError as e:
-            self.logger.info("Timeout while loading content", error=e)
+        except Exception as e:
+            self.logger.info("Timeout while loading content", extra={"error": e})
 
         while True:
             current_links = await page.eval_on_selector_all(
@@ -60,7 +60,7 @@ class BookingLinkExtractor(BaseLinkExtractor):
                 await page.wait_for_load_state("networkidle")
                 await page.wait_for_timeout(2000)
             except Exception:  # noqa: BLE001
-                self.logger.info("Error during pagination", error=traceback.format_exc())
+                self.logger.info("Error during pagination", extra={"error": traceback.format_exc()})
                 break
 
     async def _extract_links(self, page: Page) -> list[str]:  # noqa: ARG002

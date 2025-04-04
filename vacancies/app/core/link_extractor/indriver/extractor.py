@@ -4,16 +4,16 @@
 import asyncio
 import traceback
 
-from loguru import logger
+from picologging import Logger
 from playwright.async_api import Page
 
-from app.link_extractor.base import BaseLinkExtractor
+from app.core.link_extractor.base import BaseLinkExtractor
 
 
 class IndriverLinkExtractor(BaseLinkExtractor):
     """Extractor for InDrive vacancy links."""
 
-    def __init__(self, logger: logger = logger) -> None:
+    def __init__(self, logger: Logger = Logger) -> None:
         """Initialize the InDriveLinkExtractor."""
         super().__init__("https://careers.indrive.com/vacancies", logger)
 
@@ -32,7 +32,7 @@ class IndriverLinkExtractor(BaseLinkExtractor):
         try:
             await page.wait_for_selector("a[href*='/vacancies/']", timeout=self.timeout)
         except Exception:  # noqa: BLE001
-            self.logger.info("No vacancies found on the page", error=traceback.format_exc())
+            self.logger.info("No vacancies found on the page", extra={"error": traceback.format_exc()})
 
         # Нажимаем на кнопку "See more", пока она есть
         while True:
@@ -41,7 +41,9 @@ class IndriverLinkExtractor(BaseLinkExtractor):
                 await see_more_button.click()
                 await asyncio.sleep(2)
             except Exception:  # noqa: BLE001
-                self.logger.info("No more 'See more' button found, all vacancies loaded", error=traceback.format_exc())
+                self.logger.info(
+                    "No more 'See more' button found, all vacancies loaded", extra={"error": traceback.format_exc()}
+                )
                 break
 
     async def _extract_links(self, page: Page) -> list[str]:  # noqa: PLR6301

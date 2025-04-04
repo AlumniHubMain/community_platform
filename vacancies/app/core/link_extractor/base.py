@@ -4,7 +4,7 @@
 
 from abc import ABC, abstractmethod
 
-from loguru import logger
+from picologging import Logger
 from playwright.async_api import Browser, Page, Playwright, async_playwright
 
 
@@ -16,11 +16,12 @@ class BaseLinkExtractor(ABC):
     def name(self) -> str:
         """Return the name of the extractor."""
 
-    def __init__(self, base_url: str, logger: logger = logger) -> None:
+    def __init__(self, base_url: str, logger: Logger = Logger) -> None:
         """Initialize the link extractor."""
         self.base_url = base_url
         self.timeout = 60000  # 60 seconds
-        self.logger = logger.bind(base_url=base_url)
+        self.logger = logger
+        self.logger.info(f"Base URL: {base_url}")
         self.browser_args = [
             "--no-sandbox",
             "--disable-blink-features=AutomationControlled",
@@ -28,10 +29,8 @@ class BaseLinkExtractor(ABC):
             "--disable-background-timer-throttling",
             "--disable-popup-blocking",
             "--disable-backgrounding-occluded-windows",
-            "--disable-renderer-backgrounding",
             "--disable-window-activation",
             "--disable-focus-on-load",
-            "--no-first-run",
             "--no-default-browser-check",
             "--no-startup-window",
             "--window-position=0,0",
@@ -43,7 +42,7 @@ class BaseLinkExtractor(ABC):
         self._playwright = None
         self._browser = None
         self._page = None
-        self.logger.info("Initialized link extractor for {base_url}", base_url=self.base_url)
+        self.logger.info("Initialized link extractor for {base_url}", extra={"base_url": self.base_url})
 
     async def _init_browser(self) -> tuple[Playwright, Browser, Page]:
         """Initialize the browser and page.
@@ -55,10 +54,17 @@ class BaseLinkExtractor(ABC):
         self._playwright = await async_playwright().start()
         self._browser = await self._playwright.chromium.launch(headless=True, args=self.browser_args)
         self._page = await self._browser.new_page()
+        await self._page.set_viewport_size({"width": 1280, "height": 800})
+        await self._page.set_extra_http_headers({
+            "Accept-Language": "en",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/119.0.0.0",
+        })
         try:
-            await self._page.goto(self.base_url)
-        except Exception as e:  # noqa: BLE001
-            self.logger.info("Error while navigating to {base_url}: {error}", base_url=self.base_url, error=e)
+            await self._page.goto(self.base_url, timeout=self.timeout)
+        except Exception as e:
+            self.logger.info(
+                "Error while navigating to {base_url}: {error}", extra={"base_url": self.base_url, "error": e}
+            )
         return self._playwright, self._browser, self._page
 
     @abstractmethod
