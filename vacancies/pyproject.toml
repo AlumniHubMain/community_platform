@@ -15,6 +15,8 @@ dependencies = [
     "sqlalchemy>=2.0.37",
     "google-cloud-logging>=3.11.3",
     "pg8000>=1.31.2",
+    "opentelemetry-sdk>=1.31.1",
+    "opentelemetry-exporter-gcp-monitoring>=1.9.0a0",
 ]
 
 [tool.uv]

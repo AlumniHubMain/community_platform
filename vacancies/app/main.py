@@ -11,9 +11,9 @@ from urllib.parse import urljoin
 from loguru import logger
 
 from app.config import GCP_LOG_FORMAT, config, credentials
-from app.data_extractor.processor import VacancyProcessor
+from app.core.data_extractor.processor import VacancyProcessor
 from app.db import PostgresDB, PostgresSettings, VacancyRepository
-from app.link_extractor import BaseLinkExtractor
+from app.core.link_extractor import BaseLinkExtractor
 
 
 async def main(logger: logger) -> None:
