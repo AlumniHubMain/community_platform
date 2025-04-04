@@ -19,6 +19,7 @@ from ..models import (
     ORMMeetingResponse,
     ORMReferralCode
 )
+from ..models.linkedin import ORMLinkedInProfile
 from ..schemas import (
     DTOUserProfile,
     DTOUserProfileUpdate,
@@ -95,7 +96,12 @@ class UserManager:
                 selectinload(ORMUserProfile.user_specialisations)
                 .joinedload(ORMUserSpecialisation.specialisation),
                 joinedload(ORMUserProfile.referrer),
-                selectinload(ORMUserProfile.referred)
+                selectinload(ORMUserProfile.referred),
+                # for linkedin
+                selectinload(ORMUserProfile.linkedin_profile)
+                .selectinload(ORMLinkedInProfile.education),
+                selectinload(ORMUserProfile.linkedin_profile)
+                .selectinload(ORMLinkedInProfile.work_experience)
             )
             .where(ORMUserProfile.id == user_id)
         )
@@ -197,7 +203,12 @@ class UserManager:
                 selectinload(ORMUserProfile.user_specialisations)
                 .joinedload(ORMUserSpecialisation.specialisation),
                 joinedload(ORMUserProfile.referrer),
-                selectinload(ORMUserProfile.referred)
+                selectinload(ORMUserProfile.referred),
+                # for linkedin
+                selectinload(ORMUserProfile.linkedin_profile)
+                .selectinload(ORMLinkedInProfile.education),
+                selectinload(ORMUserProfile.linkedin_profile)
+                .selectinload(ORMLinkedInProfile.work_experience)
             )
             .where(ORMUserProfile.telegram_id == user_tg_id)
         )

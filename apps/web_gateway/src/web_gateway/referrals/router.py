@@ -9,7 +9,7 @@ and how to use them with Figma screens: 4433, 4434
 """
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from common_db.db_abstract import db_manager
@@ -58,13 +58,18 @@ async def get_integration_docs():
                 "description": "Search users who have a specific vacancy page",
                 "endpoint": "get /referrals/vacancy/{vacancy_page}/users",
                 "notes": "Returns a list of users who have the specified vacancy page in their vacancy_pages list."
+            },
+            "figma_4436": {
+                "description": "Remove a company from user's recommender companies",
+                "endpoint": "patch /referrals/user/{user_id}/company/{company_label}/remove",
+                "notes": "Removes the specified company from the user's recommender_companies list."
             }
         }
     }
 
 
 @router.get(
-    "/user/{company_label}",
+    "/company/{company_label}/users",
     name="get_company_recommenders",
     response_model=list[DTOUserProfileRead]
 )
@@ -88,8 +93,38 @@ async def get_company_recommenders(
     )
 
 
+@router.patch(
+    "/user/{user_id}/company/{company_label}/remove",
+    name="remove_company_from_user",
+    status_code=status.HTTP_200_OK
+)
+async def remove_company_from_user(
+        company_label: str,
+        user_id: Annotated[int, Depends(auth.current_user_id)],
+        session: Annotated[AsyncSession, Depends(db_manager.get_session)]
+):
+    """
+    Remove a company from user's recommender_companies list
+    This endpoint removes the specified company from the user's recommender_companies list.
+    If the company is not in the list, no changes are made.
+    Args:
+        user_id: User ID
+        company_label: Company label to remove (e.g., "Yandex", "VK")
+    Returns:
+        200 OK with success message
+    Figma: 4436
+    """
+    success = await ReferralManager.remove_company_from_user_recommenders(
+        user_id=user_id,
+        company_label=company_label,
+        session=session
+    )
+    # Return 200 OK with success message
+    return {"status": "success", "message": f"Company '{company_label}' removed from user's recommender companies"}
+
+
 @router.get(
-    "/user/{vacancy_page}",
+    "/vacancy/{vacancy_page}/users",
     name="get_vacancy_page_users",
     response_model=list[DTOUserProfileRead]
 )

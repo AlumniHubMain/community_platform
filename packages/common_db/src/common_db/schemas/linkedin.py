@@ -299,5 +299,6 @@ class LinkedInProfileTask(BaseModel):
     # TODO: вынести в локальный пакет - для pubsub
     username: str
     target_company_label: str
+    user_id: int | None = None
 
 # TODO: Вынести raw_data, companies в отдельные схемы

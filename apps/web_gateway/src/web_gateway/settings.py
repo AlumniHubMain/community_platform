@@ -37,5 +37,12 @@ class Settings(BaseConfig):
     limits: FieldType[LimitsSettings] = './public_config/limits.json'
     matching_requests: FieldType[MatchingRequestsSettings] = "./public_config/matching_requests.json"
 
+    # PubSub Topics & Subscriptions - TODO: get! from where?
+    pubsub_linkedin_tasks_topic: str = "linkedin-tasks"
+    pubsub_linkedin_tasks_sub: str = "linkedin-tasks-sub"
+    pubsub_limits_alert_topic: str = "linkedin-limits"
+    pubsub_limits_alert_sub: str = "linkedin-limits-sub"
+    google_cloud_project: str = 'communityp-440714'
+
 
 settings = Settings()
