@@ -18,6 +18,7 @@ COPY apps/matching/pyproject.toml apps/matching/uv.lock /build/apps/matching/
 
 COPY config/ /build/config/
 COPY credentials/ /build/credentials/
+COPY ./secrets/ /build/secrets/
 
 COPY apps/matching/ /build/apps/matching/
 
