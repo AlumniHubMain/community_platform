@@ -1,12 +1,17 @@
 import pytest
-from loguru import logger
+from picologging import Logger
 
-from app.link_extractor import BookingLinkExtractor, IndriverLinkExtractor, TinkoffLinkExtractor, WargamingLinkExtractor
+from app.core.link_extractor import (
+    BookingLinkExtractor,
+    IndriverLinkExtractor,
+    TinkoffLinkExtractor,
+    WargamingLinkExtractor,
+)
 
 
 @pytest.fixture
 def mock_logger():
-    return logger
+    return Logger("test_link_extractor")
 
 
 @pytest.fixture

@@ -26,8 +26,9 @@ A Python-based service for extracting and processing job vacancies from multiple
 ```tree
 vacancies/
 ├── app/
-│   ├── link_extractor/     # Company-specific link extractors
-│   ├── data_extractor/     # Vacancy content extraction
+│   ├── core/
+│   │   ├── link_extractor/     # Company-specific link extractors
+│   │   └── data_extractor/     # Vacancy content extraction
 │   ├── db/                 # Database models and repositories
 │   ├── config/            # Application configuration
 │   └── main.py           # Main application entry point

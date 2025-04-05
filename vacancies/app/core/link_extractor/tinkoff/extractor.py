@@ -1,14 +1,11 @@
+"""Extractor for Tinkoff vacancy links."""
+
 import traceback
 
 from picologging import Logger
-from playwright.async_api import Page, TimeoutError
+from playwright.async_api import Page
 
-from app.core.link_extractor import BaseLinkExtractor
-
-# Assuming BaseLinkExtractor is defined in app.link_extractor.base
-# If not, you might need to define a simple base class or remove the inheritance
-
-logger = Logger(__name__)
+from app.core.link_extractor.base import BaseLinkExtractor
 
 
 class TinkoffLinkExtractor(BaseLinkExtractor):
@@ -93,28 +90,3 @@ class TinkoffLinkExtractor(BaseLinkExtractor):
         # page argument is kept for consistency with the base class, though not used here
         # as links are collected in _load_all_content
         return list(self.all_links)
-
-
-# Example usage (requires playwright and asyncio context)
-# async def main():
-#     from playwright.async_api import async_playwright
-#     from loguru import logger
-#
-#     async with async_playwright() as p:
-#         browser = await p.chromium.launch()
-#         page = await browser.new_page()
-#         try:
-#             await page.goto("https://www.tbank.ru/career/vacancies/all/moscow/", wait_until="domcontentloaded")
-#             extractor = TinkoffLinkExtractor(logger=logger)
-#             links = await extractor.extract_links(page)
-#             logger.info(f"Extracted {len(links)} links:")
-#             for link in links:
-#                 logger.info(link)
-#         except Exception as e:
-#             logger.error(f"An error occurred: {e}")
-#         finally:
-#             await browser.close()
-#
-# if __name__ == "__main__":
-#     import asyncio
-#     asyncio.run(main())

@@ -5,7 +5,7 @@ from pathlib import Path
 # Add the parent directory to sys.path to allow imports from the vacancies package
 sys.path.append(str(Path(__file__).parent.parent))
 
-from result import JetBrainsLinkExtractor
+from result import TinkoffLinkExtractor
 
 
 async def test_extract_real_links(extractor):
@@ -19,4 +19,4 @@ async def test_extract_real_links(extractor):
 
 
 if __name__ == "__main__":
-    asyncio.run(test_extract_real_links(JetBrainsLinkExtractor()))
+    asyncio.run(test_extract_real_links(TinkoffLinkExtractor()))
