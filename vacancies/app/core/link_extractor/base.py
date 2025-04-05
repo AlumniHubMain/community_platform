@@ -2,6 +2,7 @@
 
 """Base class for link extractors."""
 
+import traceback
 from abc import ABC, abstractmethod
 
 from picologging import Logger
@@ -21,7 +22,7 @@ class BaseLinkExtractor(ABC):
         self.base_url = base_url
         self.timeout = 60000  # 60 seconds
         self.logger = logger
-        self.logger.info(f"Base URL: {base_url}")
+        self.logger.info("Initializing link extractor", extra={"base_url": base_url})
         self.browser_args = [
             "--no-sandbox",
             "--disable-blink-features=AutomationControlled",
@@ -42,7 +43,6 @@ class BaseLinkExtractor(ABC):
         self._playwright = None
         self._browser = None
         self._page = None
-        self.logger.info("Initialized link extractor for {base_url}", extra={"base_url": self.base_url})
 
     async def _init_browser(self) -> tuple[Playwright, Browser, Page]:
         """Initialize the browser and page.
@@ -61,9 +61,13 @@ class BaseLinkExtractor(ABC):
         })
         try:
             await self._page.goto(self.base_url, timeout=self.timeout)
-        except Exception as e:
-            self.logger.info(
-                "Error while navigating to {base_url}: {error}", extra={"base_url": self.base_url, "error": e}
+        except Exception:
+            self.logger.error(
+                {
+                    "message": "Error while navigating",
+                    "base_url": self.base_url,
+                    "error": traceback.format_exc(),
+                },
             )
         return self._playwright, self._browser, self._page
 

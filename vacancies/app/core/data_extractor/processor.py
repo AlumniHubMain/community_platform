@@ -7,9 +7,10 @@ from threading import Thread
 from time import sleep
 
 import picologging
+import picologging.config
 from picologging import Logger
 
-from app.config import setup_logging
+from app.config import logger_config
 from app.core.data_extractor.extractor import VacancyExtractor
 from app.db import VacancyRepository
 
@@ -79,18 +80,37 @@ class VacancyProcessor:
                     self.logger.info("Data processor thread received shutdown signal")
                     break
 
-                self.logger.debug("Saving data for URL", extra={"url": url})
+                self.logger.debug(
+                    {
+                        "message": "Saving data for URL",
+                        "url": url,
+                    },
+                )
                 try:
                     self.repository.add_or_update(url, company_name, data)
-                    self.logger.info("Successfully saved data for URL", extra={"url": url})
+                    self.logger.info(
+                        {
+                            "message": "Successfully saved data for URL",
+                            "url": url,
+                        },
+                    )
 
                 except Exception:
                     self.logger.error(
-                        "Database error while saving data for URL", extra={"url": url, "error": traceback.format_exc()}
+                        {
+                            "message": "Database error while saving data for URL",
+                            "url": url,
+                            "error": traceback.format_exc(),
+                        },
                     )
 
             except Exception:
-                self.logger.exception("Error processing data queue", extra={"error": traceback.format_exc()})
+                self.logger.exception(
+                    {
+                        "message": "Error processing data queue",
+                        "error": traceback.format_exc(),
+                    },
+                )
                 sleep(0.1)
 
         loop.close()
@@ -134,54 +154,71 @@ class VacancyProcessor:
     def _process_urls(url_queue: MPQueue, data_queue: MPQueue, max_input_tokens: int, max_output_tokens: int) -> None:
         """Process URLs in a separate process using async extractor."""
         worker_name = multiprocessing.current_process().name
-        setup_logging()
+        picologging.config.dictConfig(logger_config(worker_name))
         logger = picologging.getLogger(worker_name)
-
-        # Initialize monitoring
-        from app.config import VacanciesMonitoring
-
-        monitoring = VacanciesMonitoring(name="vacancy_parser", logger=logger)
 
         async def process_urls_async():
             extractor = VacancyExtractor(
                 logger=logger,
                 max_input_tokens=max_input_tokens,
                 max_output_tokens=max_output_tokens,
-                monitoring=monitoring,
             )
 
             while True:
                 try:
                     url, company_name = url_queue.get()
                     if url is None:  # Poison pill
-                        logger.info("Process received shutdown signal", extra={"worker_name": worker_name})
+                        logger.info(
+                            {
+                                "message": "Process received shutdown signal",
+                                "worker_name": worker_name,
+                            },
+                        )
                         break
 
-                    logger.debug("Process processing URL", extra={"url": url, "worker_name": worker_name})
+                    logger.debug(
+                        {
+                            "message": "Process processing URL",
+                            "url": url,
+                            "worker_name": worker_name,
+                        },
+                    )
                     vacancy_data = await extractor.process_vacancy(url)
                     worker_input_tokens, worker_output_tokens = extractor.get_current_tokens()
 
                     if vacancy_data:
                         logger.debug(
-                            "Process saving vacancy data for URL", extra={"url": url, "worker_name": worker_name}
+                            {
+                                "message": "Process saving vacancy data for URL",
+                                "url": url,
+                                "worker_name": worker_name,
+                            },
                         )
                         data_queue.put((url, company_name, vacancy_data))
                         logger.info(
-                            "Process successfully processed vacancy", extra={"url": url, "worker_name": worker_name}
+                            {
+                                "message": "Process successfully processed vacancy",
+                                "url": url,
+                                "worker_name": worker_name,
+                                "input_tokens": worker_input_tokens,
+                                "output_tokens": worker_output_tokens,
+                            },
                         )
                     else:
                         logger.warning(
-                            "Process could not extract data from URL",
-                            url=url,
-                            worker_name=worker_name,
-                            worker_input_tokens=worker_input_tokens,
-                            worker_output_tokens=worker_output_tokens,
+                            {
+                                "message": "Process could not extract data from URL",
+                                "url": url,
+                                "worker_name": worker_name,
+                                "worker_input_tokens": worker_input_tokens,
+                                "worker_output_tokens": worker_output_tokens,
+                            },
                         )
 
                     if worker_input_tokens <= 0 or worker_output_tokens <= 0:
                         logger.warning(
-                            "Process has no tokens left, shutting down",
-                            extra={
+                            {
+                                "message": "Process has no tokens left, shutting down",
                                 "worker_name": worker_name,
                                 "worker_input_tokens": worker_input_tokens,
                                 "worker_output_tokens": worker_output_tokens,
@@ -189,16 +226,34 @@ class VacancyProcessor:
                         )
                         break
 
+                    total_input_tokens, total_output_tokens = extractor.get_current_tokens()
+
+                    return max_input_tokens - total_input_tokens, max_output_tokens - total_output_tokens
+
                 except Exception:
                     logger.exception(
-                        "Process encountered error processing URL", extra={"error": traceback.format_exc()}
+                        {
+                            "message": "Process encountered error processing URL",
+                            "error": traceback.format_exc(),
+                            "worker_name": worker_name,
+                        },
                     )
 
-            logger.info("Process shutdown complete", extra={"worker_name": worker_name})
+            logger.info(
+                {
+                    "message": "Process shutdown complete",
+                    "worker_name": worker_name,
+                },
+            )
 
         asyncio.run(process_urls_async())
 
     async def add_url(self, url: str, company_name: str) -> None:
         """Add single URL to the processing queue."""
-        self.logger.debug("Adding URL to queue", extra={"url": url})
+        self.logger.debug(
+            {
+                "message": "Adding URL to queue",
+                "url": url,
+            },
+        )
         self.url_queue.put((url, company_name))

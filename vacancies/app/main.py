@@ -8,8 +8,9 @@ import traceback
 from urllib.parse import urljoin
 
 import picologging
+import picologging.config
 
-from app.config import VacanciesMonitoring, config, credentials, setup_logging
+from app.config import VacanciesMonitoring, config, credentials, logger_config
 from app.core.data_extractor.processor import VacancyProcessor
 from app.core.link_extractor import BaseLinkExtractor
 from app.db import PostgresDB, PostgresSettings, VacancyRepository
@@ -35,9 +36,11 @@ async def main(logger: picologging.Logger) -> None:
                 # Record metrics after successful extraction
                 return links
             except Exception:
-                logger.error(
-                    "Error extracting links", extra={"extractor_name": extractor.name, "error": traceback.format_exc()}
-                )
+                logger.error({
+                    "message": "Error extracting links",
+                    "extractor_name": extractor.name,
+                    "error": traceback.format_exc(),
+                })
 
         # Run extractors concurrently with semaphore limit
         results = await asyncio.gather(
@@ -75,14 +78,16 @@ async def main(logger: picologging.Logger) -> None:
         # Process results
         for extractor, links in zip(extractors, results, strict=False):
             if isinstance(links, Exception):
-                logger.error(
-                    "Error extracting links", extra={"extractor_name": extractor.name, "error": traceback.format_exc()}
-                )
+                logger.error({
+                    "message": "Error extracting links",
+                    "extractor_name": extractor.name,
+                    "error": traceback.format_exc(),
+                })
                 continue
 
             logger.info(
-                "Found {num_links} unique vacancy links in {extractor_name} ({extractor_base_url})",
-                extra={
+                {
+                    "message": "Found {num_links} unique vacancy links in {extractor_name} ({extractor_base_url})",
                     "num_links": len(links),
                     "extractor_name": extractor.name,
                     "extractor_base_url": extractor.base_url,
@@ -96,26 +101,38 @@ async def main(logger: picologging.Logger) -> None:
                 if not repository.exists_by_url(full_link):
                     await processor.add_url(full_link, extractor.name)
                     logger.info(
-                        "Added new vacancy to queue", extra={"url": full_link, "extractor_name": extractor.name}
+                        {
+                            "message": "Added new vacancy to queue",
+                            "url": full_link,
+                            "extractor_name": extractor.name,
+                        },
                     )
                     new_vacancies_count += 1
                 else:
                     vacancy = repository.update_time_reachable_by_url(full_link)
-                    logger.info("Updated vacancy in database", extra={"vacancy_id": vacancy.id, "url": full_link})
+                    logger.info(
+                        {
+                            "message": "Updated vacancy in database",
+                            "vacancy_id": vacancy.id,
+                            "url": full_link,
+                        },
+                    )
 
             # Record all metrics for this site using the new method
             monitoring.record_parsing_session(
                 site_name=extractor.name,
                 active_vacancies=len(links),
                 new_vacancies=new_vacancies_count,
-                unparsed_vacancies=0,  # We currently don't track this, setting to 0
             )
 
         await processor.start()
         await processor.shutdown()
 
     except Exception:
-        logger.error("Error in main", extra={"error": traceback.format_exc()})
+        logger.error({
+            "message": "Error in main",
+            "error": traceback.format_exc(),
+        })
 
     finally:
         if db:
@@ -125,7 +142,7 @@ async def main(logger: picologging.Logger) -> None:
 
 
 if __name__ == "__main__":
-    setup_logging()
-    logger = picologging.getLogger("prepare_images2label")
+    picologging.config.dictConfig(logger_config("vacancy_parser"))
+    logger = picologging.getLogger("vacancy_parser")
     logger.info("Starting vacancy links extraction process")
     asyncio.run(main(logger))

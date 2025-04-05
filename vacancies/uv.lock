@@ -490,34 +490,6 @@ wheels = [
 ]
 
 [[package]]
-name = "google-cloud-appengine-logging"
-version = "1.5.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "google-api-core", extra = ["grpc"] },
-    { name = "google-auth" },
-    { name = "proto-plus" },
-    { name = "protobuf" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/fd/03fe325ced54e7a5ab1c053e895570174ef939e286ba05094c4a62ec6bcf/google_cloud_appengine_logging-1.5.0.tar.gz", hash = "sha256:39a2df694d97981ed00ef5df541f7cfcca920a92496707557f2b07bb7ba9d67a", size = 13831 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1b/9e/e1df41871f1ed73e8ce3a7df96ab80580521c62aa407021ba51e760284f3/google_cloud_appengine_logging-1.5.0-py2.py3-none-any.whl", hash = "sha256:81e36606e13c377c4898c918542888abb7a6896837ac5f559011c7729fc63d8a", size = 15456 },
-]
-
-[[package]]
-name = "google-cloud-audit-log"
-version = "0.3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "googleapis-common-protos" },
-    { name = "protobuf" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/eb/81/c345efe9261a4b0bd0c5957f1685d2b4cc4522ec4fc7b0861f691d4476e7/google_cloud_audit_log-0.3.0.tar.gz", hash = "sha256:901428b257020d8c1d1133e0fa004164a555e5a395c7ca3cdbb8486513df3a65", size = 25473 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f8/d9/d2795cae4a41781269413108cc7fcbfbcb595b89212216d56c4ce6e2482e/google_cloud_audit_log-0.3.0-py2.py3-none-any.whl", hash = "sha256:8340793120a1d5aa143605def8704ecdcead15106f754ef1381ae3bab533722f", size = 27341 },
-]
-
-[[package]]
 name = "google-cloud-bigquery"
 version = "3.28.0"
 source = { registry = "https://pypi.org/simple" }
@@ -546,26 +518,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b8/1f/9d1e0ba6919668608570418a9a51e47070ac15aeff64261fb092d8be94c0/google-cloud-core-2.4.1.tar.gz", hash = "sha256:9b7749272a812bde58fff28868d0c5e2f585b82f37e09a1f6ed2d4d10f134073", size = 35587 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5e/0f/2e2061e3fbcb9d535d5da3f58cc8de4947df1786fe6a1355960feb05a681/google_cloud_core-2.4.1-py2.py3-none-any.whl", hash = "sha256:a9e6a4422b9ac5c29f79a0ede9485473338e2ce78d91f2370c01e730eab22e61", size = 29233 },
-]
-
-[[package]]
-name = "google-cloud-logging"
-version = "3.11.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "google-api-core", extra = ["grpc"] },
-    { name = "google-auth" },
-    { name = "google-cloud-appengine-logging" },
-    { name = "google-cloud-audit-log" },
-    { name = "google-cloud-core" },
-    { name = "grpc-google-iam-v1" },
-    { name = "opentelemetry-api" },
-    { name = "proto-plus" },
-    { name = "protobuf" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/a5/ac/1eabcefb926414812b759102e4b03a123ad5bfc9576bac0f27405e2f3727/google_cloud_logging-3.11.3.tar.gz", hash = "sha256:0a73cd94118875387d4535371d9e9426861edef8e44fba1261e86782d5b8d54f", size = 278029 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/eb/46/afd47b91c9c6557e2026aa4c8f74417629578b81ecaf85a14417fafcb321/google_cloud_logging-3.11.3-py2.py3-none-any.whl", hash = "sha256:b8ec23f2998f76a58f8492db26a0f4151dd500425c3f08448586b85972f3c494", size = 218891 },
 ]
 
 [[package]]
@@ -1940,7 +1892,6 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "cloud-sql-python-connector", extra = ["asyncpg"] },
-    { name = "google-cloud-logging" },
     { name = "langchain" },
     { name = "langchain-google-vertexai" },
     { name = "opentelemetry-exporter-gcp-monitoring" },
@@ -1968,7 +1919,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cloud-sql-python-connector", extras = ["asyncpg"], specifier = ">=1.16.0" },
-    { name = "google-cloud-logging", specifier = ">=3.11.3" },
     { name = "langchain", specifier = ">=0.3.14" },
     { name = "langchain-google-vertexai", specifier = ">=2.0.11" },
     { name = "opentelemetry-exporter-gcp-monitoring", specifier = ">=1.9.0a0" },

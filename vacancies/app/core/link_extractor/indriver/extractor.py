@@ -32,7 +32,13 @@ class IndriverLinkExtractor(BaseLinkExtractor):
         try:
             await page.wait_for_selector("a[href*='/vacancies/']", timeout=self.timeout)
         except Exception:  # noqa: BLE001
-            self.logger.info("No vacancies found on the page", extra={"error": traceback.format_exc()})
+            self.logger.info(
+                {
+                    "message": "No vacancies found on the page",
+                    "error": traceback.format_exc(),
+                    "extractor_name": self.name,
+                },
+            )
 
         # Нажимаем на кнопку "See more", пока она есть
         while True:
@@ -42,7 +48,11 @@ class IndriverLinkExtractor(BaseLinkExtractor):
                 await asyncio.sleep(2)
             except Exception:  # noqa: BLE001
                 self.logger.info(
-                    "No more 'See more' button found, all vacancies loaded", extra={"error": traceback.format_exc()}
+                    {
+                        "message": "No more 'See more' button found, all vacancies loaded",
+                        "error": traceback.format_exc(),
+                        "extractor_name": self.name,
+                    },
                 )
                 break
 

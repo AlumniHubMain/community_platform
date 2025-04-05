@@ -2,6 +2,7 @@
 """PostgreSQL connection module."""
 
 import os
+import traceback
 
 from google.cloud.sql.connector import Connector, IPTypes
 from picologging import Logger
@@ -98,15 +99,21 @@ class PostgresDB:
         try:
             if self.engine:
                 self.engine.dispose()
-        except Exception as e:
-            self.logger.exception("Error disposing engine: {error}", extra={"error": e})
+        except Exception:
+            self.logger.exception({
+                "message": "Error disposing engine",
+                "error": traceback.format_exc(),
+            })
 
         try:
             if self.connector:
                 self.connector.close()
                 self.connector = None
-        except Exception as e:
-            self.logger.exception("Error closing Cloud SQL connector: {error}", extra={"error": e})
+        except Exception:
+            self.logger.exception({
+                "message": "Error closing Cloud SQL connector",
+                "error": traceback.format_exc(),
+            })
 
     def __enter__(self) -> "PostgresDB":
         """Context manager entry."""

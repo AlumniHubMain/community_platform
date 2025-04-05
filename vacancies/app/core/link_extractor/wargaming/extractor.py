@@ -31,12 +31,24 @@ class WargamingLinkExtractor(BaseLinkExtractor):
         # Wait for the vacancy container to load
         try:
             await page.wait_for_selector(".careers-list", timeout=self.timeout)
-        except Exception as e:  # noqa: BLE001
-            self.logger.info("No vacancies found: {error}", extra={"error": e})
+        except Exception:  # noqa: BLE001
+            self.logger.info(
+                {
+                    "message": "No vacancies found",
+                    "error": traceback.format_exc(),
+                    "extractor_name": self.name,
+                },
+            )
         try:
             await page.wait_for_load_state("networkidle")
-        except Exception as e:  # noqa: BLE001
-            self.logger.info("Network idle not found: {error}", extra={"error": e})
+        except Exception:  # noqa: BLE001
+            self.logger.info(
+                {
+                    "message": "Network idle not found",
+                    "error": traceback.format_exc(),
+                    "extractor_name": self.name,
+                },
+            )
 
         while True:
             try:
@@ -45,11 +57,23 @@ class WargamingLinkExtractor(BaseLinkExtractor):
                 try:
                     await page.wait_for_load_state("networkidle")
                 except Exception:  # noqa: BLE001
-                    self.logger.info("Network idle not found", extra={"error": traceback.format_exc()})
+                    self.logger.info(
+                        {
+                            "message": "Network idle not found",
+                            "error": traceback.format_exc(),
+                            "extractor_name": self.name,
+                        },
+                    )
                 await page.wait_for_timeout(2000)  # Add delay to ensure content loads
 
             except Exception:  # noqa: BLE001
-                self.logger.info("Pagination completed or error occurred", extra={"error": traceback.format_exc()})
+                self.logger.info(
+                    {
+                        "message": "Pagination completed or error occurred",
+                        "error": traceback.format_exc(),
+                        "extractor_name": self.name,
+                    },
+                )
                 break
 
     async def _extract_links(self, page: Page) -> list[str]:  # noqa: PLR6301

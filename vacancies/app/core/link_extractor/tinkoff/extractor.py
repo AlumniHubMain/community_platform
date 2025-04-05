@@ -39,11 +39,14 @@ class TinkoffLinkExtractor(BaseLinkExtractor):
         try:
             # Wait for the first batch of vacancy cards to appear
             await page.wait_for_selector(self.initial_card_selector, timeout=self.timeout)
-            self.logger.info("Initial vacancy cards loaded.")
+            self.logger.info("Initial vacancy cards loaded.", extra={"extractor_name": self.name})
         except TimeoutError:
             self.logger.warning(
-                "Timeout waiting for initial vacancy cards. "
-                "Page might be empty, structure changed, or took too long to load."
+                {
+                    "message": "Timeout waiting for initial vacancy cards. "
+                    "Page might be empty, structure changed, or took too long to load.",
+                    "extractor_name": self.name,
+                },
             )
             return  # Exit if initial content doesn't load
 
@@ -57,12 +60,24 @@ class TinkoffLinkExtractor(BaseLinkExtractor):
                 )
                 new_links_count = len(set(current_links) - self.all_links)
                 self.all_links.update(current_links)
-                self.logger.info(
-                    f"Found {new_links_count} new vacancies on current view. "
-                    f"Total unique relative links: {len(self.all_links)}"
+                self.logger.debug(
+                    "Extracted links",
+                    extra={
+                        "json_fields": {
+                            "extractor_name": self.name,
+                            "new_links_count": new_links_count,
+                            "total_links_count": len(self.all_links),
+                        },
+                    },
                 )
-            except Exception as e:
-                self.logger.warning(f"Could not extract links from current view: {e}")
+            except Exception:
+                self.logger.warning(
+                    {
+                        "message": "Could not extract links from current view",
+                        "extractor_name": self.name,
+                        "error": traceback.format_exc(),
+                    },
+                )
                 # Decide whether to break or continue based on the error if needed
                 # For now, we'll try to find the 'Show More' button anyway
 
@@ -76,10 +91,15 @@ class TinkoffLinkExtractor(BaseLinkExtractor):
                     or not await show_more_button.is_visible()
                     or not await show_more_button.is_enabled()
                 ):
-                    self.logger.info("No more 'Show More' button available or it's hidden/disabled. Finished loading.")
+                    self.logger.info(
+                        {
+                            "message": "No more 'Show More' button available or it's hidden/disabled. Finished loading.",
+                            "extractor_name": self.name,
+                        },
+                    )
                     break
 
-                self.logger.info("Clicking 'Show More' button...")
+                self.logger.info("Clicking 'Show More' button...", extra={"extractor_name": self.name})
                 await show_more_button.click()
 
                 # Wait for network activity to settle after the click
@@ -90,11 +110,20 @@ class TinkoffLinkExtractor(BaseLinkExtractor):
 
             except TimeoutError:
                 self.logger.warning(
-                    "Timeout waiting for network idle after clicking 'Show More'. Assuming loading finished."
+                    {
+                        "message": "Timeout waiting for network idle after clicking 'Show More'. Assuming loading finished.",
+                        "extractor_name": self.name,
+                    },
                 )
                 break  # Stop if loading takes too long after a click
             except Exception:
-                self.logger.error(f"Error during 'Show More' pagination: {traceback.format_exc()}")
+                self.logger.error(
+                    {
+                        "message": "Error during 'Show More' pagination",
+                        "extractor_name": self.name,
+                        "error": traceback.format_exc(),
+                    },
+                )
                 break  # Stop on unexpected errors during pagination
 
     async def _extract_links(self, page: Page) -> list[str]:
@@ -111,7 +140,19 @@ class TinkoffLinkExtractor(BaseLinkExtractor):
                     absolute_link = urljoin(self.base_url, link)
                     absolute_links.add(absolute_link)
                 except ValueError:
-                    self.logger.warning(f"Could not create absolute URL for: {link}")
+                    self.logger.warning(
+                        {
+                            "message": "Could not create absolute URL for",
+                            "extractor_name": self.name,
+                            "link": link,
+                        },
+                    )
 
-        self.logger.info(f"Extracted {len(absolute_links)} unique absolute vacancy links.")
+        self.logger.info(
+            {
+                "message": "Extracted links",
+                "extractor_name": self.name,
+                "total_links_count": len(absolute_links),
+            },
+        )
         return list(absolute_links)

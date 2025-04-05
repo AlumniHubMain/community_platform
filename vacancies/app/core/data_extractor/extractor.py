@@ -2,7 +2,6 @@
 """Extractor of vacancy data."""
 
 import traceback
-from urllib.parse import urlparse
 
 from langchain_google_vertexai import ChatVertexAI
 from langchain_google_vertexai.callbacks import VertexAICallbackHandler
@@ -20,7 +19,6 @@ class VacancyExtractor:
         max_input_tokens: int = 100_000_000,
         max_output_tokens: int = 100_000_000,
         logger: Logger = Logger,
-        monitoring=None,
     ) -> None:
         """Initialize the VacancyExtractor with LLM model.
 
@@ -32,13 +30,16 @@ class VacancyExtractor:
         """
         self.max_input_tokens = max_input_tokens
         self.max_output_tokens = max_output_tokens
-        self.monitoring = monitoring
         self.logger = logger
         self.llm = ChatVertexAI(
             model="gemini-1.5-flash-002", temperature=0, max_retries=6, convert_system_message_to_human=True
         )
         self.structured_llm = self.llm.with_structured_output(VacancyStructure)
         self.vertex_callback = VertexAICallbackHandler()
+
+    def __name__(self) -> str:
+        """Get the name of the extractor."""
+        return "data_extractor"
 
     async def process_vacancy(self, url: str) -> VacancyStructure | None:
         """Process a vacancy URL to extract structured data.
@@ -62,7 +63,14 @@ class VacancyExtractor:
                     await page.wait_for_load_state("networkidle")
                     await page.wait_for_selector(".loading-spinner", state="hidden", timeout=10000)
                 except Exception:
-                    self.logger.warning("Error loading page", extra={"url": url, "error": traceback.format_exc()})
+                    self.logger.warning(
+                        {
+                            "message": "Error loading page",
+                            "url": url,
+                            "error": traceback.format_exc(),
+                            "extractor_name": self.name,
+                        },
+                    )
                     await browser.close()
                     return None
 
@@ -89,7 +97,13 @@ class VacancyExtractor:
                 """)
 
                 if not html:
-                    self.logger.warning("No vacancy content found", extra={"url": url})
+                    self.logger.warning(
+                        {
+                            "message": "No vacancy content found",
+                            "url": url,
+                            "extractor_name": self.name,
+                        },
+                    )
                     await browser.close()
                     return None
 
@@ -104,32 +118,29 @@ class VacancyExtractor:
                 self.max_output_tokens -= completion_tokens
 
                 # Record token usage in monitoring if available
-                if self.monitoring:
-                    # Extract company name from URL domain for monitoring
-                    domain = urlparse(url).netloc
-                    company_site = domain.split(".")[-2] if len(domain.split(".")) > 1 else domain
 
-                    self.monitoring.record_token_usage(
-                        site_name=company_site,
-                        prompt_tokens=prompt_tokens,
-                        completion_tokens=completion_tokens,
-                        model="gemini-1.5-flash-002",
-                    )
-                else:
-                    self.logger.info(
-                        "Token usage stats",
-                        extra={
-                            "prompt_tokens": prompt_tokens,
-                            "completion_tokens": completion_tokens,
-                            "total_tokens": prompt_tokens + completion_tokens,
-                        },
-                    )
+                self.logger.info(
+                    {
+                        "message": "Token usage stats",
+                        "prompt_tokens": prompt_tokens,
+                        "completion_tokens": completion_tokens,
+                        "total_tokens": prompt_tokens + completion_tokens,
+                        "extractor_name": self.name,
+                    },
+                )
 
                 await browser.close()
                 return vacancy
 
         except Exception:
-            self.logger.exception("Error processing vacancy", extra={"url": url, "error": traceback.format_exc()})
+            self.logger.exception(
+                {
+                    "message": "Error processing vacancy",
+                    "url": url,
+                    "error": traceback.format_exc(),
+                    "extractor_name": self.name,
+                },
+            )
             return None
 
     def get_current_tokens(self) -> tuple[int, int]:
