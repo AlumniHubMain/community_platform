@@ -1,7 +1,6 @@
 """Extractor for Tinkoff vacancy links."""
 
 import traceback
-from urllib.parse import urljoin
 
 from picologging import Logger
 from playwright.async_api import Page
@@ -11,148 +10,83 @@ from app.core.link_extractor.base import BaseLinkExtractor
 
 class TinkoffLinkExtractor(BaseLinkExtractor):
     """
-    Extracts vacancy links from the Tinkoff (T-Bank) career page.
-    Handles dynamic loading by clicking the 'Show More' button.
+    Extractor for T-Bank (Tinkoff) career vacancies page.
+    Handles dynamic loading by clicking the "Показать еще" (Show More) button.
     """
 
-    def __init__(self, logger: Logger = Logger) -> None:
-        # Using the specific Moscow vacancies page as the base URL
+    def __init__(self, logger: Logger = Logger(__name__)) -> None:
+        # Using the specific Moscow URL from the example HTML
         super().__init__("https://www.tbank.ru/career/vacancies/all/moscow/", logger)
         self.all_links = set()
-        # Selector for individual vacancy links within cards
-        self.link_selector = 'div.AtomVacanciesCards__card_aIM3Uu a[data-qa-type="uikit/button"][href^="/career/"]'
+        # Selector for the individual vacancy links within the cards
+        self._link_selector = 'div.AtomVacanciesCards__card_aIM3Uu a[href^="/career/"]'
         # Selector for the "Show More" button
-        self.show_more_button_selector = 'button[data-qa-type="vc:show-more-btn"]'
-        # Selector to wait for initial cards to ensure the main content area is loaded
-        self.initial_card_selector = "div.AtomVacanciesCards__card_aIM3Uu"
+        self._show_more_button_selector = 'button[data-qa-type="vc:show-more-btn"]'
 
     @property
     def name(self) -> str:
-        """Returns the name of the extractor."""
-        return "Tinkoff"  # Or T-Bank, depending on preference
+        return "Tinkoff"
 
     async def _load_all_content(self, page: Page) -> None:
         """
-        Loads all vacancy cards by repeatedly clicking the 'Show More' button
-        until it's no longer available or visible/enabled.
+        Loads initial content and clicks the "Show More" button until it disappears
+        or is no longer clickable, collecting links from each loaded batch.
         """
+        self.logger.info("Waiting for initial vacancy links to load...")
         try:
-            # Wait for the first batch of vacancy cards to appear
-            await page.wait_for_selector(self.initial_card_selector, timeout=self.timeout)
-            self.logger.info("Initial vacancy cards loaded.", extra={"extractor_name": self.name})
+            await page.wait_for_selector(self._link_selector, timeout=self.timeout)
+            self.logger.info("Initial content loaded.")
         except TimeoutError:
-            self.logger.warning(
-                {
-                    "message": "Timeout waiting for initial vacancy cards. "
-                    "Page might be empty, structure changed, or took too long to load.",
-                    "extractor_name": self.name,
-                },
-            )
-            return  # Exit if initial content doesn't load
+            self.logger.warning("Timeout waiting for initial vacancy links. Page might be empty or structure changed.")
+            return  # No content to load further
 
         while True:
-            # Extract links visible in the current view
-            # Use try-except in case the selector doesn't find elements temporarily
-            try:
-                current_links = await page.eval_on_selector_all(
-                    self.link_selector,
-                    "elements => elements.map(el => el.getAttribute('href'))",
-                )
-                new_links_count = len(set(current_links) - self.all_links)
-                self.all_links.update(current_links)
-                self.logger.debug(
-                    "Extracted links",
-                    extra={
-                        "json_fields": {
-                            "extractor_name": self.name,
-                            "new_links_count": new_links_count,
-                            "total_links_count": len(self.all_links),
-                        },
-                    },
-                )
-            except Exception:
-                self.logger.warning(
-                    {
-                        "message": "Could not extract links from current view",
-                        "extractor_name": self.name,
-                        "error": traceback.format_exc(),
-                    },
-                )
-                # Decide whether to break or continue based on the error if needed
-                # For now, we'll try to find the 'Show More' button anyway
+            # Extract links currently visible on the page
+            current_links = await page.eval_on_selector_all(
+                self._link_selector,
+                "elements => elements.map(el => el.getAttribute('href'))",
+            )
+            new_links_count = len(set(current_links) - self.all_links)
+            self.all_links.update(current_links)
+            self.logger.info(
+                f"Found {new_links_count} new vacancies on current view. Total unique links: {len(self.all_links)}"
+            )
 
+            # Check for the "Show More" button
             try:
-                show_more_button = await page.query_selector(self.show_more_button_selector)
+                show_more_button = await page.query_selector(self._show_more_button_selector)
 
-                # Check if the button exists AND is visible AND enabled.
-                # is_visible() is important because the button might remain in DOM but hidden.
-                if (
-                    not show_more_button
-                    or not await show_more_button.is_visible()
-                    or not await show_more_button.is_enabled()
-                ):
+                if not show_more_button or await show_more_button.is_hidden() or await show_more_button.is_disabled():
                     self.logger.info(
-                        {
-                            "message": "No more 'Show More' button available or it's hidden/disabled. Finished loading.",
-                            "extractor_name": self.name,
-                        },
+                        "No 'Show More' button found or it's hidden/disabled. Assuming all vacancies are loaded."
                     )
                     break
 
-                self.logger.info("Clicking 'Show More' button...", extra={"extractor_name": self.name})
+                self.logger.info("Clicking 'Show More' button...")
                 await show_more_button.click()
 
-                # Wait for network activity to settle after the click
-                # Use a slightly shorter timeout for subsequent loads if desired
-                await page.wait_for_load_state("networkidle", timeout=max(10000, self.timeout // 2))
-                # Add a small delay to allow potential JS rendering after network idle
-                await page.wait_for_timeout(1500)
+                # Wait for new content to load - networkidle is often good for AJAX
+                # Add a small timeout for safety
+                await page.wait_for_load_state(
+                    "networkidle", timeout=self.timeout / 2
+                )  # Shorter timeout for subsequent loads
+                await page.wait_for_timeout(2000)  # Extra buffer
 
             except TimeoutError:
                 self.logger.warning(
-                    {
-                        "message": "Timeout waiting for network idle after clicking 'Show More'. Assuming loading finished.",
-                        "extractor_name": self.name,
-                    },
+                    "Timeout waiting for network idle after clicking 'Show More'. Proceeding, but some links might be missed."
                 )
-                break  # Stop if loading takes too long after a click
+                # Decide whether to break or continue - continuing might lead to partial data
+                break
             except Exception:
-                self.logger.error(
-                    {
-                        "message": "Error during 'Show More' pagination",
-                        "extractor_name": self.name,
-                        "error": traceback.format_exc(),
-                    },
-                )
-                break  # Stop on unexpected errors during pagination
+                self.logger.error(f"Error during pagination: {traceback.format_exc()}")
+                break
 
     async def _extract_links(self, page: Page) -> list[str]:
         """
-        Extracts the unique vacancy links collected during the loading process
-        and converts them to absolute URLs.
+        Returns the unique links collected during the loading process.
+        The base class will handle making them absolute.
         """
-        # The base class's get_links method should ensure _load_all_content runs first.
-        # Convert collected relative links to absolute URLs
-        absolute_links = set()
-        for link in self.all_links:
-            if link:  # Ensure link is not empty
-                try:
-                    absolute_link = urljoin(self.base_url, link)
-                    absolute_links.add(absolute_link)
-                except ValueError:
-                    self.logger.warning(
-                        {
-                            "message": "Could not create absolute URL for",
-                            "extractor_name": self.name,
-                            "link": link,
-                        },
-                    )
-
-        self.logger.info(
-            {
-                "message": "Extracted links",
-                "extractor_name": self.name,
-                "total_links_count": len(absolute_links),
-            },
-        )
-        return list(absolute_links)
+        # page argument is kept for consistency with the base class, though not used here
+        # as links are collected in _load_all_content
+        return list(self.all_links)

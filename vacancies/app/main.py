@@ -87,7 +87,7 @@ async def main(logger: picologging.Logger) -> None:
 
             logger.info(
                 {
-                    "message": "Found {num_links} unique vacancy links in {extractor_name} ({extractor_base_url})",
+                    "message": "Found links",
                     "num_links": len(links),
                     "extractor_name": extractor.name,
                     "extractor_base_url": extractor.base_url,

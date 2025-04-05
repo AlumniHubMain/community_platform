@@ -80,19 +80,8 @@ class VacanciesMonitoring:
         """
         attributes = {"site": site_name}
 
-        if active_vacancies >= 0:
-            self.active_vacancies_gauge.set(active_vacancies, attributes)
-            self.logger.info(
-                "Active vacancies on site",
-                extra={"site": site_name, "count": active_vacancies},
-            )
-
-        if new_vacancies > 0:
-            self.new_vacancies_gauge.set(new_vacancies, attributes)
-            self.logger.info(
-                "Parsed new vacancies",
-                extra={"site": site_name, "count": new_vacancies},
-            )
+        self.active_vacancies_gauge.set(active_vacancies, attributes)
+        self.new_vacancies_gauge.set(new_vacancies, attributes)
 
     def record_token_usage(self, site_name: str, prompt_tokens: int, completion_tokens: int, model: str = "gemini"):
         """Record the token usage for LLM processing for a specific site.
