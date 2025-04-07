@@ -22,7 +22,7 @@ class ReferralManager:
             user_id: int,
             company_label: str,
             session: AsyncSession = db_manager.get_session(),
-    ) -> bool:
+    ) -> dict:
         """
         Remove a company from user's recommender_companies list.
         
@@ -35,11 +35,9 @@ class ReferralManager:
             session: Database session
             
         Returns:
-            bool: True if the company was successfully removed,
-            False if:
-                - User was not found
-                - Company was not in the list
-                - Error occurred during the operation
+            dict: A dictionary containing:
+                - success: bool - True if the operation was successful
+                - message: str - A descriptive message about the operation result
         """
         try:
             # Get user data with companies list
@@ -52,13 +50,19 @@ class ReferralManager:
             user = result.scalar_one_or_none()
 
             if user is None:  # User not found
-                return False
+                return {
+                    "success": False,
+                    "message": f"User with ID {user_id} not found"
+                }
 
             # Get current companies list or empty list if None
             current_companies = user.recommender_companies or []
 
             if company_label not in current_companies:
-                return False  # Company not found in the list
+                return {
+                    "success": False,
+                    "message": f"Company '{company_label}' was not in the user's recommender companies list"
+                }
 
             # Create a new list without the company
             updated_companies = [c for c in current_companies if c != company_label]
@@ -66,11 +70,17 @@ class ReferralManager:
             user.recommender_companies = updated_companies
             await session.commit()
             
-            return True
+            return {
+                "success": True,
+                "message": f"Company '{company_label}' was successfully removed from user's recommender companies"
+            }
             
         except Exception as e:
             logger.error(f"Error removing company {company_label} from user {user_id}: {str(e)}")
-            return False
+            return {
+                "success": False,
+                "message": f"Error removing company: {str(e)}"
+            }
     
     @classmethod
     async def get_users_by_company(

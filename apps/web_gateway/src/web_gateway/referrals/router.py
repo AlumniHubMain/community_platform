@@ -96,7 +96,12 @@ async def get_company_recommenders(
 @router.patch(
     "/user/{user_id}/company/{company_label}/remove",
     name="remove_company_from_user",
-    status_code=status.HTTP_200_OK
+    responses={
+        200: {"description": "Company was successfully removed"},
+        400: {"description": "Company was not in the user's recommender companies list"},
+        404: {"description": "User not found"},
+        500: {"description": "Internal server error"}
+    }
 )
 async def remove_company_from_user(
         company_label: str,
@@ -111,16 +116,26 @@ async def remove_company_from_user(
         user_id: User ID
         company_label: Company label to remove (e.g., "Yandex", "VK")
     Returns:
-        200 OK with success message
+        Response with appropriate HTTP status code and operation result
     Figma: 4436
     """
-    success = await ReferralManager.remove_company_from_user_recommenders(
+    result = await ReferralManager.remove_company_from_user_recommenders(
         user_id=user_id,
         company_label=company_label,
         session=session
     )
+    
+    # Return appropriate HTTP status code based on the result
+    if not result["success"]:
+        if "not found" in result["message"].lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result["message"])
+        elif "was not in" in result["message"].lower():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["message"])
+        else:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=result["message"])
+    
     # Return 200 OK with success message
-    return {"status": "success", "message": f"Company '{company_label}' removed from user's recommender companies"}
+    return {"message": result["message"]}
 
 
 @router.get(
