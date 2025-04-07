@@ -4,10 +4,13 @@ Manager for working with community companies and their services.
 from sqlalchemy import select, func, update
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
+import logging
 
 from common_db.models.users import ORMUserProfile
 from common_db.schemas.users import DTOUserProfileRead
 from common_db.db_abstract import db_manager
+
+logger = logging.getLogger(__name__)
 
 
 class ReferralManager:
@@ -21,40 +24,53 @@ class ReferralManager:
             session: AsyncSession = db_manager.get_session(),
     ) -> bool:
         """
-        Remove a company from user's recommender_companies list
+        Remove a company from user's recommender_companies list.
+        
         This method removes the specified company from the user's recommender_companies list.
         If the company is not in the list, no changes are made.
+        
         Args:
             user_id: User ID
             company_label: Company label to remove (e.g., "Yandex", "VK")
             session: Database session
+            
         Returns:
-            bool: True if the user was found, False otherwise
+            bool: True if the company was successfully removed,
+            False if:
+                - User was not found
+                - Company was not in the list
+                - Error occurred during the operation
         """
-        # Get user data with companies list
-        query = (
-            select(ORMUserProfile)
-            .filter(ORMUserProfile.id == user_id)
-        )
-        
-        result = await session.execute(query)
-        user = result.scalar_one_or_none()
-        
-        if user is None:  # User not found
-            return False
-        
-        # Get current companies list or empty list if None
-        current_companies = user.recommender_companies or []
-        
-        # Remove company if it exists in the list
-        if company_label in current_companies:
+        try:
+            # Get user data with companies list
+            query = (
+                select(ORMUserProfile)
+                .filter(ORMUserProfile.id == user_id)
+            )
+
+            result = await session.execute(query)
+            user = result.scalar_one_or_none()
+
+            if user is None:  # User not found
+                return False
+
+            # Get current companies list or empty list if None
+            current_companies = user.recommender_companies or []
+
+            if company_label not in current_companies:
+                return False  # Company not found in the list
+
             # Create a new list without the company
             updated_companies = [c for c in current_companies if c != company_label]
             # Update user data
             user.recommender_companies = updated_companies
             await session.commit()
-        
-        return True
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error removing company {company_label} from user {user_id}: {str(e)}")
+            return False
     
     @classmethod
     async def get_users_by_company(
