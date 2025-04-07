@@ -99,9 +99,9 @@ class UserManager:
                 selectinload(ORMUserProfile.referred),
                 # for linkedin
                 selectinload(ORMUserProfile.linkedin_profile)
-                .selectinload(ORMLinkedInProfile.education),
+                .joinedload(ORMLinkedInProfile.education),
                 selectinload(ORMUserProfile.linkedin_profile)
-                .selectinload(ORMLinkedInProfile.work_experience)
+                .joinedload(ORMLinkedInProfile.work_experience)
             )
             .where(ORMUserProfile.id == user_id)
         )
