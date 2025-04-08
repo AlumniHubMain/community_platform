@@ -1,6 +1,5 @@
 import atexit
 import os
-from typing import Optional
 
 from opentelemetry import metrics
 from opentelemetry.exporter.cloud_monitoring import CloudMonitoringMetricsExporter
@@ -12,7 +11,7 @@ from opentelemetry.sdk.resources import Resource
 class VacanciesMonitoring:
     """Metrics for monitoring vacancy parsing."""
 
-    def __init__(self, name: str, instance_id: Optional[str] = None):
+    def __init__(self, name: str, instance_id: str | None = None):
         self.last_update_success = True
 
         instance_id = instance_id if instance_id else os.getenv("CLOUD_RUN_EXECUTION")

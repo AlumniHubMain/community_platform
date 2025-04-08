@@ -10,7 +10,7 @@ import picologging
 import picologging.config
 from picologging import Logger
 
-from app.config import logger_config
+from app.config.logger import logger_config
 from app.core.data_extractor.extractor import VacancyExtractor
 from app.db import VacancyRepository
 

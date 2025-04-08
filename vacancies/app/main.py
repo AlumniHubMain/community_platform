@@ -10,7 +10,10 @@ from urllib.parse import urljoin
 import picologging
 import picologging.config
 
-from app.config import config, credentials, logger_config, monitoring
+from app.config.config import config
+from app.config.credentials import credentials
+from app.config.logger import logger_config
+from app.config.monitoring import monitoring
 from app.core.data_extractor.processor import VacancyProcessor
 from app.core.link_extractor import BaseLinkExtractor
 from app.db import PostgresDB, PostgresSettings, VacancyRepository

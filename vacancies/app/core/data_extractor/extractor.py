@@ -8,7 +8,7 @@ from langchain_google_vertexai.callbacks import VertexAICallbackHandler
 from picologging import Logger
 from playwright.async_api import async_playwright
 
-from app.config import monitoring
+from app.config.monitoring import monitoring
 from app.core.data_extractor.structure_vacancy import VacancyStructure
 
 
@@ -59,10 +59,7 @@ class VacancyExtractor:
                 )
                 page = await context.new_page()
                 try:
-                    await page.goto(url, timeout=30000)
-                    await page.wait_for_load_state("domcontentloaded")
-                    await page.wait_for_load_state("networkidle")
-                    await page.wait_for_selector(".loading-spinner", state="hidden", timeout=10000)
+                    await page.goto(url, timeout=3000)
                 except Exception:
                     self.logger.warning(
                         {
@@ -71,8 +68,6 @@ class VacancyExtractor:
                             "error": traceback.format_exc(),
                         },
                     )
-                    await browser.close()
-                    return None
 
                 html = await page.evaluate("""
                     () => {
