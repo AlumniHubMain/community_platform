@@ -25,7 +25,6 @@ class VacancyProcessor:
         max_output_tokens: int = 1_000_000,
         num_workers: int = 3,
         logger: Logger = Logger,
-        monitoring=None,
     ) -> None:
         """Initialize the processor with multiple parser workers.
 
@@ -45,7 +44,6 @@ class VacancyProcessor:
         self.num_workers = num_workers
         self.max_input_tokens = max_input_tokens
         self.max_output_tokens = max_output_tokens
-        self.monitoring = monitoring
 
         # Start parser workers
         self.logger.info("Starting vacancy parser processes", extra={"num_workers": self.num_workers})
@@ -183,7 +181,7 @@ class VacancyProcessor:
                             "worker_name": worker_name,
                         },
                     )
-                    vacancy_data = await extractor.process_vacancy(url)
+                    vacancy_data = await extractor.process_vacancy(url, company_name)
                     worker_input_tokens, worker_output_tokens = extractor.get_current_tokens()
 
                     if vacancy_data:

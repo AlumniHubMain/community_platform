@@ -8,6 +8,7 @@ from langchain_google_vertexai.callbacks import VertexAICallbackHandler
 from picologging import Logger
 from playwright.async_api import async_playwright
 
+from app.config import monitoring
 from app.core.data_extractor.structure_vacancy import VacancyStructure
 
 
@@ -41,7 +42,7 @@ class VacancyExtractor:
         """Get the name of the extractor."""
         return "data_extractor"
 
-    async def process_vacancy(self, url: str) -> VacancyStructure | None:
+    async def process_vacancy(self, url: str, company_name: str) -> VacancyStructure | None:
         """Process a vacancy URL to extract structured data.
 
         Args:
@@ -68,7 +69,6 @@ class VacancyExtractor:
                             "message": "Error loading page",
                             "url": url,
                             "error": traceback.format_exc(),
-                            "extractor_name": self.name,
                         },
                     )
                     await browser.close()
@@ -101,7 +101,6 @@ class VacancyExtractor:
                         {
                             "message": "No vacancy content found",
                             "url": url,
-                            "extractor_name": self.name,
                         },
                     )
                     await browser.close()
@@ -112,6 +111,12 @@ class VacancyExtractor:
                 vacancy = self.structured_llm.invoke(prompt, config={"callbacks": [self.vertex_callback]})
                 prompt_tokens = self.vertex_callback.prompt_tokens
                 completion_tokens = self.vertex_callback.completion_tokens
+
+                monitoring.record_token_usage(
+                    site_name=company_name,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                )
 
                 # Track token usage
                 self.max_input_tokens -= prompt_tokens
@@ -125,7 +130,6 @@ class VacancyExtractor:
                         "prompt_tokens": prompt_tokens,
                         "completion_tokens": completion_tokens,
                         "total_tokens": prompt_tokens + completion_tokens,
-                        "extractor_name": self.name,
                     },
                 )
 
@@ -138,7 +142,6 @@ class VacancyExtractor:
                     "message": "Error processing vacancy",
                     "url": url,
                     "error": traceback.format_exc(),
-                    "extractor_name": self.name,
                 },
             )
             return None

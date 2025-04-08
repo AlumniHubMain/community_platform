@@ -10,7 +10,7 @@ from urllib.parse import urljoin
 import picologging
 import picologging.config
 
-from app.config import VacanciesMonitoring, config, credentials, logger_config
+from app.config import config, credentials, logger_config, monitoring
 from app.core.data_extractor.processor import VacancyProcessor
 from app.core.link_extractor import BaseLinkExtractor
 from app.db import PostgresDB, PostgresSettings, VacancyRepository
@@ -20,10 +20,6 @@ async def main(logger: picologging.Logger) -> None:
     """Execute the vacancy links extraction process for different companies with concurrency limit."""
     semaphore = asyncio.Semaphore(config.CONCURRENT_EXTRACTIONS)
     db = None
-    # Initialize monitoring
-    monitoring = VacanciesMonitoring(
-        name="vacancy_parser", logger=logger, instance_id=os.environ.get("CLOUD_RUN_EXECUTION")
-    )
 
     try:
         # Initialize extractors from config
@@ -73,7 +69,6 @@ async def main(logger: picologging.Logger) -> None:
             max_output_tokens=config.MAX_OUTPUT_TOKENS,
             num_workers=config.NUM_WORKERS,
             logger=logger,
-            monitoring=monitoring,
         )
         # Process results
         for extractor, links in zip(extractors, results, strict=False):
