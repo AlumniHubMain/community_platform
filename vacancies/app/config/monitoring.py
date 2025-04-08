@@ -20,13 +20,13 @@ class VacanciesMonitoring:
         metric_readers = [
             PeriodicExportingMetricReader(
                 CloudMonitoringMetricsExporter(add_unique_identifier=False),
-                export_interval_millis=10000,  # 10 seconds
-                export_timeout_millis=10000,  # 10 seconds timeout
+                export_interval_millis=1000,  # 1 second
+                export_timeout_millis=1000,  # 1 second timeout
             ),
             # Add console exporter for debugging
             PeriodicExportingMetricReader(
                 ConsoleMetricExporter(),
-                export_interval_millis=10000,
+                export_interval_millis=1000,
             ),
         ]
 

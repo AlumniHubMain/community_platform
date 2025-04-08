@@ -66,7 +66,7 @@ def test_send_parsing_session_to_gcp(real_monitoring_instance: VacanciesMonitori
     print("Вызов record_parsing_session выполнен.")
     # Даем немного времени на внутреннюю обработку перед завершением теста
     # (хотя основной экспорт происходит по интервалу)
-    time.sleep(1)
+    time.sleep(3)
     # Реальная проверка должна быть выполнена вручную в Google Cloud Monitoring Console,
     # ища метрики с `service.instance.id = TEST_RUN_INSTANCE_ID` и `site = site_name`.
 
@@ -84,6 +84,6 @@ def test_send_token_usage_to_gcp(real_monitoring_instance: VacanciesMonitoring):
     real_monitoring_instance.record_token_usage(site_name, prompt_tokens, completion_tokens)
     print("Вызов record_token_usage выполнен.")
     # Даем немного времени на внутреннюю обработку
-    time.sleep(1)
+    time.sleep(2)
     # Реальная проверка должна быть выполнена вручную в Google Cloud Monitoring Console,
     # ища метрики с `service.instance.id = TEST_RUN_INSTANCE_ID`, `site = site_name` и `model = model`.
