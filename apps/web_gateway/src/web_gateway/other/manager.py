@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from common_db.db_abstract import db_manager
 
-from vacancies.app.data_extractor.structure_vacancy import VacancyStructure as DTOVacancy
 from vacancies.app.db.vacancy_schema import Vacancy as ORMVacancy
 
 # Настройка логгера для модуля
