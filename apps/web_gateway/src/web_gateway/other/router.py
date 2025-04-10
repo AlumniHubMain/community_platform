@@ -1,6 +1,7 @@
 """
 API router for other services.
 """
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
 
@@ -10,6 +11,9 @@ from common_db.db_abstract import db_manager
 from vacancies.app.data_extractor.structure_vacancy import VacancyStructure as DTOVacancy
 
 from web_gateway.other.manager import VacancyManager
+
+# Настройка логгера для модуля
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/other", tags=["other"])
 
@@ -30,9 +34,21 @@ async def get_vacancy_by_url(
         Vacancy structure
         
     Raises:
-        HTTPException: If vacancy not found
+        HTTPException: If vacancy not found or there was an error
     """
-    vacancy = await VacancyManager.get_by_url(url)
-    if not vacancy:
-        raise HTTPException(status_code=404, detail="Vacancy not found")
-    return DTOVacancy.model_validate(vacancy)
+    try:
+        logger.info("Processing request to get vacancy by URL", extra={"url": url})
+        vacancy = await VacancyManager.get_by_url(url, session)
+        
+        if not vacancy:
+            logger.warning("Vacancy not found", extra={"url": url})
+            raise HTTPException(status_code=404, detail="Vacancy not found")
+            
+        logger.info("Vacancy found, returning data", extra={"url": url})
+        return DTOVacancy.model_validate(vacancy)
+        
+    except Exception as e:
+        # Логируем ошибку для себя
+        logger.error("Error processing request", extra={"url": url, "error": str(e)})
+        # Для всех ошибок возвращаем 500
+        raise HTTPException(status_code=500, detail="Internal server error")
