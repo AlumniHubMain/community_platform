@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from datetime import datetime
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -376,3 +377,95 @@ class MeetingManager:
             )
 
         return MeetingRequestRead.model_validate(meeting, from_attributes=True)
+
+    @classmethod
+    async def set_meetings_freeze(
+        cls,
+        session: AsyncSession,
+        user_id: int,
+        start_date: datetime,
+        end_date: datetime | None = None,
+    ) -> None:
+        """
+        Set a freeze period for meetings for a specific user.
+        
+        Args:
+            session: Database session
+            user_id: ID of the user to set the freeze for
+            start_date: Start date of the freeze period
+            end_date: End date of the freeze period (optional, defaults to start_date if not provided)
+            
+        Raises:
+            ValueError: If dates are invalid or other validation errors
+            Exception: If database operation fails
+        """
+        # Get user profile
+        result = await session.execute(
+            select(ORMUserProfile).where(ORMUserProfile.id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise ValueError(f"User with ID {user_id} not found")
+        
+        # Validate dates
+        if end_date is None:
+            end_date = start_date
+        
+        # Check if end date is not before start date
+        if end_date < start_date:
+            raise ValueError("End date cannot be before start date")
+        
+        # Check if freeze period is not too long (e.g., max 30 days)
+        max_freeze_days = 120
+        if (end_date - start_date).days > max_freeze_days:
+            raise ValueError(f"Freeze period cannot exceed {max_freeze_days} days")
+        
+        # Check if freeze period is not in the past
+        now = datetime.now()
+        if start_date < now:
+            raise ValueError("Freeze period cannot start in the past")
+        
+        # Set the freeze dates
+        user.meetings_freeze_start_date = start_date
+        user.meetings_freeze_end_date = end_date
+        
+        try:
+            await session.commit()
+        except Exception as e:
+            await session.rollback()
+            raise Exception(f"Failed to set meetings freeze: {str(e)}")
+    
+    @classmethod
+    async def remove_meetings_freeze(
+        cls,
+        session: AsyncSession,
+        user_id: int,
+    ) -> None:
+        """
+        Remove the freeze period for meetings for a specific user.
+        
+        Args:
+            session: Database session
+            user_id: ID of the user to remove the freeze for
+            
+        Raises:
+            ValueError: If user not found
+            Exception: If database operation fails
+        """
+        # Get user profile
+        result = await session.execute(
+            select(ORMUserProfile).where(ORMUserProfile.id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise ValueError(f"User with ID {user_id} not found")
+        
+        # Clear the freeze dates
+        user.meetings_freeze_start_date = None
+        user.meetings_freeze_end_date = None
+        
+        try:
+            await session.commit()
+        except Exception as e:
+            await session.rollback()
+            raise Exception(f"Failed to remove meetings freeze: {str(e)}")

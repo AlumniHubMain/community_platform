@@ -169,6 +169,16 @@ class ORMUserProfile(ObjectTable):
         cascade="all, delete-orphan"
     )
     profile_type: Mapped[EProfileType] = mapped_column(ProfileTypePGEnum, default=EProfileType.New)
+    
+    # Meetings freeze dates - when user is unavailable for meetings (e.g., on vacation)
+    meetings_freeze_start_date: Mapped[datetime | None] = mapped_column(
+        doc="Start date of the period when user is unavailable for meetings",
+        default=None
+    )
+    meetings_freeze_end_date: Mapped[datetime | None] = mapped_column(
+        doc="End date of the period when user is unavailable for meetings",
+        default=None
+    )
 
     __table_args__ = (
         Index('ix_users_telegram_id', 'telegram_id'),
