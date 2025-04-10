@@ -115,6 +115,10 @@ class DTOUserProfile(BaseSchema):
     # fields for company recommendations and vacancies - referral block
     recommender_companies: list[str] | None = None  # list of companies where user is a recommender
     vacancy_pages: list[str] | None = None  # list of vacancy pages
+    
+    # Meetings freeze dates - when user is unavailable for meetings (e.g., on vacation)
+    meetings_freeze_start_date: datetime | None = None  # Start date of the period when user is unavailable for meetings
+    meetings_freeze_end_date: datetime | None = None  # End date of the period when user is unavailable for meetings
 
 
 class DTOUserProfileUpdate(DTOUserProfile):
