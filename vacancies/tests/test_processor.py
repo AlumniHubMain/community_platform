@@ -2,7 +2,7 @@ import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from loguru import logger
+from picologging import Logger
 
 # Import after environment variables are set
 with patch.dict(
@@ -17,7 +17,7 @@ with patch.dict(
         "GOOGLE_LOCATION": "test-location",
     },
 ):
-    from app.data_extractor.processor import VacancyProcessor
+    from app.core.data_extractor.processor import VacancyProcessor
     from app.db import VacancyRepository
 
 
@@ -34,7 +34,7 @@ def processor(mock_repository):
         max_input_tokens=1_000_000,
         max_output_tokens=1_000_000,
         num_workers=2,
-        logger=logger,
+        logger=Logger("test_processor"),
     )
 
 
