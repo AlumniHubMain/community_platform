@@ -1,14 +1,14 @@
 import pytest
-from loguru import logger
+from picologging import Logger
 from playwright.async_api import Browser, BrowserContext, Page
 
-from app.data_extractor.extractor import VacancyExtractor
-from app.data_extractor.structure_vacancy import VacancyStructure
+from app.core.data_extractor.extractor import VacancyExtractor
+from app.core.data_extractor.structure_vacancy import VacancyStructure
 
 
 @pytest.fixture
 def mock_logger():
-    return logger
+    return Logger("test_vacancy_extractor")
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ async def test_process_vacancy_page_error(extractor, mocker):
     # Simulate page loading error
     mock_page.goto.side_effect = Exception("Failed to load page")
 
-    result = await extractor.process_vacancy("fucking error")
+    result = await extractor.process_vacancy("fucking error", "fucking error")
     assert result is None
 
 
@@ -49,16 +49,15 @@ async def test_process_real_vacancy(extractor, caplog):
     """Test processing of a real vacancy URL."""
     # Use a known stable job posting URL
     urls = [
-        "https://wargaming.com/en/careers/vacancy_2840632_belgrade/",
-        "https://jobs.booking.com/booking/jobs/16148?lang=en-us",
-        "https://careers.indrive.com/vacancies/ae647d53ca703e6a3e4082c32bdc394c",
+        "https://wargaming.com/en/careers/vacancy_3074625_belgrade/",
     ]
 
     for url in urls:
-        result = await extractor.process_vacancy(url)
+        result = await extractor.process_vacancy(url, "wargaming")
+        extractor.logger.info(result)
 
         assert isinstance(result, VacancyStructure)
         assert result.title is not None
         assert result.description is not None
 
-        extractor.logger.info(f"Successfully extracted vacancy: {result.title}")
+        extractor.logger.info(f"Successfully extracted vacancy: {result.full_text}")

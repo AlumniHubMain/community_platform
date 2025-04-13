@@ -3,16 +3,17 @@ import asyncio
 
 from langchain_core.prompts import PromptTemplate
 from langchain_google_vertexai import ChatVertexAI
-from loguru import logger
+from picologging import Logger
 from playwright.async_api import async_playwright
 
 
 class VacancyExtractorGenerator:
     """Generator for vacancy extractor classes based on webpage analysis."""
 
-    def __init__(self) -> None:
+    def __init__(self, logger: Logger = Logger) -> None:
+        self.logger = logger
         self.llm = ChatVertexAI(
-            model="gemini-1.5-pro-002",
+            model="gemini-2.5-pro-exp-03-25",
             temperature=0,
             max_tokens=None,
             max_retries=6,
@@ -100,12 +101,12 @@ class VacancyExtractorGenerator:
                 await page.wait_for_load_state("networkidle")
                 await page.wait_for_selector(".loading-spinner", state="hidden", timeout=10000)
             except Exception as e:
-                logger.error(f"Error fetching page content: {e}")
+                self.logger.error(f"Error fetching page content: {e}")
                 pass
             try:
                 html_content = await page.content()
             except Exception as e:
-                logger.error(f"Error fetching page content: {e}")
+                self.logger.error(f"Error fetching page content: {e}")
                 return None
             finally:
                 await browser.close()
@@ -137,11 +138,11 @@ async def main():
         try:
             with open(args.output, "w", encoding="utf-8") as f:
                 f.write(result)
-            logger.info(f"Successfully generated extractor class and saved to {args.output}")
+            generator.logger.info(f"Successfully generated extractor class and saved to {args.output}")
         except Exception as e:
-            logger.error(f"Failed to save result to file: {e}")
+            generator.logger.error(f"Failed to save result to file: {e}")
     else:
-        logger.error("Failed to generate extractor class")
+        generator.logger.error("Failed to generate extractor class")
 
 
 if __name__ == "__main__":
