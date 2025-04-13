@@ -1,6 +1,7 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
 
 from common_db.db_abstract import db_manager
 from .meeting_manager import MeetingManager
@@ -106,3 +107,63 @@ async def get_meetings_user_limits(
     session: AsyncSession = session_dependency
 ) -> MeetingsUserLimits:
     return await LimitsManager.get_user_meetings_limits(session, user_id, settings.limits)
+
+
+@router.patch(
+    "/me/freeze", 
+    summary="Set a freeze period for meetings for the current user"
+)
+async def set_meetings_freeze(
+    start_date: datetime,
+    user_id: Annotated[int, Depends(auth.current_user_id)],
+    end_date: datetime | None = None,
+    session: AsyncSession = session_dependency,
+) -> dict:
+    """
+    Set a freeze period for meetings for the current user.
+    
+    This endpoint allows setting a period when a user is unavailable for meetings
+    (e.g., during vacation). During this period, the user cannot be scheduled for meetings.
+    
+    - If only start_date is provided, the freeze will be for that single day
+    - The freeze period cannot exceed 120 days
+    - The freeze period cannot start in the past
+    """
+    try:
+        await MeetingManager.set_meetings_freeze(
+            session=session,
+            user_id=user_id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        return {"status": "success", "message": "Meetings freeze period set successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to set meetings freeze: {str(e)}")
+
+
+@router.patch(
+    "/me/delete_freeze", 
+    summary="Remove the freeze period for meetings for the current user"
+)
+async def remove_meetings_freeze(
+    user_id: Annotated[int, Depends(auth.current_user_id)],
+    session: AsyncSession = session_dependency,
+) -> dict:
+    """
+    Remove the freeze period for meetings for the current user.
+    
+    This endpoint allows removing a previously set freeze period, making the user
+    available for meetings again.
+    """
+    try:
+        await MeetingManager.remove_meetings_freeze(
+            session=session,
+            user_id=user_id,
+        )
+        return {"status": "success", "message": "Meetings freeze period removed successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to remove meetings freeze: {str(e)}")

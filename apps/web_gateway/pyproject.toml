@@ -1,6 +1,6 @@
 [project]
 name = "web_gateway"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 readme = "README.md"
 authors = [
@@ -13,6 +13,7 @@ dependencies = [
     "common-db",
     "message-broker",
     "config-library",
+    "vacancies",
     "fastapi>=0.115.6",
     "gcloud-aio-storage>=9.3.0",
     "python-multipart>=0.0.20",
@@ -37,6 +38,7 @@ common-db = { path = "../../packages/common_db" }
 event-emitter = { path = "../../packages/event_emitter" }
 message-broker = { path = "../../packages/message_broker" }
 config-library = { path = "../../packages/config_library" }
+vacancies = { path = "../../vacancies" }
 
 [dependency-groups]
 dev = [
